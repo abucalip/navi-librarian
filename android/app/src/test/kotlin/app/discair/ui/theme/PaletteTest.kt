@@ -20,10 +20,10 @@ class PaletteTest {
     }
 
     @Test fun fiftyAndTwoThemesWithUniqueIds() {
-        assertEquals(50, Palettes.All.size)
-        assertEquals(30, Palettes.Light.size)
-        assertEquals(20, Palettes.Dark.size)
-        assertEquals(27, Palettes.All.count { it.family == Family.Classic })
+        assertEquals(54, Palettes.All.size)
+        assertEquals(33, Palettes.Light.size)
+        assertEquals(21, Palettes.Dark.size)
+        assertEquals(31, Palettes.All.count { it.family == Family.Classic })
         assertEquals(23, Palettes.All.count { it.family == Family.Brutal })
         assertTrue(Palettes.All.all { (it.family == Family.Brutal) == (it.shape != null) })
         assertEquals(Palettes.All.size, Palettes.All.map { it.id }.toSet().size)
@@ -89,7 +89,7 @@ class PaletteTest {
     }
 
     @Test fun thirteenPairsWithUniqueIdsAndDiscairFirst() {
-        assertEquals(13, FontPairs.All.size)
+        assertEquals(14, FontPairs.All.size)
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.id }.toSet().size)
         assertEquals(FontPairs.All.size, FontPairs.All.map { it.label }.toSet().size)
         assertEquals("discair", FontPairs.All.first().id)
@@ -101,7 +101,7 @@ class PaletteTest {
         // Each pair is chosen by its id alone: the saved font id never depends on the colour theme.
         for (p in brut) assertEquals(p.id, AppearanceRules.sanitizeFont(p.id))
         // The older pairs keep JetBrains Mono for numbers; the Brut pairs that name another mono bring it.
-        assertEquals(setOf("JetBrains Mono"), FontPairs.All.filter { !it.id.startsWith("brut_") && it.id != "flow" && it.id != "gallery" }.map { it.monoName }.toSet())
+        assertEquals(setOf("JetBrains Mono"), FontPairs.All.filter { !it.id.startsWith("brut_") && it.id != "flow" && it.id != "gallery" && it.id != "index" }.map { it.monoName }.toSet())
         assertEquals(setOf("JetBrains Mono", "IBM Plex Mono", "DM Mono", "Space Mono", "Roboto Mono"), brut.map { it.monoName }.toSet())
         assertTrue(brut.all { it.titleScale in 0.5f..1.5f })
         // Technical's body is proportional (IBM Plex Sans); only its numbers are monospaced.

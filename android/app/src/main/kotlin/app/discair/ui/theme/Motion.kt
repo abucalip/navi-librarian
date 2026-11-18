@@ -91,7 +91,7 @@ object MotionTokens {
 object MotionRules {
     /** The family a theme's layout uses. The Sticker Wall has no motion of its own in 7.4, so it takes the standard family. */
     fun familyFor(layout: Layout): MotionFamily = when (layout) {
-        Layout.Standard, Layout.StickerWall, Layout.CoverStack, Layout.Flow, Layout.Gallery -> MotionFamily.Standard
+        Layout.Standard, Layout.StickerWall, Layout.CoverStack, Layout.Flow, Layout.Gallery, Layout.Index -> MotionFamily.Standard
         Layout.TapeDeck -> MotionFamily.Tape
         Layout.SheetStack -> MotionFamily.Sheet
     }

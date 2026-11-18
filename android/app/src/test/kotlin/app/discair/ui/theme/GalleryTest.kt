@@ -69,7 +69,7 @@ class GalleryTest {
     }
 
     @Test fun theNewRolesDefaultSoNoOtherPaletteChanges() {
-        for (p in Palettes.All.filter { it.layout != Layout.Gallery }) {
+        for (p in Palettes.All.filter { it.layout != Layout.Gallery && it.layout != Layout.Index }) {
             assertEquals("${p.id} control", p.text, p.control)
             assertEquals("${p.id} onControl", p.ink, p.onControl)
             assertEquals("${p.id} mat", p.surface, p.mat)

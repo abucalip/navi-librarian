@@ -76,6 +76,7 @@ fun DiscairSwitch(checked: Boolean, modifier: Modifier = Modifier, enabled: Bool
     val shape = pillShape()
     if (isFlow()) { FlowSwitch(checked, modifier); return }
     if (isGallery()) { GallerySwitch(checked, modifier); return }
+    if (isIndex()) { IndexSwitch(checked, modifier); return }
     if (LocalPalette.current.brutal) {
         BrutalSwitch(checked, shape, modifier)
         return

@@ -308,9 +308,26 @@ object FontPairs {
         )
     }
 
+    /**
+     * Index (docs/INDEX_THEME.md 5.2): Inter Tight 800 for titles and numerals, Inter for text, IBM Plex Mono for the data keys. It differs from
+     * `brut_swiss` only by naming IBM Plex Mono (400, 500 and 600) as its mono. `IndexKit` reads the faces through `LocalFontPair`.
+     */
+    val Index = run {
+        val title = FontFamily(Font(R.font.inter_tight_800, FontWeight.ExtraBold))
+        FontPair(
+            "index", "Index", "Inter Tight", "Inter",
+            title = title, titleWeight = FontWeight.ExtraBold, titleTracking = (-0.035).em, titleLineHeight = 1.1f,
+            body = variableBody(R.font.inter_variable), numeral = title, numeralWeight = FontWeight.ExtraBold,
+            mono = FontFamily(
+                Font(R.font.ibm_plex_mono_400, FontWeight.Normal), Font(R.font.ibm_plex_mono_500, FontWeight.Medium), Font(R.font.ibm_plex_mono_600, FontWeight.SemiBold),
+            ),
+            monoName = "IBM Plex Mono",
+        )
+    }
+
     val All: List<FontPair> = listOf(
         Discair, Editorial, Bricolage, Geometric, Transit,
-        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss, Flow, Gallery,
+        BrutBaseline, BrutTechnical, BrutEditorial, BrutModern, BrutShout, BrutSwiss, Flow, Gallery, Index,
     )
 
     fun byId(id: String?): FontPair? = All.firstOrNull { it.id == id }

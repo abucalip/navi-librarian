@@ -120,6 +120,16 @@ fun SeekBar(fraction: Float, enabled: Boolean, onChange: (Float) -> Unit, onFini
             drawRoundRect(palette.edgeStrong, tl, androidx.compose.ui.geometry.Size(tw, th), tc, style = androidx.compose.ui.graphics.drawscope.Stroke(outline))
             return@Canvas
         }
+        if (palette.layout == app.discair.ui.theme.Layout.Index) {
+            // Index: a 6dp square `edge` track, the played part in `accent` and no thumb (index.css `.seek`).
+            val h = app.discair.ui.common.IndexRules.SEEK.dp.toPx()
+            val left = inset
+            val width = size.width - 2 * inset
+            val x = left + width * fraction.coerceIn(0f, 1f)
+            drawRect(palette.edge, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size(width, h))
+            drawRect(palette.accent, Offset(left, y - h / 2), androidx.compose.ui.geometry.Size((x - left).coerceAtLeast(0f), h))
+            return@Canvas
+        }
         if (palette.layout == app.discair.ui.theme.Layout.Gallery) {
             // Gallery: a 1.5dp `edge` track, the played part in `text` and a 10dp `text` thumb (gallery.css `.seek`).
             val h = 1.5.dp.toPx()

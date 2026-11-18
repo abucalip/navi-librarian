@@ -82,6 +82,10 @@ object ChartRules {
         layout == Layout.Gallery -> ChartStyle(
             MarkShape.Rounded, 1.5f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )
+        // Index: square columns, a 2dp line and no fill; the current column and the first series are the accent (index/pages/downloads-stats-server).
+        layout == Layout.Index -> ChartStyle(
+            MarkShape.Rounded, 2f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
+        )
         family == Family.Brutal -> ChartStyle(
             MarkShape.Outlined, 2f, area = false, steppedLine = false, meterColumns = false, barRadiusDp = 0f, segmentRadiusDp = 0f,
         )
