@@ -132,11 +132,7 @@ fun AlbumPathsSheet(albumName: String, artistName: String, albumId: String, soni
         BackHandler(enabled = step in steps.indices) { step = -1 }
         Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
             val seeds = (model.answers[AlbumTab.NeighboursByEar] as? Load.Ready)?.value?.seeds ?: 0
-            // Index draws its own numbered list and opened step (IndexAlbumPaths.kt); the state above is the same for every theme.
-            if (app.discair.ui.common.isIndex()) IndexAlbumPathList(
-                albumName, artistName, albumId, tab, tabs, state, seeds, step, lists.getValue(tab), go,
-                onTab = { step = -1; tabName = it.name }, onStep = { step = it }, onRetry = { attempt++ },
-            ) else AlbumPathList(
+            AlbumPathList(
                 albumName, artistName, albumId, tab, tabs, state, seeds, step, lists.getValue(tab), go,
                 onTab = { step = -1; tabName = it.name }, onStep = { step = it }, onRetry = { attempt++ },
             )
@@ -153,7 +149,7 @@ private fun AlbumPathList(
     onTab: (AlbumTab) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(4.dp))) }, Modifier.padding(horizontal = 16.dp))
+        TrailHeader(albumName, { PathAlbumCover(artistName, albumName, Modifier.size(TrailSizes.HeaderPicture).clip(RoundedCornerShape(if (app.discair.ui.common.isIndex()) 0.dp else 4.dp))) }, Modifier.padding(horizontal = 16.dp))
         TrailTabs(tabs.map { it.label }, tabs.indexOf(tab), { onTab(tabs[it]) })
         Text(
             albumTabDescription(tab, albumName, seeds), style = if (app.discair.ui.common.isGallery()) app.discair.ui.common.GalleryType.small() else MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,

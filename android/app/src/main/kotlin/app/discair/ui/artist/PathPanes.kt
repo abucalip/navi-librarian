@@ -327,7 +327,7 @@ internal fun InfoCard(modifier: Modifier = Modifier, raised: Boolean = false, fi
 @Composable
 internal fun PathTile(icon: ImageVector, size: Int) {
     Box(
-        Modifier.size(size.dp).clip(RoundedCornerShape(4.dp)).background(Ink.Raised),
+        Modifier.size(size.dp).clip(RoundedCornerShape(if (app.discair.ui.common.isIndex()) 0.dp else 4.dp)).background(Ink.Raised),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription = null, modifier = Modifier.size((size / 2).dp)) }
 }

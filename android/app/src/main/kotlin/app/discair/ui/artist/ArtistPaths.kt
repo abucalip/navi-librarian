@@ -123,12 +123,7 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
         // Back with a step open closes the step; Back with none open closes the sheet.
         BackHandler(enabled = step in stops.indices) { step = -1 }
         Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
-            // Index draws its own numbered list and opened step (IndexArtistPaths.kt); the state above is the same for every theme.
-            if (app.discair.ui.common.isIndex()) IndexArtistPathList(
-                artistName, mbid, kind, state, step, lists.getValue(kind), go,
-                onKind = { step = -1; kindWire = it.wire },
-                onStep = { step = it }, onRetry = { attempt++ },
-            ) else PathList(
+            PathList(
                 artistName, mbid, kind, state, step, lists.getValue(kind), go,
                 onKind = { step = -1; kindWire = it.wire },
                 onStep = { step = it }, onRetry = { attempt++ },
@@ -149,7 +144,7 @@ private fun PathList(
     onKind: (PathKind) -> Unit, onStep: (Int) -> Unit, onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        TrailHeader(artistName, { ArtistPhoto(artistName, null, Modifier.size(TrailSizes.HeaderPicture), circle = true) }, Modifier.padding(horizontal = 16.dp))
+        TrailHeader(artistName, { ArtistPhoto(artistName, null, Modifier.size(TrailSizes.HeaderPicture), circle = !app.discair.ui.common.isIndex(), rect = app.discair.ui.common.isIndex()) }, Modifier.padding(horizontal = 16.dp))
         TrailTabs(PathKind.entries.map { it.label }, PathKind.entries.indexOf(kind), { onKind(PathKind.entries[it]) })
         Text(
             kindDescription(kind, artistName, (state as? Load.Ready)?.value?.startType.orEmpty()),
@@ -249,7 +244,6 @@ internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int, cover: Int = 0
         PathKind.LabelPath -> {
             if (stop.albumArtist != null) PathRowCover(stop.albumArtist, stop.name, cover, modifier) else PathTile(PlayerIcons.Album, size)
         }
-        // Index draws every picture square (rule 3).
         PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = !app.discair.ui.common.isIndex(), rect = app.discair.ui.common.isIndex())
         PathKind.CompositionPath -> {
             // A recording's cover is its album's, when the server named the album.
