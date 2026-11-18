@@ -328,7 +328,7 @@ Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](design/inde
 
 Every route in `ui/Routes.kt` and every sheet the screens open has a frame. Not drawn: tablet widths, and empty or error states beyond Home's frame 4 (each uses the same banner, skeleton and one-line message).
 
-**Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step. Index changes only the drawing: numbered steps, lettered reasons, rules.
+**Owner change (2026-11-18): the album and artist Paths sheets use the shared layout of Flow and the other themes, in Index's own fonts and colours; Index draws no Paths layout of its own.** **Paths behaviour stays as built.** The server is asked only when the sheet is open and a kind is chosen, and Back from an opened album returns to the sheet at the same step. Index changes only the drawing: numbered steps, lettered reasons, rules.
 
 ## 11. Where the code goes
 
@@ -340,7 +340,6 @@ Every route in `ui/Routes.kt` and every sheet the screens open has a frame. Not 
 | `ui/common/IndexShell.kt` | Top bars, the strip and the bar with the signal block, sheet look, snackbar, the directional NavHost transitions |
 | `ui/home/IndexHome.kt`, `IndexHomeRules.kt` | Section 9; the rules are pure (counts, number labels "01", the source head, last-heard words) |
 | `ui/album/IndexAlbum.kt`, `ui/artist/IndexArtist.kt`, `ui/IndexGenre.kt` | Album, Artist, Genre |
-| `ui/album/IndexAlbumPaths.kt`, `ui/artist/IndexArtistPaths.kt` | Paths steps and lettered reasons |
 | `ui/discover/IndexDiscover.kt`, `ui/library/IndexLibrary.kt`, `ui/search/IndexSearch.kt` | Discover, Library, Search |
 | `ui/player/IndexNowPlaying.kt`, `ui/player/IndexEqCrossfade.kt` | Now Playing, Queue, Lyrics, Equalizer, Crossfade |
 | `ui/radio/IndexRadio.kt`, `ui/downloads/IndexDownloads.kt`, `ui/stats/IndexStats.kt`, `ui/settings/IndexSettings.kt` | Radio, Downloads, Stats, Server, Settings, Appearance |
