@@ -349,9 +349,7 @@ The owner took every recommendation and added one detail for D4.1.
 4. D5.7: trailing inspectors run full height, like the queue.
 5. Artist bio: left-aligned.
 
-Still open:
-
-6. Player bar: the cover shows twice (large in the sidebar slot and small with the disc in the bar). Keep both? No recommendation was made, so nothing changes until the owner decides.
+6. Player bar: the cover keeps showing twice, large in the sidebar slot and small with the disc in the bar. No change.
 
 ## Out of scope: data, not design
 
@@ -361,4 +359,4 @@ Still open:
 
 ## Order
 
-D1 → D2 → D3 first (they cover the owner's main complaint and the overlaps), then D4, D5, D6, D7 and D8 in any order. All items can start now. Only the twice-shown cover (owner decision 6) waits, and it is not part of any slice.
+D1 → D2 → D3 first (they cover the owner's main complaint and the overlaps), then D4, D5, D6, D7 and D8 in any order. All owner decisions are taken; every item can start now.

@@ -334,7 +334,7 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
   - selected tabs use the dark neutral style in Night and a white chip on a light grey track in Day;
   - inspectors run full height;
   - the artist bio is left-aligned.
-- Still open: the cover shown twice. It is not in any slice. Next: D1.
+- The cover stays shown twice (sidebar slot and player bar). No questions remain. Next: D1.
 
 ## 2n. Simplification candidates
 
