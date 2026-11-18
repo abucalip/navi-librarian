@@ -139,7 +139,7 @@ Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1207 on `macos/
 
 - D2.1: Album and Artist use one shared 76 pt hero top inset.
 - D2.2: the Spine strip is drawn inside the Album cover frame, so the cover's full left edge meets the back button.
-- D2.3: the Album tabs, track table and related grids are left-aligned to the hero column; the Artist body column is left-aligned to the portrait edge.
+- D2.3: the Album tabs, track table and related grids are left-aligned to the hero column; the Artist body column and biography text are left-aligned to the portrait edge.
 - D2.4: the Artist text block has the specified 55% to clear left-to-right scrim; the menu is separated by 12 pt and raised 6 pt; action capsules use a 14 pt gap.
 - D2.5: collage tile frames are pixel-rounded and overlap by 1 pt. D2.6: translucent media capsules use a dark fill and light hairline; the scrim also improves their ground.
 - D2.7: source review found the recommended hierarchy already present: 20 pt top-level headings and small-caps subgroup labels under "Not in your library". No duplicate style change was made.
