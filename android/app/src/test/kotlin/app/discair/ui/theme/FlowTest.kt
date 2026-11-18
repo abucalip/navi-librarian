@@ -8,7 +8,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step F1 of docs/ANDROID_ART_THEMES_PROPOSAL.md: the Flow palette, its layout, its font pair, its shell rules and its contrast. */
+/** Step F1 of docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md: the Flow palette, its layout, its font pair, its shell rules and its contrast. */
 class FlowTest {
     private val p = Palettes.Flow
     private fun ratio(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color) = Contrast.ratio(a, b)
@@ -95,7 +95,7 @@ class FlowTest {
         assertEquals("flow", AppearanceRules.sanitizeFont("flow"))
     }
 
-    // Step P3 of docs/palettes.md: the three new day palettes (sections 4.2 and 4.4).
+    // Step P3 of docs/archive/completed/palettes.md: the three new day palettes (sections 4.2 and 4.4).
     private val day = listOf(Palettes.FlowForest, Palettes.FlowRaspberry, Palettes.FlowViolet)
 
     @Test fun newDayPalettesAreListedAfterFlowAndKeepTheThemeShape() {
@@ -150,7 +150,7 @@ class FlowTest {
         assertEquals(listOf("AEB5A3", "BBADB0", "B2AEC2"), day.map { hex(FlowRules.chevron(it)) })
     }
 
-    // Step P4 of docs/palettes.md: the three new night palettes (sections 4.2, 4.3 and 4.4).
+    // Step P4 of docs/archive/completed/palettes.md: the three new night palettes (sections 4.2, 4.3 and 4.4).
     private val night = listOf(Palettes.FlowEmber, Palettes.FlowMoss, Palettes.FlowPlum)
 
     @Test fun newNightPalettesAreListedInDarkAndKeepTheThemeShape() {

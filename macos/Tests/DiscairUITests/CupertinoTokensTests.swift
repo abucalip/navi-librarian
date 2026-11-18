@@ -1,7 +1,7 @@
 import Testing
 @testable import DiscairUI
 
-/// Section 4.1 and 4.2 of `docs/redesign.md`: the Cupertino tokens and their contrast.
+/// Section 4.1 and 4.2 of `docs/plans/redesign.md`: the Cupertino tokens and their contrast.
 struct CupertinoTokensTests {
     @Test func everyTextAndAccentPairReachesAA() {
         for pair in CU.contrastPairs {
@@ -46,7 +46,7 @@ struct CupertinoTokensTests {
     }
 }
 
-/// The Booklet is always dark, so its accent is the Night accent of the owner's hue (docs/MACOS_PATHS_BOOKLET.md, section 3.2).
+/// The Booklet is always dark, so its accent is the Night accent of the owner's hue (docs/plans/MACOS_PATHS_BOOKLET.md, section 3.2).
 @Suite struct BookletStageAccentTests {
     private func ratio(_ a: CURGB, _ b: CURGB) -> Double { a.contrast(with: b) }
 

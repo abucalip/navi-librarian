@@ -1,4 +1,4 @@
-"""Radio station fixtures (docs/RADIO_PLAYBACK_CONTRACT.md sections 3.1, 3.5, 7) must keep the agreed fields."""
+"""Radio station fixtures (docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.1, 3.5, 7) must keep the agreed fields."""
 import json
 import unittest
 from pathlib import Path

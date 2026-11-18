@@ -1,4 +1,4 @@
-/* Layouts for the web UI (D-023, docs/BRUT_LAYOUTS_PLAN.md). A layout rearranges the shell and the main pages; a theme
+/* Layouts for the web UI (D-023, docs/archive/completed/BRUT_LAYOUTS_PLAN.md). A layout rearranges the shell and the main pages; a theme
    (static/themes.css) only supplies the tokens. Loaded after themes.css on the main page only.
    Rules:
      - every selector is scoped by :root[data-layout="<id>"], so deleting a layout means deleting its block;

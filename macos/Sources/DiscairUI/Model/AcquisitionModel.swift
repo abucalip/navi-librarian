@@ -231,7 +231,7 @@ public final class AcquisitionModel {
     }
 
     /// The metadata a Get sends: `metadata(_:)` plus the album's release group when it is known, so the Downloads row can show
-    /// its covers (docs/artwork.md, idea 13). Feedback keeps the plain metadata.
+    /// its covers (docs/archive/completed/artwork.md, idea 13). Feedback keeps the plain metadata.
     static func getMetadata(_ a: AlbumItem) -> [String: String] {
         var m = metadata(a)
         if let rgid = artworkGroupID(a.releaseGroupMBID) { m["release_group_mbid"] = rgid }

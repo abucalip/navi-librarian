@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-// Live radio playback (docs/RADIO_PLAYBACK_PROPOSAL.md S2.6; macOS stage 2, slice S2-2 item 2).
+// Live radio playback (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2.6; macOS stage 2, slice S2-2 item 2).
 // No level tap: AVFoundation gives a tap no samples on live streams (macos/DESIGN.md, S2-2 item 1), so the bar is B1 everywhere.
 // The station's address is only ever passed to AVPlayer: it is never logged, shown or put in an error (contract principle 6).
 

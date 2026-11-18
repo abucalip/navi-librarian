@@ -1,4 +1,4 @@
-"""Live "now" fixtures (docs/RADIO_PLAYBACK_CONTRACT.md sections 3.2, 3.3 and 7) must keep the agreed shape,
+"""Live "now" fixtures (docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.2, 3.3 and 7) must keep the agreed shape,
 and the Download rule (state ok and a play id) must hold in every fixture."""
 import json
 import unittest

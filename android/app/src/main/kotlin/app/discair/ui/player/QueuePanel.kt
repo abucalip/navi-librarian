@@ -105,7 +105,7 @@ fun QueuePanel(state: PlayerUiState, controller: PlayerController, modifier: Mod
                 Modifier.heightIn(min = Target).padding(bottom = 8.dp),
             ) { Text("Add songs that sound like this") }
         }
-        // The playing album's Track images (docs/artwork.md, idea 6): a card each, shown only when the album has some.
+        // The playing album's Track images (docs/archive/completed/artwork.md, idea 6): a card each, shown only when the album has some.
         TrackImageCards(trackImages(rememberAlbumArtIndex(playing)), Modifier.padding(bottom = 8.dp))
         val list = rememberLazyListState()
         // Opening the queue brings the playing song into view when it is not already on screen.

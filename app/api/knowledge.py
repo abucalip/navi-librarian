@@ -1,4 +1,4 @@
-"""Knowledge page routes (Server V2 Phase 4, docs/SERVER_V2_CONTRACT.md).
+"""Knowledge page routes (Server V2 Phase 4, docs/contracts/SERVER_V2_CONTRACT.md).
 
 HTTP adapters only: every body comes from ``intelligence.knowledge.KnowledgeReader`` (dossier,
 person, label, work, place and event pages), which reads the Server V2 SQLite file (D-026) and nothing else.

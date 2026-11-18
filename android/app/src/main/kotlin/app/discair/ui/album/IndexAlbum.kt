@@ -77,7 +77,7 @@ import kotlinx.coroutines.withContext
 private val Gutter = IndexRules.GUTTER.dp
 
 /*
- * Index's Album page (Layout.Index). Spec: docs/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frames 1 and 2.
+ * Index's Album page (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frames 1 and 2.
  * In the library: the catalogue bar ("ALBUM 0418 / 1284"), a 200dp cover beside the playing song's numeral ("05 / 10 PLAYING") and the data list, the title,
  * Play / Shuffle / Paths, tabs Songs · Info · Reviews · Booklet and numbered songs. Not in the library: "NOT IN YOUR LIBRARY", a 150dp cover beside the title,
  * the key/value grid, Get album / Save. Similar albums and artists follow both. The data and the taps are the page every theme has ([CoverStackAlbumData]).

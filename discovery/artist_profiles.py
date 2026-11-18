@@ -3,7 +3,7 @@
 One batched MusicBrainz artist search (``arid:(...)``) per chunk of artists returns each artist's
 area name and life-span begin year. Answers are cached per artist for 90 days, a not-found artist
 is cached too, and a failed chunk leaves its artists uncached so the next run asks again. Never
-raises. Injected HTTP and cache callables keep tests offline. See docs/engine2.md.
+raises. Injected HTTP and cache callables keep tests offline. See docs/plans/engine2.md.
 """
 from __future__ import annotations
 

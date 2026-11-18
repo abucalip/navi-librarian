@@ -4,7 +4,7 @@ Pure: the caller gathers each lens's pool (``run_deep_cuts_tag_supply`` with the
 and day as the radio scope), the album listeners, the artist genre tags, the fallback tags
 and the known-artist inputs; this module makes no provider calls and reads no clock. The
 gates are the lens's own (``run_lens`` through ``partition_lens_pools``), and every lens list
-is independent of the recommendation history and cooldown. Unwired; see docs/engine2.md
+is independent of the recommendation history and cooldown. Unwired; see docs/plans/engine2.md
 (Phase 4, slice 1).
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Edition advisor (docs/ServerV2.md Phase 2, item 4).
+"""Edition advisor (docs/plans/ServerV2.md Phase 2, item 4).
 
 For an album owned as two or more editions (the slice 3 duplicate albums), summarise what
 the optional audio job *measured* for each edition so the owner can compare them:

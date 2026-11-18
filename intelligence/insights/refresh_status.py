@@ -1,4 +1,4 @@
-"""Status of the insight lens refresh (redesign D3, docs/SERVER_V2_CONTRACT.md).
+"""Status of the insight lens refresh (redesign D3, docs/contracts/SERVER_V2_CONTRACT.md).
 
 The lens refresh loop (``app/services/insights_refresh.py``) runs two jobs: Forgotten Gems
 (``insights_forgotten_gems``) and the provider-backed lenses (``insights_provider_lenses``). This

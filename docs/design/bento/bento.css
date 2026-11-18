@@ -1,5 +1,5 @@
 /* Bento components. Measurements are dp (1 CSS px = 1dp), type sizes are sp. Colours come from palettes.css
-   (generated from tokens.json). Spec: docs/BENTO_THEME.md, section 7. The stand-in artwork is ../_kit (not for the app). */
+   (generated from tokens.json). Spec: docs/plans/BENTO_THEME.md, section 7. The stand-in artwork is ../_kit (not for the app). */
 @font-face{font-family:Gabarito;src:url(fonts/gabarito_bento.ttf);font-weight:500 900}
 @font-face{font-family:Figtree;src:url(fonts/figtree_bento.ttf);font-weight:400 800}
 

@@ -1,5 +1,5 @@
 /*
- * Colour palettes for Soft Brut and Flow (docs/palettes.md). Load after soft-brut.css and flow.css; add the palette's class to the
+ * Colour palettes for Soft Brut and Flow (docs/archive/completed/palettes.md). Load after soft-brut.css and flow.css; add the palette's class to the
  * .phone element, for example class="phone sb p-softbrut_mint". Only colour tokens are set here. Built by _src/build_palettes.py.
  */
 

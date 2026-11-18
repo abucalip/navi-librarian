@@ -1,4 +1,4 @@
-"""Body builder for ``POST /api/playlists/taste`` (docs/redesign.md A8b item 1).
+"""Body builder for ``POST /api/playlists/taste`` (docs/plans/redesign.md A8b item 1).
 
 Turns one taste genre into a Navidrome playlist: the owner's own songs of that genre, a random
 sample, written with the Subsonic ``createPlaylist`` call. Pure rules live here; the two Navidrome

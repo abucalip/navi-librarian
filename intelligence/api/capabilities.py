@@ -1,4 +1,4 @@
-"""``/api/capabilities`` body: which intelligence features are populated (docs/ServerV2.md 8).
+"""``/api/capabilities`` body: which intelligence features are populated (docs/plans/ServerV2.md 8).
 
 Clients hide absent sections instead of rendering errors, so every feature carries an
 explicit state and, when it is not available, a reason. Facts about the outside world

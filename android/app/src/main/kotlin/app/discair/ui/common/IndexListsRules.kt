@@ -4,7 +4,7 @@ import app.discair.model.DiscoveryList
 import app.discair.model.SearchResult
 
 /**
- * The words and numbers of Index's Discover, Library and Search (docs/INDEX_THEME.md step I4; mockups docs/design/index/pages/discover.html and
+ * The words and numbers of Index's Discover, Library and Search (docs/plans/INDEX_THEME.md step I4; mockups docs/design/index/pages/discover.html and
  * library-search.html). Pure, so the tests can pin them; the screens only draw what these return.
  */
 object IndexListsRules {

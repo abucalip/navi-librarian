@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Step G3 of docs/GALLERY_THEME.md: the words behind Gallery's Album, Artist and Genre pages. */
+/** Step G3 of docs/archive/completed/GALLERY_THEME.md: the words behind Gallery's Album, Artist and Genre pages. */
 class GalleryPagesRulesTest {
     @Test fun theAlbumCatalogueLineKeepsOnlyWhatIsKnown() {
         assertEquals("1991 · 6 songs · 43 min · FLAC", R.albumEyebrow(1991, 6, 43 * 60, "FLAC"))

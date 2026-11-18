@@ -7,7 +7,7 @@ its default macOS path) and the live motion page.
 
 Design tooling only: nothing imports it and no test collects it. Inputs: ../tokens.json, ../index.css, ../../_kit/kit.py,
 and the app's own fonts in android/app/src/main/res/font. Every page is drawn in Signal Blue (the default); `palettes`
-shows Home in all four palettes. Spec: docs/INDEX_THEME.md.
+shows Home in all four palettes. Spec: docs/plans/INDEX_THEME.md.
 """
 import json, os, sys
 
@@ -580,7 +580,7 @@ MOTION = """<!doctype html><html lang="en"><head><meta charset="utf-8"><title>In
 .notes{max-width:420px;font:14px/1.5 system-ui}.notes button{margin:4px 4px 0 0;padding:8px 12px}.pane{position:absolute;inset:0 0 120px;background:var(--ink);padding:20px 16px}
 .nav span{cursor:pointer}.nav i.blk{transition:left .38s cubic-bezier(.77,0,.18,1)}.num{display:inline-flex;overflow:hidden;height:92px}.num span{display:block;transition:transform .42s cubic-bezier(.77,0,.18,1)}</style></head><body><div class="wrap">
 <div class="scr"><div id="panes"></div><div class="dock"><div class="mini"><b>Pelota</b></div><nav class="nav" id="nav"><i class="blk" id="blk" style="left:5.5%"></i></nav></div></div>
-<div class="notes"><h2>Index motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/INDEX_THEME.md section 8.</p>
+<div class="notes"><h2>Index motion, live</h2><p>Values: tokens.json → motion. Build steps: docs/plans/INDEX_THEME.md section 8.</p>
 <button onclick="cascade()">Replay row cascade</button><button onclick="roll()">Roll the numeral</button>
 <p><b>Tap a bar cell</b>: the page slides left or right by bar order (380ms, firm curve, no fade) and the signal block slides along the top edge.<br><b>Row cascade</b>: rows enter 20ms apart from 12dp left.<br><b>Numeral</b>: each digit rolls up, 40ms apart.</p></div></div>
 <script>const names=['Home','Discover','Library','Search'];let cur=0;const panes=document.getElementById('panes'),nav=document.getElementById('nav');

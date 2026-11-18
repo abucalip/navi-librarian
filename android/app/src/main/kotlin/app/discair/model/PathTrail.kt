@@ -1,7 +1,7 @@
 package app.discair.model
 
 /*
- * The Trail layout of the Paths sheets (docs/pathsredesign.md, sections 5 and 9). Pure functions, no Compose: the link
+ * The Trail layout of the Paths sheets (docs/archive/completed/pathsredesign.md, sections 5 and 9). Pure functions, no Compose: the link
  * of a step (what connects it to the start), and the grouping of steps under their links. Both sheets use them.
  */
 

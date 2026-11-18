@@ -2,7 +2,7 @@
 
 Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed, and both font files are kept. Nothing is built; B0 is next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
-Package: [`docs/design/bento/`](design/bento/). Start with its [`README.md`](design/bento/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
+Package: [`docs/design/bento/`](../design/bento/). Start with its [`README.md`](../design/bento/README.md). The shared mockup kit is [`docs/design/_kit/`](../design/_kit/).
 
 ## 1. What the owner asked for
 
@@ -13,7 +13,7 @@ Package: [`docs/design/bento/`](design/bento/). Start with its [`README.md`](des
    - mockups of **every page**, drawn in one palette, including the album and artist **Paths** pages;
    - the other palettes given as codes and scripts;
    - detailed instructions on how to build the animations (section 8).
-4. Every mockup is drawn in **Sorbet**. Licorice and Riviera are **colour variations only**: the layout, components, type and icons are the same, and only the colour values change. [`pages/palettes`](design/bento/pages/palettes.html) shows Home in all three, generated from `tokens.json`.
+4. Every mockup is drawn in **Sorbet**. Licorice and Riviera are **colour variations only**: the layout, components, type and icons are the same, and only the colour values change. [`pages/palettes`](../design/bento/pages/palettes.html) shows Home in all three, generated from `tokens.json`.
 
 ## 2. Rules
 
@@ -27,7 +27,7 @@ Package: [`docs/design/bento/`](design/bento/). Start with its [`README.md`](des
 4. **Artwork first, colour second.** Covers and artist photos are the largest things on every page. The tile tones are the only other large colour. Tones are decoration and say nothing; state is said in words (In library, Requested) and through `control`/`accent`.
 5. **Contrast.**
    - Every palette passes `PaletteTest` as written.
-   - The Bento roles pass the extra checks in [`_src/check_contrast.py`](design/bento/_src/check_contrast.py). All three palettes pass today.
+   - The Bento roles pass the extra checks in [`_src/check_contrast.py`](../design/bento/_src/check_contrast.py). All three palettes pass today.
    - The existing rules still apply: 48dp touch targets, state never shown by colour alone, Remove animations respected, missing data said in words.
 
 ## 3. Identity in six rules
@@ -50,7 +50,7 @@ Package: [`docs/design/bento/`](design/bento/). Start with its [`README.md`](des
 
 ### 4.1 Roles
 
-The CSS variables in [`palettes.css`](design/bento/palettes.css) use the `Palette` field names, so the mapping is one to one. Bento needs no new `Palette` field: `control`, `onControl` and `mat` exist since Gallery G1. Bento's own colours, the **tones**, live in `BentoTones` in `ui/common/BentoKit.kt`, keyed by palette id (decision B1).
+The CSS variables in [`palettes.css`](../design/bento/palettes.css) use the `Palette` field names, so the mapping is one to one. Bento needs no new `Palette` field: `control`, `onControl` and `mat` exist since Gallery G1. Bento's own colours, the **tones**, live in `BentoTones` in `ui/common/BentoKit.kt`, keyed by palette id (decision B1).
 
 | Role | Used for |
 |---|---|
@@ -73,7 +73,7 @@ The CSS variables in [`palettes.css`](design/bento/palettes.css) use the `Palett
 
 ### 4.2 The three palettes
 
-Single source: [`tokens.json`](design/bento/tokens.json). On all three: `family = Classic`, `shape = null`, `layout = Layout.Bento`, `suggestedFontId = "bento"`, `minAccentContrast = 4.5`.
+Single source: [`tokens.json`](../design/bento/tokens.json). On all three: `family = Classic`, `shape = null`, `layout = Layout.Bento`, `suggestedFontId = "bento"`, `minAccentContrast = 4.5`.
 
 | Role | Sorbet (day) | Licorice (night) | Riviera (day) |
 |---|---|---|---|
@@ -144,10 +144,10 @@ Bento ships two new files, subset to Latin (Basic Latin, Latin-1, Latin Extended
 
 | File (copy into `android/app/src/main/res/font/`) | Source | Axis kept | Size |
 |---|---|---|---|
-| [`gabarito_bento.ttf`](design/bento/fonts/gabarito_bento.ttf) | Google Fonts `ofl/gabarito/Gabarito[wght].ttf` | `wght` 500–900 | 88 KB |
-| [`figtree_bento.ttf`](design/bento/fonts/figtree_bento.ttf) | `ofl/figtree/Figtree[wght].ttf` | `wght` 400–800 | 43 KB |
+| [`gabarito_bento.ttf`](../design/bento/fonts/gabarito_bento.ttf) | Google Fonts `ofl/gabarito/Gabarito[wght].ttf` | `wght` 500–900 | 88 KB |
+| [`figtree_bento.ttf`](../design/bento/fonts/figtree_bento.ttf) | `ofl/figtree/Figtree[wght].ttf` | `wght` 400–800 | 43 KB |
 
-Both are under the SIL Open Font License 1.1; the licence texts are in [`fonts/`](design/bento/fonts/). The subset commands are in the package README. Together they add about 131 KB to the APK. Both ship (decision B2).
+Both are under the SIL Open Font License 1.1; the licence texts are in [`fonts/`](../design/bento/fonts/). The subset commands are in the package README. Together they add about 131 KB to the APK. Both ship (decision B2).
 
 ### 5.2 Font pair
 
@@ -182,7 +182,7 @@ From `tokens.json` → `type`. Sizes and line heights are in sp.
 
 ## 6. Icons
 
-[`icons/`](design/bento/icons/) holds 48 SVGs (24 by 24), plus [`icons/BentoIcons.kt.txt`](design/bento/icons/BentoIcons.kt.txt), a ready `BentoIcons` object written by the build script.
+[`icons/`](../design/bento/icons/) holds 48 SVGs (24 by 24), plus [`icons/BentoIcons.kt.txt`](../design/bento/icons/BentoIcons.kt.txt), a ready `BentoIcons` object written by the build script.
 
 - **Builder.** Use the same `stroked`/`filled` builder as `ArtIcons`, with `strokeLineWidth = 1.8f` and round caps and joins.
 - **Names.** Property names match `ArtIcons` one for one, plus:
@@ -206,7 +206,7 @@ Read icons through a small switch: `BentoIcons` when `isBento()`, else today's i
 
 ## 7. Components
 
-Every measurement is in [`bento.css`](design/bento/bento.css) (1 CSS px = 1dp). The board is [`pages/components`](design/bento/pages/components.html).
+Every measurement is in [`bento.css`](../design/bento/bento.css) (1 CSS px = 1dp). The board is [`pages/components`](../design/bento/pages/components.html).
 
 ### 7.1 Tiles
 
@@ -258,7 +258,7 @@ Every measurement is in [`bento.css`](design/bento/bento.css) (1 CSS px = 1dp). 
 
 ## 8. Motion: what moves and how to build it
 
-Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](design/bento/pages/motion.html), which covers tile entry, tile to page, the pill bar, press, and Remove animations.
+Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](../design/bento/pages/motion.html), which covers tile entry, tile to page, the pill bar, press, and Remove animations.
 
 Bento's character is **springy and tactile**: tiles pop in, the pill stretches, a tile grows into its page. Nothing loops except the playing bars and the pending Get spinner, and both stop when nothing is happening.
 
@@ -316,7 +316,7 @@ Build #5 (press) and #6 (nav pill) in B1 with the shell. Build #1, #2, #3 and #4
 
 ## 9. Home
 
-Mockup: [`pages/home`](design/bento/pages/home.html) (four frames). From top to bottom:
+Mockup: [`pages/home`](../design/bento/pages/home.html) (four frames). From top to bottom:
 
 | # | Tile | Content | Data |
 |---|---|---|---|
@@ -344,7 +344,7 @@ States (frame 4):
 
 ## 10. Every page and its file
 
-Each page is an `.html` (open it in a browser to measure) and a `.png` in [`docs/design/bento/pages/`](design/bento/pages/). Frames are 360 × 780dp. Rebuild them with `python3 docs/design/bento/_src/build.py`.
+Each page is an `.html` (open it in a browser to measure) and a `.png` in [`docs/design/bento/pages/`](../design/bento/pages/). Frames are 360 × 780dp. Rebuild them with `python3 docs/design/bento/_src/build.py`.
 
 | File | Frames |
 |---|---|
@@ -408,7 +408,7 @@ Add the `Bento*` files to `ARCHITECTURE.md` in B1.
    - Each missing item becomes a server PR **before** the client step that draws it.
    - Domain logic stays server-side and the app only presents it.
    - New code goes in a new module in the owning package from `ARCHITECTURE.md` (`discovery/`, `intelligence/`, `integrations/`, `app/api/` for the route), never in `navidrome_server.py` (D-016). The module is tested by direct import, and gets an `ARCHITECTURE.md` row.
-   - The route or field is added to the contract the client reads (`docs/ANDROID_CLIENT_CONTRACT.md`, `docs/SEARCH_CONTRACT.md` or `docs/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
+   - The route or field is added to the contract the client reads (`docs/contracts/ANDROID_CLIENT_CONTRACT.md`, `docs/contracts/SEARCH_CONTRACT.md` or `docs/contracts/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
    - Prefer a new **optional field** on an existing response over a new route when the data belongs to that response. Clients ignore unknown keys (Android `ignoreUnknownKeys`, Swift `JSONDecoder`, the web), so nothing else changes.
    - Provider data uses batch lookups where the provider offers them, with the existing pacing, budgets and owner approvals (provider rule). Safety-critical code (acquisition, import, deletion, paths) keeps its own review rules.
    - Each server PR carries focused tests for the new code (never the full suite), and CI must pass on its final head.

@@ -80,7 +80,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /*
- * Gallery's Settings, Appearance and Server (G6). Spec: docs/GALLERY_THEME.md sections 7 and 10; mockups: docs/design/gallery/pages/settings.html
+ * Gallery's Settings, Appearance and Server (G6). Spec: docs/archive/completed/GALLERY_THEME.md sections 7 and 10; mockups: docs/design/gallery/pages/settings.html
  * (frames 1 and 2) and downloads-stats-server.html (frame 3). Every row, switch, menu and button is the Standard page's, set out in hairline groups.
  * The building blocks here are also the Equalizer and Crossfade pages' (player/GalleryEqCrossfade.kt).
  */

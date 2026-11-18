@@ -3,7 +3,7 @@ import DiscairCore
 import Foundation
 
 // An album's images from the Librarian (`GET /api/artwork/index?rgid=&release=` and `GET /api/artwork/image/{id}?size=`).
-// Shapes in the "Album artwork" section of docs/SERVER_V2_CONTRACT.md; decided in docs/artwork.md. The Mac only talks to
+// Shapes in the "Album artwork" section of docs/contracts/SERVER_V2_CONTRACT.md; decided in docs/archive/completed/artwork.md. The Mac only talks to
 // the Librarian, which talks to MusicBrainz and the Cover Art Archive. Nothing here reads taste or play data, and an album
 // with no images shows nothing extra. Decoding is tolerant: one bad entry never drops the rest.
 
@@ -165,7 +165,7 @@ public struct ArtworkIndex: Decodable, Equatable, Sendable {
 }
 
 extension ArtworkIndex {
-    /// The faces behind the cover that it can flip to (docs/artwork.md, idea 1): the best Back, then Tray, then Spine. The front is
+    /// The faces behind the cover that it can flip to (docs/archive/completed/artwork.md, idea 1): the best Back, then Tray, then Spine. The front is
     /// the cover the page already shows. An album with no Back image does not flip, even with a Tray or Spine: those are extras on
     /// a flipped cover, not a cover of their own. Chosen by type only, never by taste or play data.
     public var coverBackFaces: [ArtworkPicture] {
@@ -174,7 +174,7 @@ extension ArtworkIndex {
         return [back, slotImage("Tray"), slotImage("Spine")].compactMap { $0 }.filter { seen.insert($0.imageID).inserted }
     }
 
-    /// The covers an owner can pick from (docs/artwork.md, idea 7): Front images of the release group, best first, never a PDF.
+    /// The covers an owner can pick from (docs/archive/completed/artwork.md, idea 7): Front images of the release group, best first, never a PDF.
     /// The server checks the same rule on `PUT /api/artwork/choice`, so a pick it would refuse is never offered.
     public var coverEditions: [ArtworkPicture] {
         var seen = Set<Int>()
@@ -184,7 +184,7 @@ extension ArtworkIndex {
 
 /// The picker needs a real choice: one cover or none is nothing to pick from.
 extension ArtworkIndex {
-    /// The Discover peek (docs/artwork.md, idea 9): the Back, the first booklet page (never a PDF) and the Medium, in that order,
+    /// The Discover peek (docs/archive/completed/artwork.md, idea 9): the Back, the first booklet page (never a PDF) and the Medium, in that order,
     /// at most three. Chosen by type only; empty when the album has none of them.
     public var discoverPeek: [ArtworkPicture] {
         let firstPage = bookletImages.first { !$0.isPDF }
@@ -196,7 +196,7 @@ extension ArtworkIndex {
     }
 }
 
-/// Paths covers and Same Room (docs/artwork.md, idea 10). Chosen by type and comment words only; taste and play data play no part.
+/// Paths covers and Same Room (docs/archive/completed/artwork.md, idea 10). Chosen by type and comment words only; taste and play data play no part.
 extension ArtworkIndex {
     /// The covers a path row can cycle through on hover: the Front images, best first, never a PDF. One cover (or none) is nothing to
     /// cycle, so the row keeps its usual cover.
@@ -212,7 +212,7 @@ extension ArtworkIndex {
     }
 }
 
-/// Timeline filmstrip and Atlas disc nodes (docs/artwork.md, idea 11). Chosen by type only; taste and play data play no part.
+/// Timeline filmstrip and Atlas disc nodes (docs/archive/completed/artwork.md, idea 11). Chosen by type only; taste and play data play no part.
 extension ArtworkIndex {
     /// The most pictures a Timeline filmstrip holds.
     public static let filmstripLimit = 16
@@ -276,7 +276,7 @@ public enum ArtworkIndexResult: Equatable, Sendable {
             // An "ok" with nothing to show is not an error and not a statement either: show nothing extra.
             return index.images.isEmpty ? .empty : .ready(index)
         case "empty": return .empty
-        // "pending" is the knowledge-base name for the same state (docs/efficiency.md, E1): a fetch is queued, ask again.
+        // "pending" is the knowledge-base name for the same state (docs/plans/efficiency.md, E1): a fetch is queued, ask again.
         case "not_loaded", "pending": return .notLoaded(retryAfter: min(max(head.retryAfter ?? 5, 1), 60))
         default: return .unavailable
         }
@@ -368,14 +368,14 @@ extension LibrarianClient {
     }
 }
 
-/// What the album's Booklet sheet shows (docs/artwork.md, idea 2): the pages of the one release with the most booklet pages, in the
+/// What the album's Booklet sheet shows (docs/archive/completed/artwork.md, idea 2): the pages of the one release with the most booklet pages, in the
 /// server's order (never mixed across editions), then the album's Sticker, Obi and Poster, each once. An album with no booklet has
 /// no sheet, even when it has a Poster: those follow the pages, they are not a booklet of their own. Chosen by type only.
 public struct BookletView: Equatable, Sendable {
     public let edition: String
     public let pages: [ArtworkPicture]
     public let extras: [ArtworkPicture]
-    /// The booklet is the owned release's: the sidebar row says "Your edition" (docs/MACOS_PATHS_BOOKLET.md, section 5.2).
+    /// The booklet is the owned release's: the sidebar row says "Your edition" (docs/plans/MACOS_PATHS_BOOKLET.md, section 5.2).
     public var fromOwned: Bool = false
 
     /// Pages then extras, each image once.
@@ -442,7 +442,7 @@ public func fittedRect(image: CGSize, in frame: CGSize) -> CGRect {
     return CGRect(x: (frame.width - size.width) / 2, y: (frame.height - size.height) / 2, width: size.width, height: size.height)
 }
 
-// MARK: Now Playing (docs/artwork.md, ideas 3 and 4)
+// MARK: Now Playing (docs/archive/completed/artwork.md, ideas 3 and 4)
 
 /// The disc number a Medium image names in its comment or edition ("Disc 2", "CD2", "disk 02"), or nil when it names none.
 /// Plain string matching, no recognition of the picture itself.
@@ -522,7 +522,7 @@ public func discAngle(base: Double, since: Double?, now: Double, rpm: Double) ->
     return (base + max(0, now - since) * rpm * 6).truncatingRemainder(dividingBy: 360)
 }
 
-// MARK: Artist collage (docs/artwork.md, idea 8)
+// MARK: Artist collage (docs/archive/completed/artwork.md, idea 8)
 
 /// An owned album to look pictures up for: its title and MusicBrainz release group.
 public struct CollageSource: Equatable, Sendable {

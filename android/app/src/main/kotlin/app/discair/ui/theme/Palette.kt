@@ -28,7 +28,7 @@ class Palette(
     val chartRedText: Color,
     val ok: Color,
     val caution: Color,
-    // Redesign roles (docs/redesign.md 7.3). A palette that does not name them gets the derived defaults below; the four
+    // Redesign roles (docs/plans/redesign.md 7.3). A palette that does not name them gets the derived defaults below; the four
     // palettes the redesign specifies (Sand, Night, Tape · Lime, Sheet · Violet) name every one of them.
     /** The fourth status colour (information): a blue, lighter in dark mode. No existing role to derive it from. */
     val info: Color = if (light) c(0x1F5A8A) else c(0x8FB8E8),
@@ -61,7 +61,7 @@ class Palette(
     val layout: Layout = Layout.Standard,
     /** The font pair this theme is drawn with (a [FontPairs] id). Suggested in Appearance, never forced (art themes proposal, D4). */
     val suggestedFontId: String? = null,
-    // Gallery roles (docs/GALLERY_THEME.md 4.1, decision G1). Every earlier palette leaves them at the defaults, so none changes.
+    // Gallery roles (docs/archive/completed/GALLERY_THEME.md 4.1, decision G1). Every earlier palette leaves them at the defaults, so none changes.
     /** Primary button fill and every icon, link and selected underline. Defaults to [text]. */
     val control: Color = text,
     /** Text and icons on a [control] fill. Defaults to [ink]. */
@@ -93,7 +93,7 @@ class Palette(
 enum class Family(val label: String) { Classic("Classic"), Brutal("Brutal") }
 
 /**
- * The composition a theme asks for (docs/BRUT_LAYOUTS_PLAN.md, D-023). A layout changes how Home, Now Playing and the
+ * The composition a theme asks for (docs/archive/completed/BRUT_LAYOUTS_PLAN.md, D-023). A layout changes how Home, Now Playing and the
  * navigation are arranged, never what they do. [Standard] is the composition every earlier theme has.
  */
 enum class Layout(val label: String) {
@@ -309,7 +309,7 @@ object Palettes {
     )
 
     // Round 2, Sheet Stack (owner-approved 2026-11-03): soft-cornered sheets, a joined navigation group, a bottom-sheet player with a
-    // volume slider. Values from docs/BRUT_LAYOUTS_PLAN.md section 3 ("ink" is the text and the edge; "cy" is the second tone).
+    // volume slider. Values from docs/archive/completed/BRUT_LAYOUTS_PLAN.md section 3 ("ink" is the text and the edge; "cy" is the second tone).
     val SheetViolet = Palette(
         "sheetviolet", "Sheet · Violet-orange", false,
         rail = c(0x15131F), ink = c(0x15131F), surface = c(0x221F31), raised = c(0x2E2A43), edge = c(0xF4F1FF), edgeStrong = c(0xF4F1FF),
@@ -354,7 +354,7 @@ object Palettes {
         layout = Layout.StickerWall,
     )
 
-    // Art themes proposal (docs/ANDROID_ART_THEMES_PROPOSAL.md section 3): Soft Brut, a turned-down neobrutalism. A 1.5dp ink outline, a 3dp shadow,
+    // Art themes proposal (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 3): Soft Brut, a turned-down neobrutalism. A 1.5dp ink outline, a 3dp shadow,
     // one lavender accent that is never used as text (the outline carries it). Values are the tokens of design/android-art-themes/soft-brut.css.
     val SoftBrut = Palette(
         "softbrut", "Soft Brut · Lavender", true,
@@ -369,7 +369,7 @@ object Palettes {
         layout = Layout.CoverStack, suggestedFontId = "brut_modern",
     )
 
-    // Colour palettes plan (docs/palettes.md section 4.1, step P1): four more day palettes for Soft Brut. Same shape, layout and font as softbrut; only colours differ.
+    // Colour palettes plan (docs/archive/completed/palettes.md section 4.1, step P1): four more day palettes for Soft Brut. Same shape, layout and font as softbrut; only colours differ.
     val SoftBrutMint = Palette(
         "softbrut_mint", "Soft Brut · Mint", true,
         rail = c(0xF5F8F0), ink = c(0xF5F8F0), surface = c(0xFFFFFF), raised = c(0xE6EDDD), edge = c(0x17211C), edgeStrong = c(0x17211C),
@@ -422,7 +422,7 @@ object Palettes {
         layout = Layout.CoverStack, suggestedFontId = "brut_modern",
     )
 
-    // Colour palettes plan (docs/palettes.md section 4.1, step P2): three night palettes for Soft Brut. Same shape, layout and font as softbrut; the outline and hard shadow are the light outline colour and onAccent is dark.
+    // Colour palettes plan (docs/archive/completed/palettes.md section 4.1, step P2): three night palettes for Soft Brut. Same shape, layout and font as softbrut; the outline and hard shadow are the light outline colour and onAccent is dark.
     val SoftBrutMidnightMint = Palette(
         "softbrut_midnight_mint", "Soft Brut · Midnight Mint", false,
         rail = c(0x101714), ink = c(0x101714), surface = c(0x18221D), raised = c(0x223029), edge = c(0xDDEFE3), edgeStrong = c(0xDDEFE3),
@@ -462,7 +462,7 @@ object Palettes {
         layout = Layout.CoverStack, suggestedFontId = "brut_modern",
     )
 
-    // Art themes proposal (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4): Flow, an iOS-inspired Classic theme. No outline, no hard shadow, soft depth
+    // Art themes proposal (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 4): Flow, an iOS-inspired Classic theme. No outline, no hard shadow, soft depth
     // drawn by the layout. The accent is the proposal's darkened #C2410C (D6). Three greys/greens are a step darker than the mockup so the shared contrast tests pass:
     // muted 645F55 (was 6F6A60, 3.96:1 on the player's pastel washes), ok 1B7339 (was 1E7A3C, 4.44:1 on its tint), chart2 8F897D (was A8A296, 2.54:1 on white). Values are the tokens of design/android-art-themes/flow.css.
     val Flow = Palette(
@@ -476,7 +476,7 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
-    // Colour palettes plan (docs/palettes.md section 4.2, step P3): three day palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the current Flow's.
+    // Colour palettes plan (docs/archive/completed/palettes.md section 4.2, step P3): three day palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the current Flow's.
     val FlowForest = Palette(
         "flow_forest", "Flow · Forest", true,
         rail = c(0xF8F9F4), ink = c(0xF8F9F4), surface = c(0xFFFFFF), raised = c(0xE9EDE2), edge = c(0xDBE0D2), edgeStrong = c(0x7D8672),
@@ -510,7 +510,7 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
-    // Colour palettes plan (docs/palettes.md section 4.2, step P4): three night palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the night values of the other dark themes.
+    // Colour palettes plan (docs/archive/completed/palettes.md section 4.2, step P4): three night palettes for Flow. Same layout, family and font as flow; only colours differ. Status colours are the night values of the other dark themes.
     val FlowEmber = Palette(
         "flow_ember", "Flow · Ember", false,
         rail = c(0x12110F), ink = c(0x12110F), surface = c(0x1C1A17), raised = c(0x2A2723), edge = c(0x35312C), edgeStrong = c(0x8A8377),
@@ -544,7 +544,7 @@ object Palettes {
         layout = Layout.Flow, suggestedFontId = "flow",
     )
 
-    // Gallery (docs/GALLERY_THEME.md 4.2): five day and three night palettes, one layout. Values are docs/design/gallery/tokens.json; the dims are the derived defaults.
+    // Gallery (docs/archive/completed/GALLERY_THEME.md 4.2): five day and three night palettes, one layout. Values are docs/design/gallery/tokens.json; the dims are the derived defaults.
     // Day 1 muted text is 5D6169, one step darker than the first draft (5E626A was 4.4996:1 on the hue-120 pastel wash PaletteTest builds, under its 4.5 floor); tokens.json carries the same value.
     val Gallery = Palette(
         "gallery", "Gallery · White", true,
@@ -626,7 +626,7 @@ object Palettes {
         layout = Layout.Gallery, suggestedFontId = "gallery",
     )
 
-    // Index (docs/INDEX_THEME.md 4.2): three day and one night palette, one layout. Values are docs/design/index/tokens.json; the dims are the derived defaults.
+    // Index (docs/plans/INDEX_THEME.md 4.2): three day and one night palette, one layout. Values are docs/design/index/tokens.json; the dims are the derived defaults.
     // The strip and insight tones are not Palette fields (decision I1): they live in IndexTones (ui/common/IndexKit.kt), keyed by id.
     val Index = Palette(
         "index", "Index · Signal Blue", true,

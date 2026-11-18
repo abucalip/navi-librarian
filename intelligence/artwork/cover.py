@@ -1,4 +1,4 @@
-"""Which cover an owned album shows (docs/artwork.md, slice 4: edition picker and grid fallback).
+"""Which cover an owned album shows (docs/archive/completed/artwork.md, slice 4: edition picker and grid fallback).
 
 * The owner's pick (``album_choice``) always wins, on every screen that loads the album's cover.
 * With no pick, the library cover is used. It is replaced by the group's best front only when the library

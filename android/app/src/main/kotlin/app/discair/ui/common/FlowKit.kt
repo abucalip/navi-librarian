@@ -63,7 +63,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /**
- * Flow's layout (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4): no outlines and no hard shadows. Soft depth in three levels, continuous
+ * Flow's layout (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 4): no outlines and no hard shadows. Soft depth in three levels, continuous
  * corners, translucent bars, capsule buttons and grouped lists. The numbers are the tokens of design/android-art-themes/flow.css.
  */
 object FlowRules {
@@ -88,17 +88,17 @@ object FlowRules {
     /** The destinations of the bar, in order: all four, with Discover in the bar (NavRules.discoverInBar). */
     val cells: List<String> = listOf("Home", "Discover", "Library", "Search")
 
-    /** The switch track when off (flow.css `.sw`): the current Flow's own grey, the palette's `chart3` for the others (docs/palettes.md 4.4). */
+    /** The switch track when off (flow.css `.sw`): the current Flow's own grey, the palette's `chart3` for the others (docs/archive/completed/palettes.md 4.4). */
     fun switchOff(p: Palette): Color = if (p.id == "flow") Color(0xFFD9D5CB) else p.chart3
 
-    /** The grey chevron at the end of a row: the current Flow's own grey, a step lighter than the strong edge on the others (docs/palettes.md 4.4). */
+    /** The grey chevron at the end of a row: the current Flow's own grey, a step lighter than the strong edge on the others (docs/archive/completed/palettes.md 4.4). */
     fun chevron(p: Palette): Color = when (p.id) {
         "flow_forest" -> Color(0xFFAEB5A3); "flow_raspberry" -> Color(0xFFBBADB0); "flow_violet" -> Color(0xFFB2AEC2)
         "flow_ember" -> Color(0xFF6B655B); "flow_moss" -> Color(0xFF5E6B63); "flow_plum" -> Color(0xFF6E5F6E)
         else -> Color(0xFFB5B0A5)
     }
 
-    /** The 0.5dp hairline round a floating bar: black at 8% on a light palette, white at 10% on a dark one (docs/palettes.md 4.4). */
+    /** The 0.5dp hairline round a floating bar: black at 8% on a light palette, white at 10% on a dark one (docs/archive/completed/palettes.md 4.4). */
     fun barHairline(p: Palette): Color = if (p.light) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.10f)
 
     /** The fill of the navigation bar and the mini player. */

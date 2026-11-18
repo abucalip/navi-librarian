@@ -4,7 +4,7 @@ import SwiftUI
 /// Colours and type a theme gives the explorer. The screen itself is the same in every theme.
 struct GraphStyle {
     let accent: Color, ink: Color, muted: Color, card: Color, title: Font
-    /// True for the Cupertino redesign (`docs/redesign.md` section 5.2): its own control bar, sectors, List view and inspector,
+    /// True for the Cupertino redesign (`docs/plans/redesign.md` section 5.2): its own control bar, sectors, List view and inspector,
     /// drawn by `CupertinoConnections`. The `classic` view below is kept for the other styles.
     var redesigned = false
     static var cupertino: GraphStyle { GraphStyle(accent: CU.accent, ink: CU.text, muted: CU.textSecondary, card: CU.bgPanel, title: CU.title(34), redesigned: true) }
@@ -212,7 +212,7 @@ struct GraphNodeFace: View {
     let hintArtist: String
     let forceOwned: Bool
     let ink: Color
-    /// Album nodes: the Medium disc peeks out behind the cover (docs/artwork.md, idea 11). Only when the owner turns it on.
+    /// Album nodes: the Medium disc peeks out behind the cover (docs/archive/completed/artwork.md, idea 11). Only when the owner turns it on.
     var discs = false
 
     /// The release group whose disc is shown: a valid id on an album node, nil for anything else or when discs are off.

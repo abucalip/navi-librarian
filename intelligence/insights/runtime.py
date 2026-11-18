@@ -1,4 +1,4 @@
-"""Runtime refresh for the Forgotten Gems lens (docs/ServerV2.md Phase 3).
+"""Runtime refresh for the Forgotten Gems lens (docs/plans/ServerV2.md Phase 3).
 
 Takes albums the caller already fetched from Navidrome (``getAlbumList2`` carries play count,
 last played, star and rating), builds play records, and saves the gem cards through the job

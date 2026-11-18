@@ -11,7 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step F2 of docs/ANDROID_ART_THEMES_PROPOSAL.md: the pure rules behind Flow's Home. */
+/** Step F2 of docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md: the pure rules behind Flow's Home. */
 class FlowHomeRulesTest {
     @Test fun theControlHasPicksNewPlayedInThatOrder() {
         assertEquals(listOf("Picks", "New", "Played"), FlowHomeRules.labels)

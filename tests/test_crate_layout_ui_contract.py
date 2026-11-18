@@ -1,4 +1,4 @@
-"""Crate Wall layout (D-023, docs/BRUT_LAYOUTS_PLAN.md, phase P3): its three palettes and the scoping of its rules."""
+"""Crate Wall layout (D-023, docs/archive/completed/BRUT_LAYOUTS_PLAN.md, phase P3): its three palettes and the scoping of its rules."""
 
 import re
 import unittest

@@ -8,8 +8,8 @@ Scope: the **Flow** layout of the Android client (`Layout.Flow`, every Flow pale
 
 | What | Where |
 |---|---|
-| This plan | `docs/Discover_page.md` |
-| Mockups (spec), four frames B1 to B4 | [`design/android-art-themes/flow/discover-b/discover-b.html`](design/android-art-themes/flow/discover-b/discover-b.html) and `discover-b.png` beside it |
+| This plan | `docs/archive/completed/Discover_page.md` |
+| Mockups (spec), four frames B1 to B4 | [`design/android-art-themes/flow/discover-b/discover-b.html`](../../design/android-art-themes/flow/discover-b/discover-b.html) and `discover-b.png` beside it |
 | The earlier Flow Discover mockup (superseded for Discover only) | `design/android-art-themes/flow/discover.html` / `.png` |
 | Flow tokens and components (unchanged) | `design/android-art-themes/flow.css`, `ui/common/FlowKit.kt`, `ui/common/FlowPages.kt` |
 

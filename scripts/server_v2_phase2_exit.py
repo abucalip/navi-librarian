@@ -7,7 +7,7 @@ Output is aggregate counts and golden-set row numbers only (no titles, paths or 
 
     python scripts/server_v2_phase2_exit.py --golden ../golden-set-phase0 --out phase2_exit.json
 
-Checks (docs/ServerV2.md, Phase 2 exit):
+Checks (docs/plans/ServerV2.md, Phase 2 exit):
   1. release-group linking: every golden album is either linked to its MusicBrainz group (by an
      exact library MBID) or left explicitly unlinked; no album the owner marked as another
      edition, or not in MusicBrainz, is silently linked (wrong silent merge = 0)

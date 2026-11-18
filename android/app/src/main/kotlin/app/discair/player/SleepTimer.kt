@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 val SLEEP_TIMER_MINUTES = listOf(15, 30, 45, 60, 90)
 
 /**
- * Stops playback after a chosen time (docs/RADIO_PLAYBACK_CONTRACT.md section 4). The app had no sleep timer before radio, so
+ * Stops playback after a chosen time (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4). The app had no sleep timer before radio, so
  * this is the first one; it is not tied to radio, and the shell cancels it when a station is no longer playing. When time is up
  * it calls [onExpire] once (the shell passes the controller's pause, which also ends any wait to reconnect). Call from the main thread.
  */

@@ -82,7 +82,7 @@ import kotlinx.coroutines.withContext
 private val Target = 48.dp
 
 /**
- * The album's Booklet tab (docs/artwork.md, idea 2): the pages in a horizontal pager at display size, with the page number and
+ * The album's Booklet tab (docs/archive/completed/artwork.md, idea 2): the pages in a horizontal pager at display size, with the page number and
  * the image's own caption (type, edition, the Cover Art Archive comment as plain text). A tap opens the viewer, which pinch-zooms
  * and loads the full-resolution file only once the reader zooms in. A PDF booklet shows its first-page preview here and opens
  * in a page-by-page PDF viewer. No text recognition and no credit links: pages are images.

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// The liner note of the day (docs/artwork.md, idea 12): a stable day key, a stable album order and a picture chosen by type only.
+/// The liner note of the day (docs/archive/completed/artwork.md, idea 12): a stable day key, a stable album order and a picture chosen by type only.
 @Suite struct LinerNoteTests {
     private let a = "1edd139d-4779-4057-8e12-13c783674f0d"
     private let b = "9b7e1f2c-3d4a-4b5c-8d6e-7f8091a2b3c4"

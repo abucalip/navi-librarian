@@ -76,8 +76,8 @@ Out of scope for v1:
 | Blocked artists ("Not this artist") | `GET /api/discovery/blocked-artists`, `DELETE` `{artist}` lifts the hide and its penalty (DISC-12). Android: Settings › Blocklist |
 | Artist lean | `GET`, `POST`, `DELETE /api/discovery/artist-lean` `{artist, lean: more\|less, metadata?}` (DISC-11). Android: Discover card menus (More like this artist, Less like this artist) and Settings › Blocklist |
 | Lens feedback summary | `GET /api/discovery/lens-feedback` |
-| Search | `GET /api/search` (SSE stream, `docs/SEARCH_CONTRACT.md` 3.1, 3.7, 3.8) |
-| Artist page | `GET /api/artists/{key}` (`docs/SEARCH_CONTRACT.md` 3.3) |
+| Search | `GET /api/search` (SSE stream, `docs/contracts/SEARCH_CONTRACT.md` 3.1, 3.7, 3.8) |
+| Artist page | `GET /api/artists/{key}` (`docs/contracts/SEARCH_CONTRACT.md` 3.3) |
 | Album page | `GET /api/albums/{artist_key}/{album_key}` |
 | Genre page | `GET /api/genres/{tag}` |
 | Bio, details, links, year | `GET /api/artist-bio`, `/api/album-details`, `/api/album-description`, `/api/album-links`, `/api/album-year` |
@@ -178,4 +178,4 @@ Decided by the owner:
 
 Still open:
 1. **Login rate limit: resolved 2026-11-03.** `tailscale serve` does not hide the client address: a lockout of one tailnet device did not affect another (`MACOS_CLIENT_CONTRACT.md` 11.2). No backend change is needed.
-2. **Playback — decided by the owner on 2026-11-01:** the app streams directly from Navidrome with the credentials already on the device; the proxy routes in `docs/PLAYER_PROPOSAL.md` are not used. Contract: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md). It adds a media foreground service for playback only; acquisition still has no notifications or background work.
+2. **Playback — decided by the owner on 2026-11-01:** the app streams directly from Navidrome with the credentials already on the device; the proxy routes in `docs/archive/completed/PLAYER_PROPOSAL.md` are not used. Contract: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md). It adds a media foreground service for playback only; acquisition still has no notifications or background work.

@@ -1,6 +1,6 @@
 """Android client contract: recorded fixtures must still describe routes the server serves.
 
-Fixtures live in android/contract-fixtures (docs/ANDROID_CLIENT_CONTRACT.md section 7).
+Fixtures live in android/contract-fixtures (docs/contracts/ANDROID_CLIENT_CONTRACT.md section 7).
 """
 import json
 import re

@@ -41,7 +41,7 @@ import app.discair.ui.common.Target
 import coil3.compose.AsyncImage
 
 /**
- * A small "N covers" stack on the album cover (docs/artwork.md, idea 7). It is a button of at least 48 dp, so it needs no
+ * A small "N covers" stack on the album cover (docs/archive/completed/artwork.md, idea 7). It is a button of at least 48 dp, so it needs no
  * small tap target; its text says how many alternates exist.
  */
 @Composable

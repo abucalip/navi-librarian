@@ -1,4 +1,4 @@
-"""``/api/insights`` body: generic insight cards for every Phase 3 lens (docs/SERVER_V2_CONTRACT.md).
+"""``/api/insights`` body: generic insight cards for every Phase 3 lens (docs/contracts/SERVER_V2_CONTRACT.md).
 
 A pure builder. Saved cards are read from the store, but a lens contributes cards only when the
 caller lists it in ``enabled`` (the scorecard rule: only a lens whose verdict is ``pass`` is on by

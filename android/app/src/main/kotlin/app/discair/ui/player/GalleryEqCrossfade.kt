@@ -66,7 +66,7 @@ import app.discair.ui.settings.GallerySwitchRow
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Equalizer and Crossfade pages (G6). Spec: docs/GALLERY_THEME.md sections 7 and 10; mockup: docs/design/gallery/pages/settings.html, frames 3 and 4.
+ * Gallery's Equalizer and Crossfade pages (G6). Spec: docs/archive/completed/GALLERY_THEME.md sections 7 and 10; mockup: docs/design/gallery/pages/settings.html, frames 3 and 4.
  * EqualizerScreen and CrossfadeScreen reach these behind isGallery(); saving at once, hearing at once and the contracts' words are theirs, unchanged. The Now Playing
  * sheet shows the same pages with no back arrow ([onBack] null). The mockup's Fade row (Smooth, Even, Quick) is not drawn: the app has one equal-power curve and no
  * setting for it. The band and length arithmetic is [CoverStackEqRules]'.

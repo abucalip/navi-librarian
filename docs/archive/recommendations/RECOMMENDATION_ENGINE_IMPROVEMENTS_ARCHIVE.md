@@ -1,8 +1,8 @@
 # Recommendation engine improvements — historical archive
 
-Archived on 2026-10-20 from `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` to keep the active roadmap focused. This is a verbatim snapshot of the former roadmap, including dated measurements, completed work, historical decisions, implementation notes, and superseded task orderings.
+Archived on 2026-10-20 from `docs/plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` to keep the active roadmap focused. This is a verbatim snapshot of the former roadmap, including dated measurements, completed work, historical decisions, implementation notes, and superseded task orderings.
 
-**Current source of truth:** [`docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`](RECOMMENDATION_ENGINE_IMPROVEMENTS.md) for active priorities and decisions; `docs/PROJECT_STATUS.md` for the project-wide next action; root `PROJECT_LOG.md` for chronological PR and verification records.
+**Current source of truth:** [`docs/plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`](../../plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md) for active priorities and decisions; `docs/PROJECT_STATUS.md` for the project-wide next action; root `PROJECT_LOG.md` for chronological PR and verification records.
 
 ---
 

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// What the Booklet sheet shows and how its spreads and zoom lens are laid out (docs/artwork.md, idea 2).
+/// What the Booklet sheet shows and how its spreads and zoom lens are laid out (docs/archive/completed/artwork.md, idea 2).
 @Suite struct BookletTests {
     private func pic(_ id: Int, _ type: String, format: String = "jpg") -> ArtworkPicture {
         ArtworkPicture(imageID: id, release: "r", releases: ["r"], edition: "1999 JP CD", types: [type], format: format)

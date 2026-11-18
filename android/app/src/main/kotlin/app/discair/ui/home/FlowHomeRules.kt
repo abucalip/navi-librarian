@@ -4,7 +4,7 @@ import app.discair.model.Pick
 import app.discair.model.ShelfAlbum
 
 /**
- * The pure rules behind Flow's Home (docs/ANDROID_ART_THEMES_PROPOSAL.md section 6.2, mockup flow/home): the segmented control, the cover
+ * The pure rules behind Flow's Home (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 6.2, mockup flow/home): the segmented control, the cover
  * carousel, the lines under the cover and the grouped list. No Compose here, so each rule has a unit test.
  */
 object FlowHomeRules {

@@ -17,7 +17,7 @@ ARTIST_GENRE_CACHE_PREFIX = "mb:artist-genres:"
 ARTIST_GENRE_TTL_SECONDS = 90 * 24 * 60 * 60
 # Artists per genre GET. A measured pass of 96 artists (inc=tag) answered 200 in about
 # 1.1 s and no failing size was found; the app needs at most about 75 artists per run.
-# See docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
+# See docs/plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
 ARTIST_GENRE_CHUNK = 75
 # Recordings per batch request. The live sample used 100; larger batches are unverified.
 # Without "release" in inc the response has no release or release-group object.
@@ -25,7 +25,7 @@ BATCH_RECORDING_INCLUDES = "artist release"
 BATCH_RECORDING_CHUNK = 100
 # Release groups per GET. The endpoint answers 200 up to 80 comma-joined MBIDs and
 # fails from 81 (dropped connection, then HTML 502 at 83), whichever MBIDs they are;
-# 50 keeps a margin under that measured limit. See docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
+# 50 keeps a margin under that measured limit. See docs/plans/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
 RELEASE_GROUP_CHUNK = 50
 
 

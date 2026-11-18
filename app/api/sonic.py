@@ -1,4 +1,4 @@
-"""Sonic similarity and path routes (Server V2 Phase 7, slice 2, docs/ServerV2.md).
+"""Sonic similarity and path routes (Server V2 Phase 7, slice 2, docs/plans/ServerV2.md).
 
 HTTP adapters only: the logic lives in ``intelligence.sonic.proxy`` (Navidrome's sonic endpoints with
 Librarian's rules) and answers are kept for an hour by ``intelligence.sonic.cache``. Read-only: no writes,

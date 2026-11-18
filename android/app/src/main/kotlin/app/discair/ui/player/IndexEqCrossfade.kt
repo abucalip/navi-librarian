@@ -67,7 +67,7 @@ import app.discair.ui.settings.IndexSwitchRow
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Index's Equalizer and Crossfade pages (I6). Spec: docs/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/settings.html, frames 3 and 4.
+ * Index's Equalizer and Crossfade pages (I6). Spec: docs/plans/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/settings.html, frames 3 and 4.
  * EqualizerScreen and CrossfadeScreen reach these behind isIndex(); saving at once, hearing at once and the contracts' words are theirs, unchanged. The Now
  * Playing sheet shows the same pages with no bar ([onBack] null). The mockup draws five bands; the app has [EQ_BAND_COUNT], all drawn. The band and length
  * arithmetic is [CoverStackEqRules]'.

@@ -147,7 +147,7 @@ def find_blind_spots(
 
 
 def blind_spot_card(spot: BlindSpot, config: BlindSpotsConfig | None = None) -> dict[str, Any]:
-    """Generic insight card (docs/ServerV2.md section 8). States counts and members; never advice."""
+    """Generic insight card (docs/plans/ServerV2.md section 8). States counts and members; never advice."""
     cap = (config or BlindSpotsConfig()).max_missing_listed
     s = spot.set
     listed = spot.missing[: max(cap, 0)]

@@ -15,7 +15,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Radio decoders (docs/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5, 6) against the shared contract fixtures. */
+/** Radio decoders (docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5, 6) against the shared contract fixtures. */
 class RadioTest {
     private fun body(name: String): String = Json.parseToJsonElement(
         javaClass.classLoader!!.getResource("librarian/$name.json")!!.readText(),

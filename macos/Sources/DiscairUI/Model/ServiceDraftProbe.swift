@@ -3,7 +3,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
-/// The edit sheet's Test (`docs/redesign.md` F7). The Librarian's test routes read what is saved and take no body, so a Test
+/// The edit sheet's Test (`docs/plans/redesign.md` F7). The Librarian's test routes read what is saved and take no body, so a Test
 /// after a change would report on the old values. This asks each service directly with the values typed in the sheet, from this
 /// Mac, and changes nothing that is saved. Cancel therefore leaves the saved settings as they were.
 ///

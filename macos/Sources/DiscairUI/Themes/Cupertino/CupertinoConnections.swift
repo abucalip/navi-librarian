@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// Connections, the credit graph, as `docs/redesign.md` section 5.2 draws it (mockups `connections--*`): a control bar with every
+/// Connections, the credit graph, as `docs/plans/redesign.md` section 5.2 draws it (mockups `connections--*`): a control bar with every
 /// control labelled, the graph in sectors by kind with nodes that are always named, a List view for the keyboard, VoiceOver and
 /// dense walks, a 300 pt inspector, and a sentence for each state (no start, not loaded, truncated, failed).
 /// The data is the explorer model's; `GraphExplorerView` hands over to it.
@@ -451,7 +451,7 @@ struct CupertinoConnections: View {
         let also = graph.alsoOnInLibrary(n)
         if !also.isEmpty {
             Text("Also on, in your library").cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary).padding(.top, CU.Space.s)
-            // F10: the covers come from the walk already read, not from a server total (docs/redesign.md section 5.2).
+            // F10: the covers come from the walk already read, not from a server total (docs/plans/redesign.md section 5.2).
             Text("Owned albums next to this one in the walk you have read.").cuRole(CU.Font.caption).foregroundStyle(CU.textSecondary)
             HStack(spacing: CU.Space.s) {
                 ForEach(also.prefix(5)) { a in

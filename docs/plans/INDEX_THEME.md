@@ -2,7 +2,7 @@
 
 Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. **I0 is done** (section 11a; every missing server row is built) and **I1 (palettes, pair, shell) is merged (#1197)** (`ui/common/IndexKit.kt`, `IndexIcons.kt`, `IndexShell.kt`, `ui/theme/IndexMotion.kt`); **I2 (Home) is merged (#1198)** (`ui/home/IndexHome.kt`, `IndexHomeRules.kt`); **I3 (Album, Artist, Genre, Paths) is merged (#1199)** (`IndexAlbum.kt`, `IndexArtist.kt`, `IndexGenre.kt`, `IndexAlbumPaths.kt`, `IndexArtistPaths.kt`, `IndexPagesRules.kt`); **I4 (Discover, Library, Search) is merged (#1200)** (`IndexDiscover.kt`, `IndexLibrary.kt`, `IndexSearch.kt`, `IndexListsRules.kt`); **I5 (Now Playing, Queue, Lyrics, Radio) is merged (#1201)** (`ui/player/IndexNowPlaying.kt`, `ui/radio/IndexRadio.kt`); **I6 (Downloads, Stats, Server, Settings, Appearance, Equalizer, Crossfade, sheets) is built in its PR** (`ui/common/IndexSheets.kt`, `ui/downloads/IndexDownloads.kt`, `ui/stats/IndexStats.kt`, `ui/settings/IndexSettings.kt`, `ui/player/IndexEqCrossfade.kt`). This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
-Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
+Package: [`docs/design/index/`](../design/index/). Start with its [`README.md`](../design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](../design/_kit/).
 
 ## 1. What the owner asked for
 
@@ -16,7 +16,7 @@ Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](des
    - mockups of every page in one palette, including the album and artist **Paths** pages;
    - the other palettes as codes and scripts;
    - detailed instructions for the animations (section 8).
-4. Every mockup is drawn in **Signal Blue**. The other three palettes are **colour variations only**. [`pages/palettes`](design/index/pages/palettes.html) shows Home in all four, generated from `tokens.json`.
+4. Every mockup is drawn in **Signal Blue**. The other three palettes are **colour variations only**. [`pages/palettes`](../design/index/pages/palettes.html) shows Home in all four, generated from `tokens.json`.
 
 ## 2. Rules
 
@@ -30,7 +30,7 @@ Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](des
 4. **Artwork first.** Square covers and photos are the only pictures; colour on controls carries meaning.
 5. **Contrast.**
    - Every palette passes `PaletteTest`.
-   - The Index roles pass [`_src/check_contrast.py`](design/index/_src/check_contrast.py). All four pass today.
+   - The Index roles pass [`_src/check_contrast.py`](../design/index/_src/check_contrast.py). All four pass today.
    - The existing rules still apply: 48dp touch targets, state never shown by colour alone, Remove animations respected, missing data said in words.
 
 ## 3. Identity in six rules
@@ -55,7 +55,7 @@ Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](des
 
 ### 4.1 Roles
 
-The CSS variables in [`palettes.css`](design/index/palettes.css) use the `Palette` field names. Index needs no new `Palette` field. Its own colours, the **tones** (the player strip and the insight block), live in `IndexTones` in `ui/common/IndexKit.kt`, keyed by palette id (decision I1).
+The CSS variables in [`palettes.css`](../design/index/palettes.css) use the `Palette` field names. Index needs no new `Palette` field. Its own colours, the **tones** (the player strip and the insight block), live in `IndexTones` in `ui/common/IndexKit.kt`, keyed by palette id (decision I1).
 
 | Role | Used for |
 |---|---|
@@ -74,7 +74,7 @@ The CSS variables in [`palettes.css`](design/index/palettes.css) use the `Palett
 
 ### 4.2 The four palettes
 
-Single source: [`tokens.json`](design/index/tokens.json). On all four: `family = Classic`, `shape = null`, `layout = Layout.Index`, `suggestedFontId = "index"`, `minAccentContrast = 4.5`.
+Single source: [`tokens.json`](../design/index/tokens.json). On all four: `family = Classic`, `shape = null`, `layout = Layout.Index`, `suggestedFontId = "index"`, `minAccentContrast = 4.5`.
 
 | Role | Signal Blue (day) | Newsprint Red (day) | Graphite Orange (night) | Field Green (day) |
 |---|---|---|---|---|
@@ -172,7 +172,7 @@ From `tokens.json` → `type`. Sizes and line heights are in sp.
 
 ## 6. Icons
 
-[`icons/`](design/index/icons/) holds the same 48 glyphs as Bento, drawn with a **2dp stroke, square caps and mitred joins**, plus [`icons/IndexIcons.kt.txt`](design/index/icons/IndexIcons.kt.txt), a ready `IndexIcons` object.
+[`icons/`](../design/index/icons/) holds the same 48 glyphs as Bento, drawn with a **2dp stroke, square caps and mitred joins**, plus [`icons/IndexIcons.kt.txt`](../design/index/icons/IndexIcons.kt.txt), a ready `IndexIcons` object.
 
 - **Builder.** Use the `ArtIcons` builder with `strokeLineWidth = 2f`, `StrokeCap.Square` and `StrokeJoin.Miter`.
 - **Sizes:**
@@ -188,7 +188,7 @@ From `tokens.json` → `type`. Sizes and line heights are in sp.
 
 ## 7. Components
 
-Every measurement is in [`index.css`](design/index/index.css) (1 CSS px = 1dp). The board is [`pages/components`](design/index/pages/components.html).
+Every measurement is in [`index.css`](../design/index/index.css) (1 CSS px = 1dp). The board is [`pages/components`](../design/index/pages/components.html).
 
 | Component | Spec |
 |---|---|
@@ -219,7 +219,7 @@ Every measurement is in [`index.css`](design/index/index.css) (1 CSS px = 1dp). 
 
 ## 8. Motion: what moves and how to build it
 
-Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](design/index/pages/motion.html), which covers the directional tab slide, the signal block, the row cascade and the numeral roll.
+Values are in `tokens.json` → `motion`. Try them on the live page [`pages/motion`](../design/index/pages/motion.html), which covers the directional tab slide, the signal block, the row cascade and the numeral roll.
 
 Index's character is **firm and directional**:
 - things slide along the axis they belong to and stop without overshoot;
@@ -282,7 +282,7 @@ Each step has an `IndexMotionTest` that pins its values to `tokens.json`, and a 
 
 ## 9. Home
 
-Mockup: [`pages/home`](design/index/pages/home.html) (four frames). From top to bottom:
+Mockup: [`pages/home`](../design/index/pages/home.html) (four frames). From top to bottom:
 
 | # | Section | Content | Data |
 |---|---|---|---|
@@ -306,7 +306,7 @@ States (frame 4):
 
 ## 10. Every page and its file
 
-Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](design/index/pages/). Frames are 360 × 780dp. Rebuild them with `python3 docs/design/index/_src/build.py`.
+Each page is an `.html` and a `.png` in [`docs/design/index/pages/`](../design/index/pages/). Frames are 360 × 780dp. Rebuild them with `python3 docs/design/index/_src/build.py`.
 
 | File | Frames |
 |---|---|
@@ -362,7 +362,7 @@ Add the `Index*` files to `ARCHITECTURE.md` in I1.
    - Each missing item becomes a server PR **before** the client step that draws it.
    - Domain logic stays server-side and the app only presents it.
    - New code goes in a new module in the owning package from `ARCHITECTURE.md` (`discovery/`, `intelligence/`, `integrations/`, `app/api/` for the route), never in `navidrome_server.py` (D-016). The module is tested by direct import, and gets an `ARCHITECTURE.md` row.
-   - The route or field is added to the contract the client reads (`docs/ANDROID_CLIENT_CONTRACT.md`, `docs/SEARCH_CONTRACT.md` or `docs/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
+   - The route or field is added to the contract the client reads (`docs/contracts/ANDROID_CLIENT_CONTRACT.md`, `docs/contracts/SEARCH_CONTRACT.md` or `docs/contracts/SERVER_V2_CONTRACT.md`), with a recorded fixture under the existing fixture folders.
    - Prefer a new **optional field** on an existing response over a new route when the data belongs to that response. Clients ignore unknown keys (Android `ignoreUnknownKeys`, Swift `JSONDecoder`, the web), so nothing else changes.
    - Provider data uses batch lookups where the provider offers them, with the existing pacing, budgets and owner approvals (provider rule). Safety-critical code (acquisition, import, deletion, paths) keeps its own review rules.
    - Each server PR carries focused tests for the new code (never the full suite), and CI must pass on its final head.

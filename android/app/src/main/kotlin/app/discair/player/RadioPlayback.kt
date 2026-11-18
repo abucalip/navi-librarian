@@ -63,7 +63,7 @@ fun radioLiveLine(now: RadioNow?): String = when {
 }
 
 /**
- * Plays a radio station through the one [PlayerController] and keeps the live song fresh (docs/RADIO_PLAYBACK_CONTRACT.md
+ * Plays a radio station through the one [PlayerController] and keeps the live song fresh (docs/contracts/RADIO_PLAYBACK_CONTRACT.md
  * sections 3.2 and 4). The server decides what is playing: this class only asks `/now` every [pollMs] while the stream is
  * sounding or buffering, shows the answer, and sends the Download request. It never splits an artist from a title and
  * never downloads anything itself. Call from the main thread; [nowFor], [getPlay] and [artwork] run on [io].

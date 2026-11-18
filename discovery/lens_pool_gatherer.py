@@ -10,7 +10,7 @@ Gated by ``engine2_lens_lists_enabled`` (default on): when the setting is off th
 before any provider call. Unwired: nothing calls it yet, and it does not read or write the
 recommendation history, the cooldown or the personal list. Providers and caches are injected, so
 tests use fixtures and make no network call. A failing provider leaves the pool or its tags short;
-it does not raise for provider errors. See docs/engine2.md (Phase 4, slice 2).
+it does not raise for provider errors. See docs/plans/engine2.md (Phase 4, slice 2).
 """
 from collections.abc import Callable, Iterable, Mapping
 from datetime import date

@@ -13,7 +13,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-/** Step G2 of docs/GALLERY_THEME.md: the pure rules behind Gallery's Home. */
+/** Step G2 of docs/archive/completed/GALLERY_THEME.md: the pure rules behind Gallery's Home. */
 class GalleryHomeRulesTest {
     private val zone = ZoneId.of("UTC")
     private val now = ZonedDateTime.of(2026, 11, 16, 21, 14, 0, 0, zone).toInstant()

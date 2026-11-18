@@ -12,7 +12,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** The Downloads row's covers (docs/artwork.md, idea 13): Front images only, never a PDF, at most three; and the release group a Get carries. */
+/** The Downloads row's covers (docs/archive/completed/artwork.md, idea 13): Front images only, never a PDF, at most three; and the release group a Get carries. */
 class EditionCoversTest {
     private fun image(id: Long, types: List<String> = emptyList(), format: String = "jpg") = ArtworkImage(
         imageId = id, release = "r", releases = listOf("r"), edition = "1999 JP CD", types = types, comment = "",

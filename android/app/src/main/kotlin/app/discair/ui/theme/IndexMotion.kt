@@ -5,7 +5,7 @@ import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
 
 /*
- * Index's motion values (docs/INDEX_THEME.md section 8, docs/design/index/tokens.json → motion). Firm and directional: things slide along the axis they
+ * Index's motion values (docs/plans/INDEX_THEME.md section 8, docs/design/index/tokens.json → motion). Firm and directional: things slide along the axis they
  * belong to and stop without overshoot; no springs, no scale, no fades on navigation. Pure, so IndexMotionTest pins every value to the tokens.
  * Every duration goes through [MotionRules.duration], so it is 0 when the phone removes animations; Index code never calls Compose's own `tween`.
  */

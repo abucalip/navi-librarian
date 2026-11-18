@@ -81,7 +81,7 @@ fun LibraryScreen(open: Opener) {
     val model: LibraryViewModel = viewModel(factory = LibraryViewModelFactory(repo))
     val state by model.state.collectAsState()
     val list = rememberLazyListState()
-    // Albums are two to a row, as drawn; artists stay a list (docs/redesign.md 8.2).
+    // Albums are two to a row, as drawn; artists stay a list (docs/plans/redesign.md 8.2).
     val grid = state.tab == LibraryTab.Albums
     val cell = 160f
 

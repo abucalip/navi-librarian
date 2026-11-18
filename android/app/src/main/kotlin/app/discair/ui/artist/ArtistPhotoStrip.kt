@@ -48,7 +48,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 /**
- * The artist's session and band pictures (docs/artwork.md, idea 8): the indexes of the first owned albums that have a release group,
+ * The artist's session and band pictures (docs/archive/completed/artwork.md, idea 8): the indexes of the first owned albums that have a release group,
  * asked for together and read live. Empty while loading, when nothing qualifies or when a lookup fails; the page then shows no strip.
  */
 @Composable

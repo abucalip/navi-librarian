@@ -2,7 +2,7 @@ import CoreGraphics
 import DiscairLibrarian
 import Foundation
 
-/// The Booklet sheet's pure rules (docs/MACOS_PATHS_BOOKLET.md, section 5): what each spread or page shows, its label, the position
+/// The Booklet sheet's pure rules (docs/plans/MACOS_PATHS_BOOKLET.md, section 5): what each spread or page shows, its label, the position
 /// and caption text, the edition rows, and the zoom steps. No view code here, so each rule is tested on its own.
 enum BookletMode: Equatable, Sendable { case spread, page }
 

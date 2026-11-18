@@ -272,7 +272,7 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
             job.releaseGroup?.let { ReleaseEditionCovers(it) }
-            // Four named steps (docs/redesign.md section 3); the words below still say the exact state.
+            // Four named steps (docs/plans/redesign.md section 3); the words below still say the exact state.
             val step = DownloadsRules.step(job.status)
             app.discair.ui.common.StageTracker(step.current, Modifier.padding(vertical = 4.dp), failed = step.failed, progress = DownloadsRules.fill(job))
             // The icon and the words are the status; the colour only adds emphasis (rule 4).

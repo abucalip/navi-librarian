@@ -22,7 +22,7 @@ struct LinerNoteChoice: Codable, Equatable {
     }
 }
 
-/// Home's liner note of the day (docs/artwork.md, idea 12): one picture from an album on Home, cropped to a square by a fixed
+/// Home's liner note of the day (docs/archive/completed/artwork.md, idea 12): one picture from an album on Home, cropped to a square by a fixed
 /// centre rule, with "Which album?" revealing the album on tap. Read-only. Nothing is drawn while loading, when no album on Home
 /// has a picture for the day, or when the lookup fails. Theme-neutral for now (one plain style, as the track cards are).
 struct LinerNoteCard: View {
@@ -91,7 +91,7 @@ struct LinerNoteCard: View {
         for album in albums {
             if let rgid = artworkGroupID(album.releaseGroupMBID)?.lowercased(), byGroup[rgid] == nil { byGroup[rgid] = album }
         }
-        // At most three lookups a day; each unbuilt index starts its own background build (docs/artwork.md, idea 12).
+        // At most three lookups a day; each unbuilt index starts its own background build (docs/archive/completed/artwork.md, idea 12).
         for rgid in linerNoteOrder(Array(byGroup.keys), day: day).prefix(3) {
             guard let album = byGroup[rgid] else { continue }
             guard case .ready(let index) = await store.artworkIndex(rgid: rgid, release: nil), !Task.isCancelled else { continue }

@@ -1,4 +1,4 @@
-"""Identity resolution ladder (docs/ServerV2.md 6.5).
+"""Identity resolution ladder (docs/plans/ServerV2.md 6.5).
 
 For one library item, in order:
 

@@ -1,7 +1,7 @@
 package app.discair.model
 
 /**
- * Now Playing artwork (docs/artwork.md, ideas 3 and 4): which Medium image is the disc, which images drift behind the lyrics, and the
+ * Now Playing artwork (docs/archive/completed/artwork.md, ideas 3 and 4): which Medium image is the disc, which images drift behind the lyrics, and the
  * timing rules for both. Chosen by type, comment and disc number only; never by taste or play data. Mirrors the macOS rules.
  */
 

@@ -76,7 +76,7 @@ val Target = 48.dp
 
 /**
  * Letter spacing for a title. Compose has no word spacing, so the redesign's +0.16em word spacing becomes a tighter
- * −0.06em for any title with a space in it (docs/redesign.md 7.2). A single word keeps the style's own spacing.
+ * −0.06em for any title with a space in it (docs/plans/redesign.md 7.2). A single word keeps the style's own spacing.
  */
 internal fun titleLetterSpacing(text: String, base: TextUnit): TextUnit = if (text.contains(' ')) (-0.06).em else base
 

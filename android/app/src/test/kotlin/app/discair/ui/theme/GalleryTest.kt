@@ -12,7 +12,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step G1 of docs/GALLERY_THEME.md: the eight palettes (pinned to docs/design/gallery/tokens.json), the new roles, the font pair and the shell rules. */
+/** Step G1 of docs/archive/completed/GALLERY_THEME.md: the eight palettes (pinned to docs/design/gallery/tokens.json), the new roles, the font pair and the shell rules. */
 class GalleryTest {
     private val ids = listOf("gallery", "gallery_celadon", "gallery_mist", "gallery_blush", "gallery_butter", "gallery_graphite", "gallery_oxblood", "gallery_moss")
     private val gallery = ids.map { Palettes.byId(it) ?: error("missing $it") }

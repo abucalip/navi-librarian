@@ -17,7 +17,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The disc and the slideshow (docs/artwork.md, ideas 3 and 4): what is picked and the timing rules. Same rules as the Mac. */
+/** The disc and the slideshow (docs/archive/completed/artwork.md, ideas 3 and 4): what is picked and the timing rules. Same rules as the Mac. */
 class NowPlayingArtworkTest {
     private fun pic(id: Long, vararg types: String, comment: String = "", edition: String = "", format: String = "jpg", size: Int? = 1200) =
         ArtworkImage(id, "r", listOf("r"), edition, types.toList(), comment, true, size, size, format)

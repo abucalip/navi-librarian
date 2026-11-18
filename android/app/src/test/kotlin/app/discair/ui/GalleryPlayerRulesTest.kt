@@ -11,7 +11,7 @@ import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Step G5 of docs/GALLERY_THEME.md: the words and choices behind Gallery's Now Playing, Queue, Lyrics and Radio pages. */
+/** Step G5 of docs/archive/completed/GALLERY_THEME.md: the words and choices behind Gallery's Now Playing, Queue, Lyrics and Radio pages. */
 class GalleryPlayerRulesTest {
     private val utc = ZoneId.of("UTC")
 

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DiscairLibrarian
 
-/// The queue's Track cards (docs/artwork.md, idea 6): only Track images, never a PDF, at most three, none when there are none.
+/// The queue's Track cards (docs/archive/completed/artwork.md, idea 6): only Track images, never a PDF, at most three, none when there are none.
 @Suite struct TrackImagesTests {
     private func index(_ images: [ArtworkPicture]) -> ArtworkIndex {
         let body: [String: Any] = [

@@ -79,7 +79,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /*
- * Index's Settings, Server and Appearance (I6). Spec: docs/INDEX_THEME.md sections 7 and 10; mockups: docs/design/index/pages/settings.html (frames 1 and 2)
+ * Index's Settings, Server and Appearance (I6). Spec: docs/plans/INDEX_THEME.md sections 7 and 10; mockups: docs/design/index/pages/settings.html (frames 1 and 2)
  * and downloads-stats-server.html (frame 3). Every row, switch, menu and button is the Standard page's, set out in ruled groups under a page head. The building
  * blocks here are also the Equalizer and Crossfade pages' (player/IndexEqCrossfade.kt).
  */

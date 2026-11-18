@@ -3,7 +3,7 @@ import DiscairLibrarian
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Settings › Radio (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 3), in the same grouped rows as Playback: the scrobbling switch
+/// Settings › Radio (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 3), in the same grouped rows as Playback: the scrobbling switch
 /// (disabled with its reason when Last.fm is not set up on the server), the app address read only, and for each station a
 /// logo with Change (an open panel, images up to 2 MB) and Reset. Two switches for the menu bar item (S2-5) sit between the address and the logos.
 struct CupertinoRadioSettings: View {

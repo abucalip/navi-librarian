@@ -3,7 +3,7 @@
    Variable names: --c content, --p panel, --f fill, --t text, --t2 textSecondary, --t3 textTertiary, --sep separator,
    --a accent, --at accentTint, --oa onAccent, --ok success, --wn warning, --wnt warningTint, --dg danger, --dgt dangerTint,
    --in info, --int infoTint. In Swift use the CU roles, never these hex values. Sizes are points at a 1280 pt window
-   (content 980 pt wide). The plan (docs/MACOS_HOME_MARQUEE_PLAN.md) lists every measure. */
+   (content 980 pt wide). The plan (docs/archive/completed/MACOS_HOME_MARQUEE_PLAN.md) lists every measure. */
 .app{--c:#fff;--p:#f5f5f7;--f:#ececf0;--t:#1d1d1f;--t2:#636368;--t3:#8e8e93;--sep:#e5e5ea;--a:#d61f4a;--at:#fce8ec;--oa:#fff;--ok:#187a48;--wn:#8a5200;--wnt:#fff4dc;--dg:#b3261e;--dgt:#fbeae8;--in:#0b5cad;--int:#e8f1fb;
  background:var(--c);color:var(--t);font:13px/1.35 var(--ui);min-width:1240px;font-variant-numeric:tabular-nums}
 .app[data-mode=night]{--c:#0b0b0d;--p:#151518;--f:#202025;--t:#f2f2f4;--t2:#9e9ea7;--t3:#6e6e78;--sep:#27272c;--a:#ff7a8f;--at:#33202a;--oa:#0b0b0d;--ok:#47c285;--wn:#f2b04a;--wnt:#2b2416;--dg:#ff7b72;--dgt:#2e1a19;--in:#6cb2f5;--int:#172534}

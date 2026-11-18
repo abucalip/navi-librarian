@@ -1,4 +1,4 @@
-"""Neighbours by Ear composition (docs/ALBUM_PATHS_PROPOSAL.md, path 8): seeds, grouping, ranking, skips, bounds."""
+"""Neighbours by Ear composition (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, path 8): seeds, grouping, ranking, skips, bounds."""
 import unittest
 
 from intelligence.sonic.neighbours import album_neighbours, pick_seeds

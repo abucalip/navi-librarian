@@ -1,4 +1,4 @@
-"""Write the artwork index contract fixtures (docs/artwork.md, slice 1) by calling the real route.
+"""Write the artwork index contract fixtures (docs/archive/completed/artwork.md, slice 1) by calling the real route.
 
 Each file is `GET /api/artwork/index` answered by the real route, service, index merge and store, with
 the MusicBrainz and CAA fetchers replaced by canned answers. The ids, dates and comments are invented
@@ -128,7 +128,7 @@ def all_fixtures() -> dict[str, dict]:
     with small_caps(served_cap=3):            # 8 images, 3 served: slot winners first
         out["artwork_index_truncated_served_cap.json"] = record("sc", own, two, build=True)
     # No `time` fixture: the route rebuilds from the per-release cache, where an unread release counts as
-    # failed, so a time-bounded build is served as `partial` (see docs/artwork.md, contract section).
+    # failed, so a time-bounded build is served as `partial` (see docs/archive/completed/artwork.md, contract section).
     out["artwork_index_not_loaded.json"] = record("not_loaded", {"rgid": RG}, SCENARIOS["ok"], build=False)
     out["artwork_index_error_bad_rgid.json"] = record("bad", {"rgid": "not-an-id"}, SCENARIOS["ok"], build=False)
     return out

@@ -7,7 +7,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 
 /*
- * What the Server screen reads (docs/redesign.md 8.2, step A7): the settings and test routes of the connected services, the
+ * What the Server screen reads (docs/plans/redesign.md 8.2, step A7): the settings and test routes of the connected services, the
  * capabilities body and the two job-status routes. Parsing is forgiving: a missing field is "not known", never a default that
  * reads as working. No route here returns a secret.
  */

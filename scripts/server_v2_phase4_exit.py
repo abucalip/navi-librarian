@@ -8,7 +8,7 @@ titles, paths or credentials).
     python scripts/server_v2_phase4_exit.py --store ~/discair-mb-test/intelligence.sqlite3 \
         --import-report ~/discair-mb-test/run4.json --out phase4_exit.json
 
-Checks (docs/ServerV2.md, Phase 4 exit):
+Checks (docs/plans/ServerV2.md, Phase 4 exit):
   1. provenance: every edge names its source, evidence class and match quality, and points at a
      stored observation of the same source; slice edges carry the dump date
   2. ambiguity: homonyms (same name, different MBID) stay separate entities, a name lookup returns

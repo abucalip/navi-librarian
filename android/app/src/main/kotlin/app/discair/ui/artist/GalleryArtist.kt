@@ -60,7 +60,7 @@ import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Artist page (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frame 3.
+ * Gallery's Artist page (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frame 3.
  * A 200dp photo print, the catalogue line (albums in the library, the years they span), the name in Fraunces italic and the genres, Play / Shuffle / Paths,
  * then Top songs as rows, In your library as captioned prints, Missing albums with Get, the biography and similar artists. The data is [CoverStackArtistData].
  */

@@ -18,7 +18,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** What the Booklet tab shows and how zoom is kept in bounds (docs/artwork.md, idea 2). */
+/** What the Booklet tab shows and how zoom is kept in bounds (docs/archive/completed/artwork.md, idea 2). */
 class BookletTest {
     private fun image(id: Long, type: String, format: String = "jpg") =
         ArtworkImage(id, "r", listOf("r"), "1999 JP CD", listOf(type), "", true, 800, 800, format)

@@ -79,7 +79,7 @@ internal fun radioArtworkUrl(url: String): String? =
     else playerArtworkUrl(url)
 
 /**
- * Now Playing for a station (docs/RADIO_PLAYBACK_CONTRACT.md section 4), built like the song sheet: the same sheet, the
+ * Now Playing for a station (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4), built like the song sheet: the same sheet, the
  * artwork tint or blurred backdrop, header, themed artwork card, title block, status words and round primary Play button.
  * A live stream has no seek bar, queue, lyrics, shuffle or repeat, so those are left out; it adds the favourite toggle,
  * the Download control and a link to the Heard list.

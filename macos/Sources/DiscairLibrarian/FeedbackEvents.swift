@@ -1,6 +1,6 @@
 import Foundation
 
-/// One skip or dismissal reported to the Librarian (`docs/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`, D-027).
+/// One skip or dismissal reported to the Librarian (`docs/contracts/SERVER_V2_CONTRACT.md`, `POST /api/feedback/events`, D-027).
 /// Record-only: the server stores it and nothing ranks with it. Carries no path, token, device name or free text.
 public struct FeedbackEvent: Codable, Equatable, Sendable {
     public enum Kind: String, Codable, Sendable { case skip, dismiss }

@@ -1,6 +1,6 @@
 # Discair contract fixtures
 
-Phase 0 of [`docs/ANDROID_CLIENT_CONTRACT.md`](../../docs/ANDROID_CLIENT_CONTRACT.md). One recorded response per endpoint the Discair app uses. DTOs are generated from these files, not guessed.
+Phase 0 of [`docs/contracts/ANDROID_CLIENT_CONTRACT.md`](../../docs/contracts/ANDROID_CLIENT_CONTRACT.md). One recorded response per endpoint the Discair app uses. DTOs are generated from these files, not guessed.
 
 - `librarian/` — Librarian routes (`capture.py`). `navidrome/` — Subsonic calls (`capture_navidrome.py`).
 - Each file holds `request`, `response` (`status`, `content_type`, `body`) and `captured_at`. SSE routes store `sse_events` as `{event, data}` in order.

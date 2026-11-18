@@ -80,7 +80,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.rememberReducedMotion
 
 /*
- * Index's Discover (Layout.Index). Spec: docs/INDEX_THEME.md step I4; mockup: docs/design/index/pages/discover.html, frames 1 and 2.
+ * Index's Discover (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I4; mockup: docs/design/index/pages/discover.html, frames 1 and 2.
  * "Discover" with the entry count as a superscript, the lists as mono tabs (Insights is the last tab), then each list as numbered entries: "01" in mono
  * `accent`, a 96dp cover, the genre, the title, the maker and year, the reason, and Get / Save / X. Daily picks and Deep dives keep a section head per lens
  * or genre row. Insights: the Taste bars, the anniversary as the insight block, the other lenses as numbered rows. The data, saves, dismissals and Undo are

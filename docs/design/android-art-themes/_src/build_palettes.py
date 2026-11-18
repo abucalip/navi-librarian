@@ -1,10 +1,10 @@
 """
-Builds the palette files of docs/palettes.md from the existing Soft Brut and Flow mockups:
+Builds the palette files of docs/archive/completed/palettes.md from the existing Soft Brut and Flow mockups:
 
   palettes/palettes.css      the colour tokens of every new palette (one class each), loaded after soft-brut.css / flow.css
   palettes/soft-brut.html    Home, Album and Now Playing in each new Soft Brut palette
   palettes/flow.html         the same three screens in each new Flow palette
-  palettes/roles.md          the role tables and the Kotlin entries that docs/palettes.md quotes
+  palettes/roles.md          the role tables and the Kotlin entries that docs/archive/completed/palettes.md quotes
 
 Only colours change: the screens are cut from the existing mockup pages and the theme CSS files are not edited.
 Run from docs/design/android-art-themes:  python3 _src/build_palettes.py
@@ -155,7 +155,7 @@ if bad:
 
 os.makedirs(os.path.join(HERE, "palettes"), exist_ok=True)
 head = """/*
- * Colour palettes for Soft Brut and Flow (docs/palettes.md). Load after soft-brut.css and flow.css; add the palette's class to the
+ * Colour palettes for Soft Brut and Flow (docs/archive/completed/palettes.md). Load after soft-brut.css and flow.css; add the palette's class to the
  * .phone element, for example class="phone sb p-softbrut_mint". Only colour tokens are set here. Built by _src/build_palettes.py.
  */
 
@@ -189,7 +189,7 @@ for key, folder, theme_css, title, note in (
            f'<link rel="stylesheet" href="{FONTS}"><link rel="stylesheet" href="../shared.css"><link rel="stylesheet" href="../{theme_css}">'
            '<link rel="stylesheet" href="palettes.css"><style>.doc h2{font:700 18px/1.2 \'Space Grotesk\',system-ui,sans-serif;margin:34px 0 12px}</style></head><body>'
            f'{symbols}<div class="doc"><h1>{title}</h1><p>Android, 360 × 780 dp, 1 px = 1 dp. The three screens are the existing {folder} mockups; only the colour '
-           f'tokens differ (palettes.css). {note} Covers and photos are drawn stand-ins. Spec: docs/palettes.md.</p></div>']
+           f'tokens differ (palettes.css). {note} Covers and photos are drawn stand-ins. Spec: docs/archive/completed/palettes.md.</p></div>']
     for pid, label, pick, mode in rows[key]:
         out.append(f'<div class="doc"><h2>{pick} · {label} ({mode}) · <code>{pid}</code></h2></div><div class="frames">')
         for cap, page_ in (("Home", "home"), ("Album", "album-artist-genre"), ("Now Playing", "player")):
@@ -198,7 +198,7 @@ for key, folder, theme_css, title, note in (
     out.append("</body></html>\n")
     open(os.path.join(HERE, f"palettes/{folder}.html"), "w", encoding="utf-8").write("".join(out))
 
-# ---- the tables docs/palettes.md quotes ----
+# ---- the tables docs/archive/completed/palettes.md quotes ----
 m = ["### Soft Brut roles\n",
      "| Palette | id | Mode | page (`rail`, `ink`) | `surface` | `raised` | outline (`edge`, `edgeStrong`, `shadowColor`, `chartBase`) | `text` | `textMuted` | `accent` (`chart1`) | `accentDim` | `onAccent` | `accent2` | `accent3` | `accent4` | soft edge (`chartGrid`) | `chart2` | `minAccentContrast` |",
      "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]

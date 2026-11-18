@@ -14,7 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Which faces an album's cover can flip to (docs/artwork.md, idea 1). */
+/** Which faces an album's cover can flip to (docs/archive/completed/artwork.md, idea 1). */
 class CoverFacesTest {
     private fun image(id: Long, type: String) = ArtworkImage(id, "r", listOf("r"), "1999 JP CD", listOf(type), "", true, 500, 500, "jpg")
     private fun index(vararg types: String): ArtworkIndex {

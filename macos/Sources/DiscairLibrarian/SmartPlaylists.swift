@@ -1,6 +1,6 @@
 import Foundation
 
-/// One rule inside a server rule set (`docs/SERVER_V2_CONTRACT.md`, "Smart playlists"). Values stay strings, as on the server.
+/// One rule inside a server rule set (`docs/contracts/SERVER_V2_CONTRACT.md`, "Smart playlists"). Values stay strings, as on the server.
 public struct ServerSmartRule: Codable, Equatable, Sendable {
     public let field: String
     public let op: String

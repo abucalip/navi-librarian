@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The queue's Track cards (docs/artwork.md, idea 6): only Track images, never a PDF, at most three, none when there are none. */
+/** The queue's Track cards (docs/archive/completed/artwork.md, idea 6): only Track images, never a PDF, at most three, none when there are none. */
 class TrackImagesTest {
     private fun image(id: Long, vararg types: String, format: String = "jpg") =
         ArtworkImage(id, "r", listOf("r"), "1999 JP CD", types.toList(), "", true, 500, 500, format)

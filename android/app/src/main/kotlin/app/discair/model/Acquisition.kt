@@ -135,7 +135,7 @@ data class AcquisitionJob(
     val metadata: JsonObject get() = details["metadata"] as? JsonObject ?: JsonObject(emptyMap())
 
     /**
-     * The MusicBrainz release group the Get carried in its metadata (docs/artwork.md, idea 13), or null when it carried none.
+     * The MusicBrainz release group the Get carried in its metadata (docs/archive/completed/artwork.md, idea 13), or null when it carried none.
      * Only a real MusicBrainz id is used, so a bad value never reaches the artwork lookup.
      */
     val releaseGroup: String? get() = (metadata["release_group_mbid"] as? JsonPrimitive)?.contentOrNull

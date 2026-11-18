@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import DiscairUI
 
-/// The Heard list's rules and the Download states of a heard song (docs/RADIO_PLAYBACK_PROPOSAL.md S2-3 items 3 to 5).
+/// The Heard list's rules and the Download states of a heard song (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-3 items 3 to 5).
 @MainActor
 @Suite("Heard rules") struct HeardRulesTests {
     static var cal: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }

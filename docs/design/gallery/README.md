@@ -1,6 +1,6 @@
 # Gallery design package
 
-The design system for the Android **Gallery** theme. The spec is [`docs/GALLERY_THEME.md`](../../GALLERY_THEME.md); this folder is what it refers to.
+The design system for the Android **Gallery** theme. The spec is [`docs/archive/completed/GALLERY_THEME.md`](../../archive/completed/GALLERY_THEME.md); this folder is what it refers to.
 
 | Path | What it is |
 |---|---|

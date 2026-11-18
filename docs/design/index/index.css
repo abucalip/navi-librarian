@@ -1,5 +1,5 @@
 /* Index components. Measurements are dp (1 CSS px = 1dp), type sizes are sp. Colours come from palettes.css
-   (generated from tokens.json). Spec: docs/INDEX_THEME.md, section 7. Fonts are the app's own files in res/font. */
+   (generated from tokens.json). Spec: docs/plans/INDEX_THEME.md, section 7. Fonts are the app's own files in res/font. */
 @font-face{font-family:"Inter Tight";src:url(../../../android/app/src/main/res/font/inter_tight_800.ttf);font-weight:800}
 @font-face{font-family:Inter;src:url(../../../android/app/src/main/res/font/inter_variable.ttf);font-weight:100 900}
 @font-face{font-family:"IBM Plex Mono";src:url(../../../android/app/src/main/res/font/ibm_plex_mono_400.ttf);font-weight:400}

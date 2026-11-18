@@ -1,8 +1,8 @@
 # Client efficiency — baseline protocol and results
 
 **Status:** protocol and tables. macOS S2 to S7 (and the S7 Reduce Motion reference) have been measured (2026-11-14); S11 and every Android cell stay blank; S1 and S8 to S10 are measured on a short protocol (see the S1 and S8 to S11 notes) until a Phase 0 step (P0-2 macOS, P0-3 Android) fills it from a real run.
-**Plan:** [`docs/client_efficiency.md`](client_efficiency.md), step P0-1. Scenario IDs (S1–S11) and cheap-tool commands are copied from its section 8; the plan remains the authority if the two ever disagree.
-**Scripts:** [`scripts/perf/macos_cheap.sh`](../scripts/perf/macos_cheap.sh) and [`scripts/perf/android_cheap.sh`](../scripts/perf/android_cheap.sh). Each prints one markdown table row per run. Raw tool output goes to `$DISCAIR_PERF_RAW` (default `~/discair-perf-raw`), never into the repository.
+**Plan:** [`docs/plans/client_efficiency.md`](client_efficiency.md), step P0-1. Scenario IDs (S1–S11) and cheap-tool commands are copied from its section 8; the plan remains the authority if the two ever disagree.
+**Scripts:** [`scripts/perf/macos_cheap.sh`](../../scripts/perf/macos_cheap.sh) and [`scripts/perf/android_cheap.sh`](../../scripts/perf/android_cheap.sh). Each prints one markdown table row per run. Raw tool output goes to `$DISCAIR_PERF_RAW` (default `~/discair-perf-raw`), never into the repository.
 
 ## 1. Rules (from the plan, section 8.1)
 

@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-// The pieces of the Paths sheet's Trail layout (docs/MACOS_PATHS_BOOKLET.md, section 4): a group on the rail, a stop card, the
+// The pieces of the Paths sheet's Trail layout (docs/plans/MACOS_PATHS_BOOKLET.md, section 4): a group on the rail, a stop card, the
 // detail bar and the filter. Measures come from `CU.PathsSheet`, colours from the CU roles.
 
 // MARK: Library lookups

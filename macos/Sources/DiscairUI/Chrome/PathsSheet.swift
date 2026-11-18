@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// The Paths sheet of an album or an artist (docs/MACOS_PATHS_BOOKLET.md, section 4): a header, text tabs, the summary with a
+/// The Paths sheet of an album or an artist (docs/plans/MACOS_PATHS_BOOKLET.md, section 4): a header, text tabs, the summary with a
 /// filter, the Trail of steps grouped under what links them to the start, and a detail bar for the selected step. It can be
 /// resized, and every colour is a CU role, so it follows the theme, Night and the owner's accent.
 struct PathsSheet: View {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repeatable request timing for the Phase P steps of docs/efficiency.md (step M2).
+"""Repeatable request timing for the Phase P steps of docs/plans/efficiency.md (step M2).
 
 Against a running instance, the script logs in, reads ``/api/diagnostics/runtime`` (M1), requests a fixed
 list of routes ``--runs`` times each, records the wall time and the ``Server-Timing`` duration of every

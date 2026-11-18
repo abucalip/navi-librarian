@@ -1,9 +1,9 @@
 import Foundation
 
-// Server feeds behind the redesigned Home (`docs/redesign.md` section 5.1, step M8): the radio Heard list, the job-status
+// Server feeds behind the redesigned Home (`docs/plans/redesign.md` section 5.1, step M8): the radio Heard list, the job-status
 // routes of the taste, popularity and insight jobs, and the listens-by-day series (D2). The radio and popularity routes exist;
 // `GET /api/insights/refresh/status` (D3) and `listens_by_day` on the taste body (D2) are contract proposals in
-// `docs/SERVER_V2_CONTRACT.md`. Until the server serves them the client treats a missing answer as "not available", never zero.
+// `docs/contracts/SERVER_V2_CONTRACT.md`. Until the server serves them the client treats a missing answer as "not available", never zero.
 
 /// One song heard on a relayed radio station (`GET /api/radio/plays`).
 public struct RadioPlay: Decodable, Equatable, Sendable, Identifiable {

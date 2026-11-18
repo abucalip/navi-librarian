@@ -49,7 +49,7 @@ internal fun readHealth(get: () -> String): HealthRead = try {
 }
 
 /**
- * Reads the routes behind the Server screen (docs/redesign.md 8.2) with one request each, all at once. Reads only: a test route
+ * Reads the routes behind the Server screen (docs/plans/redesign.md 8.2) with one request each, all at once. Reads only: a test route
  * is called for a service whose settings say it is set up, and nothing is saved. A route that fails leaves its field null.
  */
 internal fun readServer(client: LibrarianClient, navidromeDirect: Boolean?, clock: () -> Long = System::currentTimeMillis): ServerReads =

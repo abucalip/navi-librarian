@@ -37,7 +37,7 @@ struct DiscairApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1280, height: 800)
 
-        // The menu bar item (docs/RADIO_PLAYBACK_PROPOSAL.md S2-5, mockup D2): radio and library songs, with a popover.
+        // The menu bar item (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-5, mockup D2): radio and library songs, with a popover.
         MenuBarExtra(isInserted: Bindable(menuBar).isInserted) {
             MenuBarPopoverHost(state: state, showTitle: showMenuBarTitle)
         } label: {

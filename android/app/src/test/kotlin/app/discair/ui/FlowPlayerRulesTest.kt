@@ -8,7 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step F4 part 1 of docs/ANDROID_ART_THEMES_PROPOSAL.md: the numbers of flow/player (flow.css `.npc`, `.cb`, `.lyr`) and the lyric contrast. */
+/** Step F4 part 1 of docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md: the numbers of flow/player (flow.css `.npc`, `.cb`, `.lyr`) and the lyric contrast. */
 class FlowPlayerRulesTest {
     @Test fun buttonsAndCoverFollowTheMockup() {
         assertEquals(22, FlowPlayerRules.TITLE_SIZE)

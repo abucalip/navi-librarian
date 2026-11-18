@@ -89,7 +89,7 @@ import app.discair.ui.theme.LocalPalette
 import java.time.Instant
 
 /*
- * Gallery's Home (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 9; mockup: docs/design/gallery/pages/home.html (six frames).
+ * Gallery's Home (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 9; mockup: docs/design/gallery/pages/home.html (six frames).
  * Top to bottom: service banner, source switch, the hero print with its placard and actions, Played lately, Artists you return to, Radio,
  * This week, Arrivals, Genres and the library line. The data and behaviour are the Home every theme has (Get, Save, the menu, the arrivals and the links).
  */

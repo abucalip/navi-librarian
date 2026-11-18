@@ -1,10 +1,10 @@
 # Brut round 3 plan (web and Android)
 
-Last updated: 2026-11-03 (P1 merged; P2, Pipeline Board, dropped by the owner the same day and removed from `main`; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
+Last updated: 2026-11-03 (P1 merged; P2, Pipeline Board, dropped by the owner the same day and removed from `main`; theme-ownership and mockup-is-the-spec rules in section 2). Governing decision: D-024 in [DECISIONS.md](../DECISIONS.md). Status tracking: the table in section 9 (update it in the PR that completes each phase). GitHub `main` is authoritative.
 
 ## 1. What this is
 
-Round 3 of the Neobrut work (round 1 is D-022, round 2 is D-023 and [BRUT_LAYOUTS_PLAN.md](BRUT_LAYOUTS_PLAN.md)). Round 2 rearranged the same screens. Round 3 also changes **what a screen is made of and how it is operated**: the dashboard becomes a board, pages become windows, an album becomes a receipt or a binder slot. Round 3 covers **every screen**, album and artist pages included, which round 2 only touched lightly.
+Round 3 of the Neobrut work (round 1 is D-022, round 2 is D-023 and [BRUT_LAYOUTS_PLAN.md](../archive/completed/BRUT_LAYOUTS_PLAN.md)). Round 2 rearranged the same screens. Round 3 also changes **what a screen is made of and how it is operated**: the dashboard becomes a board, pages become windows, an album becomes a receipt or a binder slot. Round 3 covers **every screen**, album and artist pages included, which round 2 only touched lightly.
 
 The owner approved five themes, one palette each:
 
@@ -16,7 +16,7 @@ The owner approved five themes, one palette each:
 | R | **Receipt Roll** (`receipt`) | Android | Thermal receipt paper: itemised albums, barcode seek bar, tear-off slips |
 | K | **Binder** (`binder`) | Android | A collector's binder: every album a slot, missing ones dashed with a Get |
 
-Reference mockups (static HTML, open in a browser; tabs 1–5 are the approved themes): [`design/brut-round3/mockups.html`](design/brut-round3/mockups.html). Tabs 6–10 in that file (Workspace, Expressive, Seeded, Thumb Zone, Triage) are Material 3 based ordinary-theme ideas the owner has **not** approved; they are parked (ACTIVE_WORK.md, section 4) and must not be built from this plan. The mockups use third-party font links; the app itself must not (fonts and icons are self-hosted).
+Reference mockups (static HTML, open in a browser; tabs 1–5 are the approved themes): [`design/brut-round3/mockups.html`](../design/brut-round3/mockups.html). Tabs 6–10 in that file (Workspace, Expressive, Seeded, Thumb Zone, Triage) are Material 3 based ordinary-theme ideas the owner has **not** approved; they are parked (ACTIVE_WORK.md, section 4) and must not be built from this plan. The mockups use third-party font links; the app itself must not (fonts and icons are self-hosted).
 
 Mockup artifact (private to the owner, may expire): claude.ai/artifact/1AiN1zTmCphn4MeUUW5xKo.
 
@@ -162,7 +162,7 @@ Idea: collecting. Every album is a slot in a binder page; a missing slot is dash
 
 ## 8. Decision D-024 (text for DECISIONS.md)
 
-Recorded in [DECISIONS.md](DECISIONS.md) in the same commit as this plan.
+Recorded in [DECISIONS.md](../DECISIONS.md) in the same commit as this plan.
 
 ## 9. Phases and status
 

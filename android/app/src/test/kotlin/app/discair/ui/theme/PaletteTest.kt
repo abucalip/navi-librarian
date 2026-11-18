@@ -158,7 +158,7 @@ class PaletteTest {
     }
 
     @Test fun specifiedPalettesHaveTheRedesignTable() {
-        // docs/redesign.md 7.3, which matches the tokens in docs/design/redesign/android/android.css. Order: info, infoDim,
+        // docs/plans/redesign.md 7.3, which matches the tokens in docs/design/redesign/android/android.css. Order: info, infoDim,
         // okDim, cautionDim, dangerDim, chart1, chart2, chart3, chartGhost, chartGrid, chartBase.
         val table = mapOf(
             Palettes.Sand to listOf(0x1F5A8AL, 0xCFDDE8L, 0xD5E5CFL, 0xF1DDB4L, 0xF2CFC2L, 0xAD4016L, 0x8C7B57L, 0xC9BB9CL, 0xE3D8C0L, 0xCFC2A6L, 0x857758L),
@@ -190,7 +190,7 @@ class PaletteTest {
     }
 
     @Test fun secondChartSeriesReadsOnSurfaceOnEveryTheme() {
-        // Chart 2 is the comparison line and the baseline dot: a graphic, so 3:1 (docs/redesign.md 4.4).
+        // Chart 2 is the comparison line and the baseline dot: a graphic, so 3:1 (docs/plans/redesign.md 4.4).
         for (p in Palettes.All) check(p, "chart 2", p.chart2, p.surface, 3.0, "surface")
     }
 

@@ -558,7 +558,7 @@ fun ModalBottomSheet(
 ) {
     val p = LocalPalette.current
     if (isGallery()) {
-        // Gallery: `surface`, a 14dp top radius, a 36 by 4dp `edge` handle and the fixed scrim (docs/GALLERY_THEME.md 7.3).
+        // Gallery: `surface`, a 14dp top radius, a 36 by 4dp `edge` handle and the fixed scrim (docs/archive/completed/GALLERY_THEME.md 7.3).
         androidx.compose.material3.ModalBottomSheet(
             onDismissRequest, modifier, sheetState, shape = shape ?: RoundedCornerShape(topStart = GalleryRules.SHEET_TOP_RADIUS.dp, topEnd = GalleryRules.SHEET_TOP_RADIUS.dp),
             containerColor = containerColor ?: p.surface, scrimColor = GalleryRules.SCRIM, tonalElevation = 0.dp,
@@ -775,7 +775,7 @@ fun PlayerIconButton(
 }
 
 
-// ---------------------------------------------------------------- Flow (docs/ANDROID_ART_THEMES_PROPOSAL.md section 4)
+// ---------------------------------------------------------------- Flow (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 4)
 
 private enum class FlowKind { Primary, Tonal }
 

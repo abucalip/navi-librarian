@@ -1,7 +1,7 @@
 import DiscairCore
 import Foundation
 
-// Internet radio calls (docs/RADIO_PLAYBACK_PROPOSAL.md S2.4; macOS stage 2, slice S2-1 item 2). Every call is deployed on the
+// Internet radio calls (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2.4; macOS stage 2, slice S2-1 item 2). Every call is deployed on the
 // server; none is added. The stream address (`playableURL`) is never put in a request path, an error or a log line here.
 
 /// `GET /api/radio/settings`: the address Navidrome clients reach the app at. Shown read only on the Mac.

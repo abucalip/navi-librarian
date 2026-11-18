@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure global search latency against the targets in docs/SEARCH_CONTRACT.md section 2.1 (P5).
+"""Measure global search latency against the targets in docs/contracts/SEARCH_CONTRACT.md section 2.1 (P5).
 
 The script serves only the search router in a throwaway app and times real HTTP/SSE requests against
 it, so the route, the owned index and the stream framing are the production code. It reads the

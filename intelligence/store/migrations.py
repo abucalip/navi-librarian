@@ -53,7 +53,7 @@ _V1 = (
         UNIQUE (source, payload_hash)
     )
     """,
-    # Observations are append-only: rows are never edited (docs/ServerV2.md 6.2).
+    # Observations are append-only: rows are never edited (docs/plans/ServerV2.md 6.2).
     """
     CREATE TRIGGER observations_no_update BEFORE UPDATE ON observations
     BEGIN SELECT RAISE(ABORT, 'observations are append-only'); END

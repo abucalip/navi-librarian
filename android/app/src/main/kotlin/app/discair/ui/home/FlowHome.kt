@@ -96,7 +96,7 @@ import app.discair.ui.theme.accentText
 /*
  * Flow's Home (Layout.Flow): the owner's pick of dashboard I4. A segmented control (Picks, New, Played) chooses what the cover carousel
  * shows; then the title and actions of the centred cover, Artists, Insight, Genres and a grouped list (arrivals, Radio, Library).
- * Spec: docs/ANDROID_ART_THEMES_PROPOSAL.md section 6.2; mockup: docs/design/android-art-themes/flow/home.html.
+ * Spec: docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 6.2; mockup: docs/design/android-art-themes/flow/home.html.
  * Behaviour is the Home every theme has: the same data, Get, Save, the menu, the arrivals and the links.
  */
 

@@ -13,7 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** docs/INDEX_THEME.md step I3: the words and numbers of Index's Album, Artist, Genre and Paths, and the I0 fields they read (section 11a.3). */
+/** docs/plans/INDEX_THEME.md step I3: the words and numbers of Index's Album, Artist, Genre and Paths, and the I0 fields they read (section 11a.3). */
 class IndexPagesRulesTest {
     @Test fun theAlbumBarSaysItsPlaceInTheLibraryOnlyWhenTheServerGaveIt() {
         assertEquals("Album 0418 / 1284", IndexPagesRules.albumCatalogue(true, 418, 1284))

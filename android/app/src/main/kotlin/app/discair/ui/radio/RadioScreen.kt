@@ -62,7 +62,7 @@ val LocalRadio = androidx.compose.runtime.compositionLocalOf<app.discair.player.
 internal const val LIVE_REFRESH_MS = 15_000L
 
 /**
- * The Radio page (docs/RADIO_PLAYBACK_CONTRACT.md section 4, slice 4): the owner's Navidrome stations with their
+ * The Radio page (docs/contracts/RADIO_PLAYBACK_CONTRACT.md section 4, slice 4): the owner's Navidrome stations with their
  * logos, favourites first as the server orders them, a live title strip per station from `GET /api/radio/now`, and a
  * favourite toggle. Playing a station comes in slice 5. The strip is refreshed only while the page is visible.
  */

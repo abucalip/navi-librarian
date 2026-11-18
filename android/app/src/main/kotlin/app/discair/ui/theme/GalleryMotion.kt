@@ -1,7 +1,7 @@
 package app.discair.ui.theme
 
 /*
- * Gallery's motion values (docs/GALLERY_THEME.md section 8, docs/design/gallery/tokens.json → motion). Pure, so they are unit-tested and pinned to the
+ * Gallery's motion values (docs/archive/completed/GALLERY_THEME.md section 8, docs/design/gallery/tokens.json → motion). Pure, so they are unit-tested and pinned to the
  * tokens without a device. Every duration still goes through [MotionRules.duration] at the call site, so it becomes 0 when the phone removes animations.
  */
 object GalleryMotion {

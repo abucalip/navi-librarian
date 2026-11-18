@@ -95,7 +95,7 @@ import app.discair.ui.theme.LocalPalette
 import java.time.Instant
 
 /*
- * Index's Home (Layout.Index). Spec: docs/INDEX_THEME.md section 9; mockup: docs/design/index/pages/home.html (four frames).
+ * Index's Home (Layout.Index). Spec: docs/plans/INDEX_THEME.md section 9; mockup: docs/design/index/pages/home.html (four frames).
  * Top to bottom: the service banner, the head with its source switch, the lead pick with its data list and actions, the strip (02 to 05), Played, Artists,
  * Radio, This week (the insight block), Arrivals, Genres and the library line. The data and behaviour are the Home every theme has; the Home bar is the shell's.
  */

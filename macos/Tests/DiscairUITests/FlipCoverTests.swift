@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import DiscairUI
 
-/// The album page carries the release group that keys the cover's artwork index (docs/artwork.md, idea 1).
+/// The album page carries the release group that keys the cover's artwork index (docs/archive/completed/artwork.md, idea 1).
 @Suite struct FlipCoverTests {
     private func related(_ json: String) throws -> AlbumPageRelated {
         try JSONDecoder().decode(AlbumPageEnvelope.self, from: Data(json.utf8)).related

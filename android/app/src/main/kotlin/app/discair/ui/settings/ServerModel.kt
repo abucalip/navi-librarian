@@ -8,7 +8,7 @@ import app.discair.model.ServiceCheck
 import app.discair.model.ServiceId
 
 /*
- * The pure half of the Server screen (docs/redesign.md 8.2 and 6.2, step A7): the state of each connected service, the summary
+ * The pure half of the Server screen (docs/plans/redesign.md 8.2 and 6.2, step A7): the state of each connected service, the summary
  * sentence and the server-activity rows, built from what the screen read. Nothing here touches Compose or the network.
  *
  * Rules carried over from the Mac (6.2): when the Librarian does not answer, everything it would report is Unknown, not failed;

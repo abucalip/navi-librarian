@@ -1,7 +1,7 @@
 # Server V2 — remaining work
 
 **Updated:** 2026-11-09  
-**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Phase 6 taste presentation is closed: slices 5–8 are merged across macOS Cupertino, macOS Zine and Android, and the slice 9 close-out is done. Remaining work is explicitly listed runtime/client verification; no Server V2 work is currently published or deployed. See [Project Status](PROJECT_STATUS.md), the [API contract](SERVER_V2_CONTRACT.md), and the [historical plan archive](archive/ServerV2_HISTORY_2026-11-09.md).
+**Current state:** Server-side Phases 0–6 are closed. Phase 7 implementation is merged. Phase 6 taste presentation is closed: slices 5–8 are merged across macOS Cupertino, macOS Zine and Android, and the slice 9 close-out is done. Remaining work is explicitly listed runtime/client verification; no Server V2 work is currently published or deployed. See [Project Status](../PROJECT_STATUS.md), the [API contract](../contracts/SERVER_V2_CONTRACT.md), and the [historical plan archive](../archive/ServerV2_HISTORY_2026-11-09.md).
 
 ## Phase 6 — Taste presentation
 
@@ -12,7 +12,7 @@
 - `profiles` includes the server-authored `headline`, recent/mid/all-time windows, dimensions, shifts and sample/attribution flags. Clients display the supplied headline and never invent a shift or compose replacement prose.
 - `context` includes time-of-day and weekday/weekend lenses plus morning-vs-night contrast. Contrast is stated only when both contexts have at least 100 listens, attribution is sufficient, and the configured shift threshold is met; otherwise show the supplied low-sample/no-difference state.
 - Sparse and empty data must remain honest. Taste profiles and context do not affect recommendation ranking.
-- Design references: [macOS mockups](design/macos-taste/mockups.html) · [Android mockups](design/android-taste/mockups.html).
+- Design references: [macOS mockups](../design/macos-taste/mockups.html) · [Android mockups](../design/android-taste/mockups.html).
 
 ### Completed slices
 
@@ -52,4 +52,4 @@ The owner waived the macOS Connections/Atlas/Timeline screen review, the discove
 
 ## History
 
-Completed phase plans, slice implementation details, PR/commit history, probes, measurements, decisions and earlier verification notes are preserved in [Server V2 historical snapshot](archive/ServerV2_HISTORY_2026-11-09.md). Do not use that snapshot as the active work queue.
+Completed phase plans, slice implementation details, PR/commit history, probes, measurements, decisions and earlier verification notes are preserved in [Server V2 historical snapshot](../archive/ServerV2_HISTORY_2026-11-09.md). Do not use that snapshot as the active work queue.

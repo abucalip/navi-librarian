@@ -3,7 +3,7 @@ import Testing
 @testable import DiscairLibrarian
 @testable import DiscairUI
 
-/// The Booklet sheet's pure rules (docs/MACOS_PATHS_BOOKLET.md, section 5).
+/// The Booklet sheet's pure rules (docs/plans/MACOS_PATHS_BOOKLET.md, section 5).
 @Suite struct BookletLayoutTests {
     private func pic(_ id: Int, _ type: String = "Booklet", w: Int? = 1200, h: Int? = 1200, comment: String = "", format: String = "jpg") -> ArtworkPicture {
         ArtworkPicture(imageID: id, release: "r", releases: ["r"], edition: "1999 JP CD", types: [type], comment: comment, width: w, height: h, format: format)

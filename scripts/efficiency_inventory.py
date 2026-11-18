@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Request-time provider inventory for step K1 of docs/efficiency.md.
+"""Request-time provider inventory for step K1 of docs/plans/efficiency.md.
 
 Against a running local instance, read a targets file (owned and unowned artists and albums, made by the
 operator and kept outside the repository), request every route the artist and album pages use for each

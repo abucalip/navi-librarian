@@ -81,14 +81,14 @@ import app.discair.ui.theme.Palette
 import app.discair.ui.theme.rememberReducedMotion
 
 /**
- * Gallery's shell (docs/GALLERY_THEME.md 7.3, mockups gallery/pages/components and home): the dock is the `rail` colour with a 1dp `edge` rule on top;
+ * Gallery's shell (docs/archive/completed/GALLERY_THEME.md 7.3, mockups gallery/pages/components and home): the dock is the `rail` colour with a 1dp `edge` rule on top;
  * the mini player (58dp) sits above the bar (62dp), divided by a 1dp rule; the page bars are plain, with no fill of their own and no rule under them.
  */
 
 /** The curve of the bar marker, the sheet, the snackbar and the page's rising blocks: cubic-bezier(0.2, 0.8, 0.2, 1). */
 private val GalleryEase = GalleryMotion.SETTLE.let { CubicBezierEasing(it.x1, it.y1, it.x2, it.y2) }
 
-// ---------------------------------------------------------------- page arrival (docs/GALLERY_THEME.md section 8)
+// ---------------------------------------------------------------- page arrival (docs/archive/completed/GALLERY_THEME.md section 8)
 
 /** The arriving page's clock, in milliseconds since it started to arrive; null outside a Gallery page (previews, tests, other themes). */
 val LocalGalleryArrival = compositionLocalOf<Animatable<Float, AnimationVector1D>?> { null }
@@ -122,7 +122,7 @@ fun Modifier.galleryArrive(index: Int): Modifier {
     }
 }
 
-// ---------------------------------------------------------------- Now Playing flight (docs/GALLERY_THEME.md section 8)
+// ---------------------------------------------------------------- Now Playing flight (docs/archive/completed/GALLERY_THEME.md section 8)
 
 /**
  * The mini cover in the dock and the cover in the player's print, so the cover can fly between them. The player page is its own window, outside the
@@ -296,7 +296,7 @@ fun GalleryPageHead(title: String, modifier: Modifier = Modifier, eyebrow: Strin
 }
 
 /**
- * Gallery's snackbar host (docs/GALLERY_THEME.md section 8): the toast fades in and rises 14dp over 280ms, holds 4s (longer when the phone's accessibility
+ * Gallery's snackbar host (docs/archive/completed/GALLERY_THEME.md section 8): the toast fades in and rises 14dp over 280ms, holds 4s (longer when the phone's accessibility
  * settings ask for more time, as Material's host does), then fades out. Material's own host scales the toast in, which Gallery's calm does not have.
  */
 @Composable

@@ -2,7 +2,7 @@
 
 Status: **approved by the owner on 2026-11-10. Stage 2 (macOS) started 2026-11-13, section 5. Stage 1 slice 0 (contract), slice 1 (server stations list, favourites, tags, logos; PR #965) slice 2 (server live "now" holder, `/now`, `/api/radio/now`; PR #966) slice 3 (server scrobble and love; PR #967) slice 4 (Android decoders, Radio page, logos, favourites; PR #968) and slice 5 (Android playback, live Now Playing, Download and Heard states; PR #969) are merged (2026-11-10). Slice 6 (reconnect, sleep timer, settings) is merged (PR #970, 2026-11-10); stage 1 is complete and the deployment gate is next. Stage 2 (macOS) starts only after deployment is authorized and verified.**
 
-This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
+This contract turns [`RADIO_PLAYBACK_PROPOSAL.md`](../plans/RADIO_PLAYBACK_PROPOSAL.md) into the rules the server and clients build against. Where the proposal and this contract disagree, this contract governs. Builds on RADIO-01 ("Grab the radio", PR [#637](https://github.com/abucalip/navi-librarian/pull/637)): the relay at `GET /radio/stream/{token}`, ICY title reading, the 30-second play log in `radio.sqlite3`, and `POST /api/radio/plays/{play_id}/get` as the Download action. Related: [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md), [`MACOS_CLIENT_CONTRACT.md`](MACOS_CLIENT_CONTRACT.md).
 
 ## 1. Scope
 
@@ -124,7 +124,7 @@ Additive only. New columns or tables are created when missing, so a rollback to 
 
 ## 5. macOS client (stage 2, started 2026-11-13)
 
-The owner reports the server and Android parts deployed and working (2026-11-13), so stage 2 starts. The owner chose the macOS design. The detailed slices are S2-0 to S2-5 in [`RADIO_PLAYBACK_PROPOSAL.md`](RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan". The mockups in [`design/macos-radio/mockups.html`](design/macos-radio/mockups.html) are the spec; the options the owner chose are the ones the page opens on. The rules below are what the macOS slices build against. Where the earlier stage 2 bullets differ, these rules govern.
+The owner reports the server and Android parts deployed and working (2026-11-13), so stage 2 starts. The owner chose the macOS design. The detailed slices are S2-0 to S2-5 in [`RADIO_PLAYBACK_PROPOSAL.md`](../plans/RADIO_PLAYBACK_PROPOSAL.md), "Stage 2 detailed plan". The mockups in [`design/macos-radio/mockups.html`](../design/macos-radio/mockups.html) are the spec; the options the owner chose are the ones the page opens on. The rules below are what the macOS slices build against. Where the earlier stage 2 bullets differ, these rules govern.
 
 ### 5.1 Choices (owner, 2026-11-13)
 

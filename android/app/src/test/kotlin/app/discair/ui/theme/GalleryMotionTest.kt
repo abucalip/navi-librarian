@@ -4,7 +4,7 @@ import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** docs/GALLERY_THEME.md section 8: Gallery's motion values match tokens.json, and the page's blocks rise in turn. */
+/** docs/archive/completed/GALLERY_THEME.md section 8: Gallery's motion values match tokens.json, and the page's blocks rise in turn. */
 class GalleryMotionTest {
     /** tokens.json → motion, read without a JSON library: each entry is `"name": { ... }` holding numbers and a curve array. */
     private fun motion(): Map<String, String> {

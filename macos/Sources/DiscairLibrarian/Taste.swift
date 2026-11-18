@@ -1,6 +1,6 @@
 import Foundation
 
-/// One ranked value in a taste window ("jazz", 0.3 share). `docs/SERVER_V2_CONTRACT.md`, `GET /api/insights/taste`.
+/// One ranked value in a taste window ("jazz", 0.3 share). `docs/contracts/SERVER_V2_CONTRACT.md`, `GET /api/insights/taste`.
 public struct TasteEntry: Decodable, Equatable, Sendable {
     public let value: String
     public let count: Int

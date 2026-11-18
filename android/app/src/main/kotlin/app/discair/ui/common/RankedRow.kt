@@ -133,7 +133,7 @@ fun RankedRow(
 }
 
 /**
- * "Covers": opens a row's peek of up to three pictures (docs/artwork.md, idea 9). Closed by default; the lookup starts only when
+ * "Covers": opens a row's peek of up to three pictures (docs/archive/completed/artwork.md, idea 9). Closed by default; the lookup starts only when
  * the reader opens it. Shows nothing for an album with no such pictures.
  */
 @Composable

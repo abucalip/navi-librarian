@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * The Index theme's 48 icons (docs/INDEX_THEME.md section 6), copied from docs/design/index/icons/IndexIcons.kt.txt: 24 by 24, a 2 stroke, square caps and
+ * The Index theme's 48 icons (docs/plans/INDEX_THEME.md section 6), copied from docs/design/index/icons/IndexIcons.kt.txt: 24 by 24, a 2 stroke, square caps and
  * mitred joins, outline only except play, pause, next, previous and the three dots. Names match [ArtIcons]. Colour comes from the `Icon` tint.
  */
 object IndexIcons {

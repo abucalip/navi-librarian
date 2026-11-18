@@ -86,7 +86,7 @@ public struct InsightMissingRun: Decodable, Equatable, Sendable {
     }
 }
 
-/// One generic insight card (docs/SERVER_V2_CONTRACT.md, `GET /api/insights`). The title and body are the server's words
+/// One generic insight card (docs/contracts/SERVER_V2_CONTRACT.md, `GET /api/insights`). The title and body are the server's words
 /// and are shown as they are; a card with no key or no reasons is dropped by the response, so every shown card is explainable.
 public struct InsightCard: Decodable, Equatable, Sendable, Identifiable {
     public var id: String { kind + "|" + subject.key }

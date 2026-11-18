@@ -16,7 +16,7 @@ private struct PNGTransport: HTTPTransport {
     }
 }
 
-/// Now Playing artwork (docs/artwork.md, ideas 3 to 5): the slideshow switch and the cover the system is given.
+/// Now Playing artwork (docs/archive/completed/artwork.md, ideas 3 to 5): the slideshow switch and the cover the system is given.
 @MainActor
 @Suite("Now Playing artwork", .serialized)
 struct NowPlayingArtworkUITests {

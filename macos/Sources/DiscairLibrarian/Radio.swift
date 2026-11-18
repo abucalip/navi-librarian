@@ -1,6 +1,6 @@
 import Foundation
 
-// Internet radio decoders (docs/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5; macOS stage 2, slice S2-1).
+// Internet radio decoders (docs/contracts/RADIO_PLAYBACK_CONTRACT.md sections 3.1 to 3.5; macOS stage 2, slice S2-1).
 // The server owns "what is playing": these types only read what it says. The Android reference is
 // `android/app/src/main/kotlin/app/discair/model/Radio.kt`. The name `RadioModel` already means "Radio from this"
 // (similar songs), so everything here uses the `Station` and `Radio` prefixes.

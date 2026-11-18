@@ -1,4 +1,4 @@
-"""Album artwork routes (docs/artwork.md, slice 1: server cache and endpoints).
+"""Album artwork routes (docs/archive/completed/artwork.md, slice 1: server cache and endpoints).
 
 ``GET /api/artwork/index?rgid=&release=``: the merged Cover Art Archive index for a MusicBrainz release
 group. ``status`` is ``ok``, ``empty``, ``unavailable`` or ``not_loaded`` (a background build is running;

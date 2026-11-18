@@ -52,7 +52,7 @@ import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Index's Search (Layout.Index). Spec: docs/INDEX_THEME.md step I4; mockup: docs/design/index/pages/library-search.html, frame 3.
+ * Index's Search (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I4; mockup: docs/design/index/pages/library-search.html, frame 3.
  * "Search" as the page head, the square 52dp field with its 2dp outline, the state of the search as a mono line, then three groups with counts: Artist,
  * In your library, Not in your library (last, with Get). The query, the streaming and every tap are the page every theme has (SearchScreen).
  */

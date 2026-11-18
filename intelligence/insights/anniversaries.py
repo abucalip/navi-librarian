@@ -200,7 +200,7 @@ def _when(item: Anniversary) -> str:
 
 
 def anniversary_card(item: Anniversary) -> dict[str, Any]:
-    """Generic insight card (docs/ServerV2.md section 8). States a dated fact; never advice."""
+    """Generic insight card (docs/plans/ServerV2.md section 8). States a dated fact; never advice."""
     years = f"{item.years} year{'s' if item.years != 1 else ''}"
     when = _when(item)
     if item.kind == "album_release":

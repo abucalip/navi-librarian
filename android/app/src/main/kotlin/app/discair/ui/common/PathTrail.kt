@@ -74,7 +74,7 @@ import app.discair.ui.theme.themeShape
 import app.discair.ui.theme.toTween
 
 /*
- * The pieces of the Trail layout of the Paths sheets (docs/pathsredesign.md, sections 3 and 9), shared by the artist and
+ * The pieces of the Trail layout of the Paths sheets (docs/archive/completed/pathsredesign.md, sections 3 and 9), shared by the artist and
  * the album sheet. Sizes are those of docs/design/paths-trail/trail.css, where 1 CSS px is 1 dp. Nothing here reads a
  * request or a model: the sheets give each piece its words and its picture.
  *

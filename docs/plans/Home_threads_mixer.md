@@ -8,8 +8,8 @@ Scope: the **Flow** layout of the Android client (`Layout.Flow`, all seven Flow 
 
 | What | Where |
 |---|---|
-| This plan and design system | `docs/Home_threads_mixer.md` |
-| Mockups (spec): frames T1 to T5 (Threads), M1 to M3 (Shelf mixer), K (components board) | [`design/android-art-themes/flow/home-threads-mixer/home-threads-mixer.html`](design/android-art-themes/flow/home-threads-mixer/home-threads-mixer.html) and `home-threads-mixer.png` beside it |
+| This plan and design system | `docs/plans/Home_threads_mixer.md` |
+| Mockups (spec): frames T1 to T5 (Threads), M1 to M3 (Shelf mixer), K (components board) | [`design/android-art-themes/flow/home-threads-mixer/home-threads-mixer.html`](../design/android-art-themes/flow/home-threads-mixer/home-threads-mixer.html) and `home-threads-mixer.png` beside it |
 | Mockup generator | `design/android-art-themes/_src/build_home_threads_mixer.py` (run from the repo root; inlines `shared.css`, `flow.css` and the icon symbols of `flow/home.html`) |
 | Flow tokens and components (reused) | `design/android-art-themes/flow.css`, `ui/common/FlowKit.kt`, `ui/common/FlowPages.kt`, `ui/common/ArtIcons.kt` |
 | Today's Flow Home | `ui/home/FlowHome.kt`, `ui/home/FlowHomeRules.kt` |
@@ -239,7 +239,7 @@ Examples: "90s post-rock you have not played in a year", "Jazz you play most", "
 - **Song-list cache:** `_fetch_songs` pages the whole Navidrome list on every call, which is too slow for a wheel. Keep the raw `search3` song list in the route module for **120 s** (one shared copy, guarded by the existing `_LOCK` or its own lock, refreshed on expiry). The preview uses it; `result_smart` may keep reading fresh. Keep the raw items too (album name, artist, duration, coverArt are not in the evaluator rows).
 - Errors: invalid rule set `400 {status: "rejected", errors}` (the PUT's shape); Navidrome failure `502 "Could not read the Navidrome song list."`; anything else `502 "Could not preview the smart playlist."`
 - Tests (new `tests/test_smart_preview.py`, direct import of the builder plus the route with a fake librarian): grouping and order; `seed` repeats the same order; `albums` cap; `duration_sec`; `loosen` only under 5 albums and the right counts; no write to the store; the cache serves a second call inside 120 s without paging again and pages again after it; 400 and 502 shapes. Check whether `plays equals 0` matches songs with no `playCount` (absent value). If it does not, say so in the PR and in 6.1; do not change the evaluator in this step.
-- Document the endpoint under "Smart playlists" in `docs/SERVER_V2_CONTRACT.md` and add a fixture `smart_playlist_preview.json`.
+- Document the endpoint under "Smart playlists" in `docs/contracts/SERVER_V2_CONTRACT.md` and add a fixture `smart_playlist_preview.json`.
 
 ### 7.2 S0b: album path kind `album_label`
 

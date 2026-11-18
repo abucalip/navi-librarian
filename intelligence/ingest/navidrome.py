@@ -1,4 +1,4 @@
-"""Navidrome ingest adapter (docs/ServerV2.md section 9, Phase 1 item 4).
+"""Navidrome ingest adapter (docs/plans/ServerV2.md section 9, Phase 1 item 4).
 
 Takes an OpenSubsonic ``getAlbum`` album object (already fetched by the caller) and:
 

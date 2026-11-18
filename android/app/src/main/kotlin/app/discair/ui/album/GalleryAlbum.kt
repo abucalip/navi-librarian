@@ -78,7 +78,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /*
- * Gallery's Album page (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frames 1 and 2.
+ * Gallery's Album page (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/album-artist-genre.html, frames 1 and 2.
  * The cover is a 228dp print; under it the catalogue placard (year, songs, length, quality), the title in Fraunces italic and the artist; then Play, Shuffle and Paths
  * (or Get album, Save), tabs Songs / Info / Reviews / Booklet, and a strip of similar albums. The data and the taps are the page every theme has ([CoverStackAlbumData]).
  */

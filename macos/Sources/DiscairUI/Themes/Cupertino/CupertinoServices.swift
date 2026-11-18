@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-// Settings > Services, the toolbar status button and its popover, and the edit sheet: `docs/redesign.md` section 6, step M9.
+// Settings > Services, the toolbar status button and its popover, and the edit sheet: `docs/plans/redesign.md` section 6, step M9.
 // Mockups: `settings-services--healthy`, `--degraded`, `--librarian-unreachable`, `--edit-sheet`, and the popover in `home--degraded`.
 // The states and sentences come from `ServicesModel`; this file only draws them.
 

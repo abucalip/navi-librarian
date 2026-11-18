@@ -6,7 +6,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * The pure rules behind Soft Brut's Home (docs/ANDROID_ART_THEMES_PROPOSAL.md section 6.1, mockup soft-brut/home): the pile of
+ * The pure rules behind Soft Brut's Home (docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md section 6.1, mockup soft-brut/home): the pile of
  * sleeves, the radio line, the arrival line and the stat strip. No Compose here, so each rule has a unit test.
  */
 object CoverStackHomeRules {

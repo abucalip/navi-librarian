@@ -1,4 +1,4 @@
-"""Deterministic text and identifier normalization for matching (docs/ServerV2.md 6.5).
+"""Deterministic text and identifier normalization for matching (docs/plans/ServerV2.md 6.5).
 
 Pure functions, no I/O. Normalized strings are matching aids only: they decide whether
 two spellings are *candidates* for the same thing, never that they are the same thing.

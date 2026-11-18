@@ -1,4 +1,4 @@
-"""Release to release-group linking for owned albums (docs/ServerV2.md Phase 2, item 1).
+"""Release to release-group linking for owned albums (docs/plans/ServerV2.md Phase 2, item 1).
 
 A release is not a release group: an album the owner holds is one *release*, and every
 reissue, remaster and deluxe edition of it shares one *release group*. This module

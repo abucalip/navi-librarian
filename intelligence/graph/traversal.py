@@ -7,7 +7,7 @@ edges lead to it; the facts behind it (relation, role, source, evidence class, m
 quality) are kept on the hop, never merged away. Results are ordered deterministically
 and resumed with an opaque cursor, so a client can page through them.
 
-Nothing here writes to the store or calls a provider (docs/ServerV2.md, Phase 4 item 6).
+Nothing here writes to the store or calls a provider (docs/plans/ServerV2.md, Phase 4 item 6).
 """
 from __future__ import annotations
 

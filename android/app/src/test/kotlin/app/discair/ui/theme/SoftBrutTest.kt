@@ -7,7 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step S1 of docs/ANDROID_ART_THEMES_PROPOSAL.md: the Soft Brut palette, its layout, its shell rules and its contrast. */
+/** Step S1 of docs/archive/completed/ANDROID_ART_THEMES_PROPOSAL.md: the Soft Brut palette, its layout, its shell rules and its contrast. */
 class SoftBrutTest {
     private val p = Palettes.SoftBrut
     private fun ratio(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color) = Contrast.ratio(a, b)
@@ -85,7 +85,7 @@ class SoftBrutTest {
         assertEquals(FontPairs.Discair.id, AppearanceRules.sanitizeFont(FontPairs.Discair.id)) // choosing the theme changes no stored font
     }
 
-    // Step P1 of docs/palettes.md: the four new day palettes (section 4.1).
+    // Step P1 of docs/archive/completed/palettes.md: the four new day palettes (section 4.1).
     private val day = listOf(Palettes.SoftBrutMint, Palettes.SoftBrutPeach, Palettes.SoftBrutSky, Palettes.SoftBrutLemon)
     private fun hex(c: androidx.compose.ui.graphics.Color) = "%02X%02X%02X".format((c.red * 255).toInt(), (c.green * 255).toInt(), (c.blue * 255).toInt())
 
@@ -143,7 +143,7 @@ class SoftBrutTest {
         }
     }
 
-    // Step P2 of docs/palettes.md: the three night palettes (sections 3 and 4.1, 4.3).
+    // Step P2 of docs/archive/completed/palettes.md: the three night palettes (sections 3 and 4.1, 4.3).
     private val night = listOf(Palettes.SoftBrutMidnightMint, Palettes.SoftBrutPlumPeach, Palettes.SoftBrutNavySky)
 
     @Test fun nightPalettesAreListedInTheDarkListAndKeepTheThemeShape() {

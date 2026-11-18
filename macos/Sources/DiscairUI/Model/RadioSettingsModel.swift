@@ -13,7 +13,7 @@ public protocol RadioSettingsSource: Sendable {
 }
 extension LibrarianClient: RadioSettingsSource {}
 
-/// Settings › Radio (docs/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 3): the server's scrobbling switch, the app address (read only)
+/// Settings › Radio (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2-4 item 3): the server's scrobbling switch, the app address (read only)
 /// and a logo Change and Reset for each station. Everything is read when the tab opens; nothing polls.
 @MainActor
 @Observable

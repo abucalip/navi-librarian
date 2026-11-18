@@ -1,6 +1,6 @@
 /* Discair Android redesign · tokens for the four themes and the mockup styles.
    Only .theme-day (Day · Sand) is rendered as mockups. The Night, Tape and Sheet token blocks are the specified values
-   from docs/redesign.md section 7; they are not rendered or visually verified. */
+   from docs/plans/redesign.md section 7; they are not rendered or visually verified. */
 @font-face { font-family: "Peace Sans"; src: url("../../../../android/app/src/main/res/font/peace_sans_400.ttf"); }
 @font-face { font-family: "Open Sans"; font-weight: 400; src: url("../../../../android/app/src/main/res/font/open_sans_400.ttf"); }
 @font-face { font-family: "Open Sans"; font-weight: 500; src: url("../../../../android/app/src/main/res/font/open_sans_500.ttf"); }

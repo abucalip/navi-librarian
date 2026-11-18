@@ -49,7 +49,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 /**
- * Library stats (docs/redesign.md 8.2, mockup `stats`): range chips, the collection over time with the selected value above the
+ * Library stats (docs/plans/redesign.md 8.2, mockup `stats`): range chips, the collection over time with the selected value above the
  * plot, own and play by decade, shelf life and when you listen. The library list is read once and shared by the charts.
  */
 @Composable

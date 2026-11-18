@@ -480,7 +480,7 @@ def similar_items(
     # Commit the fetched records when every provider answered, even if a tag lookup was rate-limited:
     # tags are cached on their own and the ranking is recomputed on every request, so the records are
     # whole. A failed provider leaves the previous entry in place (contract 5.2). Without this, a gate
-    # that keeps refusing tag lookups made every page fetch the records again (docs/efficiency.md, M2).
+    # that keeps refusing tag lookups made every page fetch the records again (docs/plans/efficiency.md, M2).
     if fetched and complete and remaining() > 0 and not cancelled.is_set():
         write_cached(network.cache_write, key, records, time.time())
     if complete and not tags_hit_deadline:

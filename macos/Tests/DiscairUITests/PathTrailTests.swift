@@ -3,7 +3,7 @@ import Testing
 import DiscairLibrarian
 @testable import DiscairUI
 
-/// The Paths sheet's Trail rules (docs/MACOS_PATHS_BOOKLET.md, section 4.2): links, groups, role lines, the filter and the order.
+/// The Paths sheet's Trail rules (docs/plans/MACOS_PATHS_BOOKLET.md, section 4.2): links, groups, role lines, the filter and the order.
 @Suite @MainActor struct PathTrailTests {
     // MARK: Builders
 

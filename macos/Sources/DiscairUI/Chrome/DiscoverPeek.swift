@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// Discover's covers peek (docs/artwork.md, idea 9): up to three covers of an album, the Back, the first booklet page and the
+/// Discover's covers peek (docs/archive/completed/artwork.md, idea 9): up to three covers of an album, the Back, the first booklet page and the
 /// Medium. It opens while its row is hovered and stays open after a "Covers" click, which is the keyboard and VoiceOver route.
 /// The index is read only once it is open, so the lists stay quick. Nothing is drawn while loading, when the album has none of
 /// these pictures, or when the lookup fails; no album without a release group shows the control at all.

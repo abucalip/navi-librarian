@@ -1,7 +1,7 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-// Discair for Mac: logic package (contract docs/MACOS_CLIENT_CONTRACT.md, phase M1).
+// Discair for Mac: logic package (contract docs/contracts/MACOS_CLIENT_CONTRACT.md, phase M1).
 // No third-party dependencies. The app shell (Xcode project) arrives in M4 and depends on these products.
 let package = Package(
     name: "Discair",

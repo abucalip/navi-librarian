@@ -1,7 +1,7 @@
 import DiscairLibrarian
 import SwiftUI
 
-/// A small "N covers" button on the album cover (docs/artwork.md, idea 7), shown only when the album's release group has two or
+/// A small "N covers" button on the album cover (docs/archive/completed/artwork.md, idea 7), shown only when the album's release group has two or
 /// more Front images. It opens a sheet to pick which cover the app uses; the server stores the pick and every screen follows it.
 /// Nothing is drawn while the index is pending, empty or failed, and nothing is claimed about the album.
 struct EditionPickerButton: View {

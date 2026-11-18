@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 
 /**
- * The Discover row peek (docs/artwork.md, idea 9): up to three thumbnails of an album a row shows, the Back, the first booklet
+ * The Discover row peek (docs/archive/completed/artwork.md, idea 9): up to three thumbnails of an album a row shows, the Back, the first booklet
  * page and the Medium, in that order. Chosen by type only; taste and play data play no part. The row asks for them only when
  * the reader opens its covers, so lists stay fast.
  */

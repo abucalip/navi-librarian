@@ -7,7 +7,7 @@ stops once enough usable listens are in hand, or when the floor of ``max_days`` 
 Listens seen in more than one window or source are counted once.
 
 Pure apart from the injected window readers: no provider is called here directly, and nothing
-is logged except aggregate counts. See docs/engine2.md (Phase 4).
+is logged except aggregate counts. See docs/plans/engine2.md (Phase 4).
 """
 from __future__ import annotations
 

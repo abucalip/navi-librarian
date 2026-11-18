@@ -14,7 +14,7 @@ and feed ownership, editions, taste and the knowledge pages; reusing them would 
 non-owned album look owned. Source is ``musicbrainz_dump_releases`` so the main slice load, which
 replaces ``musicbrainz_dump`` edges, never removes these, and this step replaces only its own.
 
-Scope, measured on the owner's real store (2026-11-07, docs/ServerV2.md Phase 7):
+Scope, measured on the owner's real store (2026-11-07, docs/plans/ServerV2.md Phase 7):
 
 * **Credited recordings:** recordings an owned artist has a performer or producer credit on
   (``CREDIT_ROLES``). Writing, engineering, mixing and the like are not sideman work.

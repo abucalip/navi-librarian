@@ -39,14 +39,14 @@ public final class ArtworkStore {
 
     @ObservationIgnored private let media: MediaCache?
 
-    /// Album images from the Librarian's artwork routes (docs/artwork.md, slice 2). Own memory cache, so a long booklet
+    /// Album images from the Librarian's artwork routes (docs/archive/completed/artwork.md, slice 2). Own memory cache, so a long booklet
     /// never pushes the covers out; a request for the same image already under way is joined, not repeated.
     @ObservationIgnored private let albumCache: NSCache<NSString, NSImage> = {
         let c = NSCache<NSString, NSImage>(); c.countLimit = 120; c.totalCostLimit = 96 * 1024 * 1024; return c
     }()
     @ObservationIgnored private var albumLoads: [String: AlbumLoad] = [:]
     @ObservationIgnored private var indexes: [String: ArtworkIndex] = [:]
-    /// The owner's cover picks (docs/artwork.md, idea 7), library album id to artwork image id. Views read it, so a new pick redraws.
+    /// The owner's cover picks (docs/archive/completed/artwork.md, idea 7), library album id to artwork image id. Views read it, so a new pick redraws.
     public private(set) var choices: [String: Int] = [:]
     /// Release group of an album by artist and title, found once per album (Now Playing has no album page to read it from).
     @ObservationIgnored private var releaseGroups: [String: String] = [:]
@@ -170,7 +170,7 @@ public final class ArtworkStore {
         return result
     }
 
-    /// The artist collage (docs/artwork.md, idea 8): the session and band pictures of up to `collageAlbumLimit` of the artist's albums.
+    /// The artist collage (docs/archive/completed/artwork.md, idea 8): the session and band pictures of up to `collageAlbumLimit` of the artist's albums.
     /// Indexes are asked one at a time (the server paces its own provider calls). An album whose index is empty, unavailable or still
     /// building after the usual waits adds nothing. Empty when there are too few pictures, so the page keeps its usual hero.
     public func artistCollage(_ sources: [CollageSource], minimum: Int = collageMinimum) async -> [CollageEntry] {
@@ -200,7 +200,7 @@ public final class ArtworkStore {
         return index
     }
 
-    /// An owned album's cover as every screen shows it: the owner's pick (docs/artwork.md, idea 7), else the library cover (the song's
+    /// An owned album's cover as every screen shows it: the owner's pick (docs/archive/completed/artwork.md, idea 7), else the library cover (the song's
     /// own cover id, then the album's), with the server's best front when the library has none or only a small one.
     public func libraryCover(albumID: String?, coverArt: String?, px: Int) async -> NSImage? {
         var image: NSImage?

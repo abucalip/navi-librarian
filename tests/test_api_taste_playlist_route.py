@@ -1,4 +1,4 @@
-"""Route and body tests for POST /api/playlists/taste (docs/redesign.md A8b item 1)."""
+"""Route and body tests for POST /api/playlists/taste (docs/plans/redesign.md A8b item 1)."""
 import random
 import unittest
 

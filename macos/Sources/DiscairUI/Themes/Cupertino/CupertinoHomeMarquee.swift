@@ -1,7 +1,7 @@
 import DiscairNavidrome
 import SwiftUI
 
-// The shelves and the summary line of the "Marquee" Home (`docs/MACOS_HOME_MARQUEE_PLAN.md` sections 2 to 3.4).
+// The shelves and the summary line of the "Marquee" Home (`docs/archive/completed/MACOS_HOME_MARQUEE_PLAN.md` sections 2 to 3.4).
 // Mockups: `docs/design/macos-home-marquee/mockups.html`. The rules and words come from `HomeScreen`; these views draw them.
 
 /// Covers for tiles whose album may not be in the library (a Get, a radio song) or is known only by its Navidrome id.

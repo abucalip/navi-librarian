@@ -40,7 +40,7 @@ import app.discair.ui.theme.LocalPalette
 import app.discair.ui.theme.Palette
 
 /*
- * Index's Downloads page (I6). Spec: docs/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/downloads-stats-server.html, frame 1.
+ * Index's Downloads page (I6). Spec: docs/plans/INDEX_THEME.md sections 7 and 10; mockup: docs/design/index/pages/downloads-stats-server.html, frame 1.
  * DownloadsScreen reaches this behind isIndex(); the stream, the order, the actions (Play, Use next source, Try again, Dismiss) and the confirmation are the
  * Standard page's. Active, Done and Failed are tabs over the same list, counted on the phone (section 11a: served). The state is always words.
  */

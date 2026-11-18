@@ -80,7 +80,7 @@ fun InsightsPage(
     ) {
         if (showTaste) item(key = "taste") { TasteCardView(taste?.profiles, tasteLoaded) }
         if (fl) {
-            // Flow (docs/Discover_page.md 4.6, frame B4): no lens headings. The cards carry their lens as a tag; lenses with nothing fold into one note.
+            // Flow (docs/archive/completed/Discover_page.md 4.6, frame B4): no lens headings. The cards carry their lens as a tag; lenses with nothing fold into one note.
             val off = mutableListOf<String>()
             val empty = mutableListOf<String>()
             for (kind in lensKinds(response)) {

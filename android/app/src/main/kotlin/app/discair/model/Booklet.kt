@@ -1,7 +1,7 @@
 package app.discair.model
 
 /**
- * What the album's Booklet tab shows (docs/artwork.md, idea 2): the pages of the one release with the most booklet pages, in the
+ * What the album's Booklet tab shows (docs/archive/completed/artwork.md, idea 2): the pages of the one release with the most booklet pages, in the
  * server's order (never mixed across editions), then the album's Sticker, Obi and Poster, each once. An album with no booklet
  * has no tab, even when it has a Poster: those follow the pages, they are not a booklet of their own. Chosen by type only.
  */

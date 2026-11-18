@@ -2,7 +2,7 @@ import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 
-/// What each module of the redesigned Cupertino Home says in each state (`docs/redesign.md` section 5.1, step M8). Pure: the
+/// What each module of the redesigned Cupertino Home says in each state (`docs/plans/redesign.md` section 5.1, step M8). Pure: the
 /// figures come from `HomeDashboard` (M5), the taste profiles, the insight lenses and the server's own answers, and this turns
 /// them into the state a module draws and the words it uses. No SwiftUI, no network. The views only draw these values.
 ///

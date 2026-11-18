@@ -7,7 +7,7 @@ paths, ids or credentials).
 
     python scripts/server_v2_phase6_exit.py --store ~/discair-mb-test/intelligence.sqlite3 --out phase6_exit.json
 
-Checks (docs/ServerV2.md, Phase 6 exit and the exit lines of items 5 and 6):
+Checks (docs/plans/ServerV2.md, Phase 6 exit and the exit lines of items 5 and 6):
   1. profiles reproducible: listens built from the store's owned recordings give byte-identical profiles,
      monthly snapshot, listening-context profiles and obscurity profile on a repeat run and on shuffled
      input; saving the unchanged profile again writes nothing

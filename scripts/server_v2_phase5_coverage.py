@@ -6,7 +6,7 @@ the copy is deleted afterwards. Output is aggregate counts only (no titles, path
 
     python scripts/server_v2_phase5_coverage.py --store ~/discair-mb-test/intelligence.sqlite3 --out phase5_coverage.json
 
-For each path kind (docs/ServerV2.md, Phase 5 item 4) it reports how many owned artists reach at least
+For each path kind (docs/plans/ServerV2.md, Phase 5 item 4) it reports how many owned artists reach at least
 one and at least three evidence-backed stops, the time taken and the projected precompute time, and
 applies the Phase 5 kill rule: a kind that is mostly empty or needs more than a day is dropped. A kind
 whose inputs are absent from the store (for example before the slice is re-imported with the

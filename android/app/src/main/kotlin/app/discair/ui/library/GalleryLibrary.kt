@@ -68,7 +68,7 @@ import app.discair.ui.player.LocalPlayActions
 import app.discair.ui.theme.LocalPalette
 
 /*
- * Gallery's Library (Layout.Gallery). Spec: docs/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/library-search.html, frames 1 and 2.
+ * Gallery's Library (Layout.Gallery). Spec: docs/archive/completed/GALLERY_THEME.md section 10; mockup: docs/design/gallery/pages/library-search.html, frames 1 and 2.
  * The count as the catalogue line, "Library" as the large title, tabs Artists / Albums, the order line with Sort, then artists as rows with photo prints or
  * albums as two columns of captioned prints. The data, the paging, the sort and every tap are the page every theme has (LibraryScreen).
  */

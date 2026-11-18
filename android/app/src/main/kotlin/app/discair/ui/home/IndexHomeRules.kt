@@ -3,7 +3,7 @@ package app.discair.ui.home
 import app.discair.ui.common.IndexDatum
 
 /**
- * The pure rules behind Index's Home (docs/INDEX_THEME.md section 9, mockup index/pages/home): the head's count, the catalogue numbers ("01"), which albums
+ * The pure rules behind Index's Home (docs/plans/INDEX_THEME.md section 9, mockup index/pages/home): the head's count, the catalogue numbers ("01"), which albums
  * the strip shows, the lead's data list, the play counts and the insight's numeral. No Compose here, so each rule has a unit test. The radio words
  * (plates, last heard, "Heard on") are [GalleryHomeRules], shared because they are the same words.
  */

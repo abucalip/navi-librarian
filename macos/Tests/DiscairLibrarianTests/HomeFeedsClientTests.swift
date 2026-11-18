@@ -4,7 +4,7 @@ import DiscairCore
 @testable import DiscairLibrarian
 
 /// The feeds behind the redesigned Home. The radio and popularity routes exist on the server; the insight-refresh status route
-/// and `listens_by_day` (D2, D3) are proposals, so those answers are tested from the contract in `docs/SERVER_V2_CONTRACT.md`.
+/// and `listens_by_day` (D2, D3) are proposals, so those answers are tested from the contract in `docs/contracts/SERVER_V2_CONTRACT.md`.
 @Suite("Home feeds client") struct HomeFeedsClientTests {
     let base = URL(string: "https://lib.example.ts.net")!
     let cred = Credential(username: "owner", password: "s3cret-pw-1234")

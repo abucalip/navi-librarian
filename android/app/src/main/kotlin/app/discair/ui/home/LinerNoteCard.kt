@@ -54,7 +54,7 @@ private data class LinerNote(val picture: ArtworkImage, val choice: LinerNoteCho
 private const val PREFS = "discair_liner_note"
 
 /**
- * Home's liner note of the day (docs/artwork.md, idea 12): one picture from an album in the Home picks, cropped to a square by a fixed
+ * Home's liner note of the day (docs/archive/completed/artwork.md, idea 12): one picture from an album in the Home picks, cropped to a square by a fixed
  * centre rule, with "Which album?" revealing the album on tap. Read-only. Nothing shows while loading, when no pick has a picture for
  * the day, or when the lookup fails.
  */

@@ -1,7 +1,7 @@
 import DiscairCore
 import SwiftUI
 
-/// Settings, in seven tabs (`docs/redesign.md` sections 5.3 and 6.2): Services (the connected services, their health and setup,
+/// Settings, in seven tabs (`docs/plans/redesign.md` sections 5.3 and 6.2): Services (the connected services, their health and setup,
 /// `CupertinoServices`), Playback, Radio (`CupertinoRadioSettings`), Blocklist (`CupertinoBlocklist`), Appearance (`CupertinoAppearance`), Music folder and Profiles. The cards inside Playback, Music folder and Profiles keep their form until step M10.
 /// Passwords go to the Keychain and are never shown or read back.
 struct CupertinoSettings: View {

@@ -141,7 +141,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     // Playback is for albums in the library only; the id is the Navidrome album id the page already carries.
     val albumId = (info?.id ?: route.id)?.takeIf { owned && it.isNotBlank() }
     val play = app.discair.ui.player.LocalPlayActions.current
-    // Edition picker (docs/artwork.md, idea 7): the owner's pick is stored on the server, which serves it on every screen.
+    // Edition picker (docs/archive/completed/artwork.md, idea 7): the owner's pick is stored on the server, which serves it on every screen.
     val editions = remember(artIndex) { app.discair.model.coverEditions(artIndex) }
     var choice by remember(info?.artworkChoice) { mutableStateOf(info?.artworkChoice) }
     var showEditions by androidx.compose.runtime.saveable.rememberSaveable(route) { mutableStateOf(false) }

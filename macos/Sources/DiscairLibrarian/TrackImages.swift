@@ -1,6 +1,6 @@
 import Foundation
 
-/// How many Track images the queue shows at most (docs/artwork.md, idea 6).
+/// How many Track images the queue shows at most (docs/archive/completed/artwork.md, idea 6).
 public let trackImageLimit = 3
 
 extension ArtworkIndex {

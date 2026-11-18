@@ -11,7 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** docs/INDEX_THEME.md step I4: the words and numbers of Index's Discover, Library and Search, and the I0 `plays` field they read (section 11a.3). */
+/** docs/plans/INDEX_THEME.md step I4: the words and numbers of Index's Discover, Library and Search, and the I0 `plays` field they read (section 11a.3). */
 class IndexListsRulesTest {
     @Test fun discoverTabsFollowTheListOrderSoASwipeMovesTheSameWay() {
         assertEquals(DiscoveryList.entries.size, IndexListsRules.tabs.size)

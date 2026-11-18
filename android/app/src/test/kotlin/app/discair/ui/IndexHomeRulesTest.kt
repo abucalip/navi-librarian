@@ -10,7 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** docs/INDEX_THEME.md section 9: the pure rules behind Index's Home. */
+/** docs/plans/INDEX_THEME.md section 9: the pure rules behind Index's Home. */
 class IndexHomeRulesTest {
     @Test fun theCountIsTheSourceSizeOrADashWhileUnknown() {
         assertEquals("12", IndexHomeRules.count(12))

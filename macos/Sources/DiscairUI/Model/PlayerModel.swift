@@ -129,7 +129,7 @@ public final class PlayerModel {
     @ObservationIgnored private var urls: StreamURLBuilder?
     @ObservationIgnored let output: AudioOutput
 
-    // MARK: Live radio (stage 2, S2-2; rules in docs/RADIO_PLAYBACK_PROPOSAL.md S2.6)
+    // MARK: Live radio (stage 2, S2-2; rules in docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2.6)
 
     /// The station that is playing, or nil. Never saved with the queue.
     public internal(set) var live: LiveSession?

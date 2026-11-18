@@ -2,7 +2,7 @@
 
 **Status:** Draft for owner review. Read-only measurement; no server code, API or client contract changed.
 **Baseline:** GitHub `main` at `b266b136` (2026-11-05). Measured against the owner's live Navidrome on 2026-11-05.
-**Plan:** [`ServerV2.md`](ServerV2.md) section 9, Phase 0. Work items below use the plan's numbering.
+**Plan:** [`ServerV2.md`](../../plans/ServerV2.md) section 9, Phase 0. Work items below use the plan's numbering.
 
 ## Summary
 

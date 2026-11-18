@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * The pure rules behind Gallery's Home (docs/GALLERY_THEME.md section 9, mockup gallery/pages/home): the pager label, the catalogue line over the hero,
+ * The pure rules behind Gallery's Home (docs/archive/completed/GALLERY_THEME.md section 9, mockup gallery/pages/home): the pager label, the catalogue line over the hero,
  * the words for when a station was last heard, and the Radio section's rows. No Compose here, so each rule has a unit test.
  */
 object GalleryHomeRules {

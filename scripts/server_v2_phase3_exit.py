@@ -7,7 +7,7 @@ history is not read or changed. Output is aggregate counts only (no titles, path
 
     python scripts/server_v2_phase3_exit.py --out phase3_exit.json
 
-Checks (docs/ServerV2.md, Phase 3 exit and item 6):
+Checks (docs/plans/ServerV2.md, Phase 3 exit and item 6):
   1. Forgotten Gems on the real library: states how many albums carry history, returns cards or
      an explicit empty reason, is identical across two runs and across shuffled input, and only
      ever names albums that are in the library

@@ -7,7 +7,7 @@ fixed number of passes over those plain files, so nothing is decompressed twice)
 transaction). The wrapper in :mod:`intelligence.jobs.runner` supplies visible state and
 last-known-good behaviour; progress records each finished stage so a re-run skips the download.
 
-The owner-approved budgets (docs/ServerV2.md, Phase 4) are checked with measured numbers and
+The owner-approved budgets (docs/plans/ServerV2.md, Phase 4) are checked with measured numbers and
 recorded in the run's progress. A breach before the load (entity cap hit, import time spent,
 scratch ceiling passed) stops without writing, outcome ``fallback_api_only``, which is the
 Phase 4 kill criterion. A breach seen only after the load (slice size, import time) is recorded

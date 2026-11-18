@@ -144,7 +144,7 @@ def _rows(handle, columns: tuple[str, ...]) -> Iterator[dict[str, str | None]]:
 
 # ---------------------------------------------------------------------------------------------
 # Decompress once: the wanted tables are written to plain files in one pass over the archive, and
-# every later pass reads those files (docs/ServerV2.md Phase 4; owner direction 2026-11-06).
+# every later pass reads those files (docs/plans/ServerV2.md Phase 4; owner direction 2026-11-06).
 
 def parallel_available() -> bool:
     """True when the optional ``indexed_bzip2`` package is installed (multi-core bzip2 block decoding).

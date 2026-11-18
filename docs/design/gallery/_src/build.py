@@ -7,7 +7,7 @@
 Design tooling only: nothing imports it and no test collects it. Inputs: ../tokens.json (colours, type, motion)
 and ../gallery.css (component looks). Outputs: ../palettes.css, ../icons/*.svg, ../icons/GalleryIcons.kt.txt,
 ../pages/<name>.html and .png. PNGs need Google Chrome at its default macOS path; the HTML is written either way.
-Spec: docs/GALLERY_THEME.md.
+Spec: docs/archive/completed/GALLERY_THEME.md.
 """
 import json, os, subprocess, sys
 
@@ -600,7 +600,7 @@ def page_html(name):
     else:
         body = '<div class="frames">' + "".join(frame(*f) for f in fn()) + "</div>"
     sub = ("Android, 360 × 780 dp, 1 px = 1 dp. Drawn in Day 1 (Gallery · White) unless a frame names another palette. "
-           "Covers, artist photos and station logos are stand-ins. Spec: docs/GALLERY_THEME.md.")
+           "Covers, artist photos and station logos are stand-ins. Spec: docs/archive/completed/GALLERY_THEME.md.")
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>Gallery · {title}</title><link rel="stylesheet" href="{FONTS}"><link rel="stylesheet" href="../palettes.css"><link rel="stylesheet" href="../gallery.css"></head>'
             f'<body><div class="doc"><h1>Gallery · {title}</h1><p>{sub}</p></div>{body}</body></html>')

@@ -1,4 +1,4 @@
-"""Listens per UTC day for the Home "Listens last 7 days" stat (redesign D2, docs/SERVER_V2_CONTRACT.md).
+"""Listens per UTC day for the Home "Listens last 7 days" stat (redesign D2, docs/contracts/SERVER_V2_CONTRACT.md).
 
 A pure builder plus one live ``taste_listens_by_day`` row in ``insights`` (no migration), saved by the taste
 refresh from the listens it already read. Nothing here fetches data, calls a provider or touches ranking.

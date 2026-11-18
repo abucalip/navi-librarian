@@ -11,7 +11,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * Taste profiles (docs/SERVER_V2_CONTRACT.md, `GET /api/insights/taste`). The server writes the headline and lists every
+ * Taste profiles (docs/contracts/SERVER_V2_CONTRACT.md, `GET /api/insights/taste`). The server writes the headline and lists every
  * shift; the app draws them as given. It never composes prose, never states a shift that is not listed, and shows a
  * window or dimension the server flagged low-sample as progress, not as a finding. Parsing is forgiving: an unknown or
  * missing flag means "not sound".

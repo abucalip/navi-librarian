@@ -12,7 +12,7 @@ Honesty rules
 * a subject is judged only by its own events: a track skip never creates an album or artist entry;
 * a malformed event is rejected with a reason and never stops the rest of its batch, except a batch
   larger than ``MAX_BATCH``, which is rejected as a whole;
-* ``event_id`` is a client-generated UUID (docs/ServerV2.md, D-027). Anything else is ``bad_event_id``.
+* ``event_id`` is a client-generated UUID (docs/plans/ServerV2.md, D-027). Anything else is ``bad_event_id``.
   It is normalised to lowercase, as ``mbid`` is, so the same UUID in either case is one event;
 * duplicate ``event_id`` values are idempotent: the first accepted copy is kept, so replaying a batch
   changes nothing;

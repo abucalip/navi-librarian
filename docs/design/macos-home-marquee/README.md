@@ -1,7 +1,7 @@
 # macOS Home mockups, "Marquee" layout
 
 The spec for the artwork-led Home of the Mac client. The owner chose it on 2026-11-13. The build steps are in
-[`../../MACOS_HOME_MARQUEE_PLAN.md`](../../MACOS_HOME_MARQUEE_PLAN.md).
+[`../../MACOS_HOME_MARQUEE_PLAN.md`](../../archive/completed/MACOS_HOME_MARQUEE_PLAN.md).
 
 | File | What it is |
 |---|---|

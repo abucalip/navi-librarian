@@ -1,4 +1,4 @@
-"""Derivation generation and per-resource ``data_version`` counters (docs/ServerV2.md 6.4).
+"""Derivation generation and per-resource ``data_version`` counters (docs/plans/ServerV2.md 6.4).
 
 The generation stamps every derived row. Changing matching logic bumps it, and derived
 tables rebuild from observations without refetching. A ``data_version`` per

@@ -1,4 +1,4 @@
-"""Album paths fixtures keep the contract the builders promise (docs/ALBUM_PATHS_PROPOSAL.md, "Rules").
+"""Album paths fixtures keep the contract the builders promise (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, "Rules").
 
 Recorded through GET /api/knowledge/paths (type=release) and GET /api/sonic/album-neighbours
 in android/contract-fixtures/librarian. These tests read the recorded responses only; they do not

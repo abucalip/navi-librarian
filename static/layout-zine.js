@@ -1,4 +1,4 @@
-/* Zine Spread layout behaviour (D-024, docs/BRUT_ROUND3_PLAN.md, phase P1). Loaded after static/app.js; it defines functions that app.js
+/* Zine Spread layout behaviour (D-024, docs/plans/BRUT_ROUND3_PLAN.md, phase P1). Loaded after static/app.js; it defines functions that app.js
    calls through zineHook() and a few listeners. Every function returns at once unless <html data-layout="zine"> is set, and every
    element it fills is hidden by default and shown only by static/layouts.css, so no other theme changes. Nothing here makes a request
    of its own except one read of the existing /api/library/artists list (how many records of the lead story's artist are owned);

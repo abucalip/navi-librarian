@@ -19,7 +19,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step I6 of docs/INDEX_THEME.md: the words and choices behind Index's sheets, Downloads, Stats, Server, Settings, Appearance and Equalizer. */
+/** Step I6 of docs/plans/INDEX_THEME.md: the words and choices behind Index's sheets, Downloads, Stats, Server, Settings, Appearance and Equalizer. */
 class IndexStatusRulesTest {
     private fun job(status: String, progress: Map<String, Double> = emptyMap()) = AcquisitionJob(
         "Bark Psychosis", "Hex", status, 1.0, null,

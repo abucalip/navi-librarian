@@ -1,5 +1,5 @@
 /*
- * Gallery theme: the measurement sheet for every component (spec: docs/GALLERY_THEME.md).
+ * Gallery theme: the measurement sheet for every component (spec: docs/archive/completed/GALLERY_THEME.md).
  * 1 CSS px = 1 dp. Colours come only from the palette variables in palettes.css (generated from tokens.json),
  * so every palette draws the same components. The last block (stand-ins) is mockup artwork, not for the app.
  */
