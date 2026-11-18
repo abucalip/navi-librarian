@@ -141,7 +141,8 @@ private fun StepRow(s: AlbumStep, i: Int, cover: Int, modifier: Modifier, onOpen
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(s.album, style = IndexType.rowTitle(), color = p.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 IndexLabel(listOfNotNull(s.artist.ifBlank { null }, s.year?.toString()).joinToString(" · "))
-                if (s.detail.isNotBlank()) Text(s.detail, style = IndexType.body().copy(fontSize = 13.5.sp, lineHeight = 19.sp), color = p.text, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                // The server's line, unless it only repeats the artist the meta line already says.
+                if (s.detail.isNotBlank() && !s.detail.trim().equals(s.artist.trim(), ignoreCase = true)) Text(s.detail, style = IndexType.body().copy(fontSize = 13.5.sp, lineHeight = 19.sp), color = p.text, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 s.play?.let { IndexLabel(it, color = p.accent) }
                 IndexLabel(if (s.owned) "In library" else "Not in library", color = if (s.owned) p.ok else p.textMuted)
             }
