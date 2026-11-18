@@ -42,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -192,11 +195,34 @@ private fun RowScope.IndexCell(palette: Palette, label: String, icon: ImageVecto
 fun IndexMiniPlayer(state: PlayerUiState, controller: PlayerController, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val item = state.current ?: return
     val showTime = state.status == null && !state.buffering && !item.isRadio
+    // The strip's cover is where Now Playing's cover flies from (motion #8): measured only while the strip is at rest.
+    val measure = Modifier.onGloballyPositioned { c -> if (IndexFlight.dock.value == 0f && !IndexFlight.dock.isRunning) IndexFlight.mini = c.boundsInWindow() }
     IndexStrip(
         title = item.title, meta = IndexShellRules.stripMeta(playerSubtitle(state), state.positionMs, state.durationMs, showTime),
-        fraction = IndexShellRules.progress(state.positionMs, state.durationMs), playing = state.isPlaying, onOpen = onOpen, onToggle = controller::playPause, modifier = modifier,
-        cover = { Cover(item.coverUrl.ifBlank { null }, Modifier.size(IndexRules.STRIP_COVER.dp), rect = true) },
+        fraction = IndexShellRules.progress(state.positionMs, state.durationMs), playing = state.isPlaying, onOpen = onOpen, onToggle = controller::playPause,
+        modifier = modifier.indexStripMotion(),
+        cover = { Cover(item.coverUrl.ifBlank { null }, measure.size(IndexRules.STRIP_COVER.dp), rect = true) },
     )
+}
+
+/**
+ * Index's one player flight (docs/INDEX_THEME.md 8.2 #8): the strip cover's place, the player's cover and the flight's progress. Its own instance of the shape
+ * Gallery uses, so the two themes never share state.
+ */
+val IndexFlight = GalleryPlayerFlight()
+
+/**
+ * Motion #8's strip: while Now Playing is up the strip slides down under the bar (which is drawn after it and stays), and slides back up over the player's
+ * fall (320ms, Firm). Nothing fades.
+ */
+@Composable
+fun Modifier.indexStripMotion(): Modifier {
+    val flight = IndexFlight
+    val reduced = rememberReducedMotion()
+    LaunchedEffect(flight.playerUp) {
+        if (flight.playerUp) flight.dock.snapTo(1f) else flight.dock.animateTo(0f, IndexMotion.firm(IndexMotion.PLAYER_FALL_MS, reduced))
+    }
+    return graphicsLayer { translationY = flight.dock.value * size.height }
 }
 
 /** The strip's drawing, without the player: what the mini player and the components board share. */
