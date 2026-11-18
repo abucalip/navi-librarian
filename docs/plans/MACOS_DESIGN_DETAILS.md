@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: plan only, no code yet (2026-11-18). Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 built (2026-11-18, PR open); D2 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 

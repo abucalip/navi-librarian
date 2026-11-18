@@ -12,10 +12,69 @@ enum ArtistSpacing {
     static let beforeHeading: CGFloat = 44
     static let afterHeading: CGFloat = 32
 }
-enum CupertinoArtistLayout { static let bannerHeight: CGFloat = 356 }
+enum CupertinoArtistLayout {
+    static let bannerHeight: CGFloat = 356
+    /// The hero's height once the page has scrolled (D1.4): back button, small picture, title and Play on one line.
+    static let compactHeight: CGFloat = 96
+    /// The scroll distance over which the hero shrinks from `bannerHeight` to `compactHeight`.
+    static let span: CGFloat = bannerHeight - compactHeight
+    /// Fade at the hero's bottom edge, so the sidebar gutter has no hard step (D1.2); shorter when compact.
+    static let fade: CGFloat = 40
+
+    /// The hero follows the scroll offset directly (no timer, no repeating animation). With Reduce Motion it snaps between the two heights.
+    static func progress(offset: CGFloat, reduceMotion: Bool) -> CGFloat {
+        let p = min(max(offset / span, 0), 1)
+        return reduceMotion ? (p > 0.5 ? 1 : 0) : p
+    }
+    static func height(progress p: CGFloat) -> CGFloat { bannerHeight - span * p }
+}
+
+extension View {
+    /// Fades the hero's colour field out over its last stretch, to whatever lies under it (`CU.content`).
+    func heroBottomFade(progress p: CGFloat) -> some View {
+        let f = CupertinoArtistLayout.fade - 24 * p
+        return mask(alignment: .top) {
+            VStack(spacing: 0) {
+                Rectangle()
+                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: f)
+            }
+        }
+    }
+    /// Reports how far the scroll view has moved down from its resting position.
+    func reportsHeroOffset(_ offset: Binding<CGFloat>) -> some View {
+        onScrollGeometryChange(for: CGFloat.self) { max(0, $0.contentOffset.y + $0.contentInsets.top) } action: { _, v in offset.wrappedValue = v }
+    }
+}
+
+/// The compact hero: back button, small picture, title and Play on one line, left of the toolbar's controls.
+struct CupertinoCompactHero<Picture: View>: View {
+    let backTitle: String
+    let title: String
+    let back: () -> Void
+    let play: (() -> Void)?
+    @ViewBuilder let picture: Picture
+    let trailingInset: CGFloat
+
+    var body: some View {
+        HStack(spacing: 16) {
+            BackButton(title: backTitle, onDark: true, action: back)
+            picture.frame(width: 36, height: 36)
+            Text(title).font(CU.title(20)).lineLimit(1)
+            Spacer(minLength: 0)
+            if let play {
+                Button(action: play) { Label("Play", systemImage: "play.fill") }.buttonStyle(CapsuleButtonStyle(primary: true))
+            }
+        }
+        .foregroundStyle(CU.onMedia)
+        .padding(.leading, 236 + CU.Space.xl).padding(.trailing, trailingInset).padding(.top, 54)
+    }
+}
 
 struct CupertinoArtistBanner: View {
     let state: AppState
+    /// Scroll offset of the page below; the banner shrinks with it.
+    var offset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var collage = ArtistCollageModel()
     @Environment(\.artwork) private var artwork
 
@@ -43,7 +102,9 @@ struct CupertinoArtistBanner: View {
     var body: some View {
         let lib = state.library
         let h = (lib.isLive ? LibraryModel.hue(for: state.selectedArtist.name) : Fixtures.albums[1].hue) / 360
+        let p = CupertinoArtistLayout.progress(offset: offset, reduceMotion: reduceMotion)
         ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topLeading) {
             CU.artwork(hue: h, saturation: 0.45, brightness: 0.45)
             RadialGradient(colors: [CU.artwork(hue: h, saturation: 0.6, brightness: 0.9).opacity(0.95), .clear],
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
@@ -59,10 +120,19 @@ struct CupertinoArtistBanner: View {
                 CU.shadowInk.opacity(0.38)
             }
             LinearGradient(colors: [CU.shadowInk.opacity(0.0), CU.shadowInk.opacity(0.4)], startPoint: .top, endPoint: .bottom)
-        }
-        .frame(height: CupertinoArtistLayout.bannerHeight)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
+            }
+            .frame(height: CupertinoArtistLayout.height(progress: p)).clipped()
+            .frame(maxWidth: .infinity, alignment: .top)
+            .heroBottomFade(progress: p)
+            .frame(height: CupertinoArtistLayout.height(progress: p), alignment: .top)
+
+            if p > 0.5 {
+                CupertinoCompactHero(backTitle: AppState.title(of: state.artistBack), title: state.selectedArtist.name,
+                                     back: { state.screen = state.artistBack },
+                                     play: state.selectedArtistIsUnowned ? nil : { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) },
+                                     picture: { ArtistPhoto(name: state.selectedArtist.name, size: 36) },
+                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
                 HStack(alignment: .center, spacing: 28) {
@@ -96,7 +166,9 @@ struct CupertinoArtistBanner: View {
             .foregroundStyle(CU.onMedia)
             .padding(.leading, 236 + CU.Space.xl).padding(.top, 50)       // 236 sidebar column + 32 margin
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
+            .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }
+        .frame(height: CupertinoArtistLayout.height(progress: p), alignment: .top).clipped()
         .accessibilityElement(children: .contain)
         .task(id: "\(state.related.ownedGroups.map(\.rgid))|\(artwork?.generation ?? 0)") {
             collage.minimum = 1
@@ -107,6 +179,7 @@ struct CupertinoArtistBanner: View {
 
 struct CupertinoArtist: View {
     let state: AppState
+    var heroOffset: Binding<CGFloat> = .constant(0)
     private let top: [(title: String, album: Int, sub: String, missing: Bool)] = [
         ("Life's What You Make It", 11, "The Colour of Spring", true), ("Such a Shame", 13, "Album", false),
         ("Myrrhman", 0, "Album", false), ("Talk Talk", 12, "Album", false),
@@ -115,6 +188,7 @@ struct CupertinoArtist: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Color.clear.frame(height: CupertinoArtistLayout.span)   // the room the full hero takes above the compact one
                 if !state.library.isLive {   // top songs need a Navidrome call the client does not have yet
                     Text("Top songs").font(CU.title(20)).padding(.top, 24).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 24), GridItem(.flexible())], spacing: 0) {
@@ -141,6 +215,8 @@ struct CupertinoArtist: View {
             }
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
+        .scrollEdgeEffectStyle(.hard, for: .top)
+        .reportsHeroOffset(heroOffset)
         .task(id: state.selectedArtist.id) { await state.loadSelectedArtist() }
     }
 

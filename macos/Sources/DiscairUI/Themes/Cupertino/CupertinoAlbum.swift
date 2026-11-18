@@ -6,13 +6,18 @@ import SwiftUI
 /// the songs and the lists below it scroll.
 struct CupertinoAlbumBanner: View {
     let state: AppState
+    /// Scroll offset of the page below; the banner shrinks with it.
+    var offset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let a = state.selectedAlbum
         let tracks = state.library.tracks
         let owned = tracks.filter(\.owned).count
         let h = a.hue / 360
+        let p = CupertinoArtistLayout.progress(offset: offset, reduceMotion: reduceMotion)
         ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topLeading) {
             CU.artwork(hue: h, saturation: 0.45, brightness: 0.45)
             RadialGradient(colors: [CU.artwork(hue: h, saturation: 0.6, brightness: 0.9).opacity(0.95), .clear],
                            center: UnitPoint(x: 0.2, y: 0.1), startRadius: 0, endRadius: 800)
@@ -20,10 +25,19 @@ struct CupertinoAlbumBanner: View {
                            center: UnitPoint(x: 0.9, y: 0.9), startRadius: 0, endRadius: 700)
             if !(a.coverArt ?? "").isEmpty { BlurredArtwork(album: a, radius: 24); CU.shadowInk.opacity(0.12) }
             LinearGradient(colors: [CU.shadowInk.opacity(0.0), CU.shadowInk.opacity(0.4)], startPoint: .top, endPoint: .bottom)
-        }
-        .frame(height: CupertinoArtistLayout.bannerHeight)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
+            }
+            .frame(height: CupertinoArtistLayout.height(progress: p)).clipped()
+            .frame(maxWidth: .infinity, alignment: .top)
+            .heroBottomFade(progress: p)
+            .frame(height: CupertinoArtistLayout.height(progress: p), alignment: .top)
+
+            if p > 0.5 {
+                CupertinoCompactHero(backTitle: AppState.title(of: state.albumBack), title: a.title,
+                                     back: { state.screen = state.albumBack },
+                                     play: { state.actions.play(album: a) },
+                                     picture: { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous)) },
+                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.albumBack), onDark: true) { state.screen = state.albumBack }.padding(.bottom, 8)
                 HStack(alignment: .top, spacing: 24) {
@@ -77,7 +91,9 @@ struct CupertinoAlbumBanner: View {
             .foregroundStyle(CU.onMedia)
             .padding(.leading, 236 + CU.Space.xl).padding(.top, 76)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
+            .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }
+        .frame(height: CupertinoArtistLayout.height(progress: p), alignment: .top).clipped()
         .accessibilityElement(children: .contain)
     }
 }
@@ -92,6 +108,7 @@ enum AlbumTab: String, CaseIterable, Identifiable {
 
 struct CupertinoAlbum: View {
     let state: AppState
+    var heroOffset: Binding<CGFloat> = .constant(0)
     @State private var tab: AlbumTab = .tracks
 
     var body: some View {
@@ -99,6 +116,7 @@ struct CupertinoAlbum: View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Color.clear.frame(height: CupertinoArtistLayout.span)   // the room the full hero takes above the compact one
                 tabBar.frame(maxWidth: .infinity).padding(.top, 16)
                 switch tab {
                 case .tracks: tracksTab(a)
@@ -111,6 +129,7 @@ struct CupertinoAlbum: View {
             .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
+        .reportsHeroOffset(heroOffset)
         .task(id: a.id) { await state.loadSelectedAlbum() }
         .onChange(of: a.id) { _, _ in tab = .tracks }
         // A song opened from a Library search is marked and scrolled into view once the tracks arrive.
