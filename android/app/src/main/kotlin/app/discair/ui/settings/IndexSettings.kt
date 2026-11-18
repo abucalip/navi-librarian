@@ -258,10 +258,7 @@ internal fun IndexServer(state: Load<ServerReads>, reload: () -> Unit, onBack: (
                 val zone = remember { ZoneId.systemDefault() }
                 val clock = DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochMilli(state.value.checkedAtMillis).atZone(zone))
                 val view = remember(state.value) { ServerRules.build(state.value, clock) }
-                IndexSettingsHead(
-                    "Server", onBack, catalogue = IndexSettingsRules.checkedLine(clock),
-                    action = { app.discair.ui.common.IndexIconButton(IndexIcons.Refresh, "Check now", reload) },
-                )
+                IndexSettingsHead("Server", onBack, catalogue = IndexSettingsRules.checkedLine(clock))
                 Row(
                     Modifier.fillMaxWidth().padding(start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp, top = 12.dp).semantics { liveRegion = LiveRegionMode.Polite },
                     horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,

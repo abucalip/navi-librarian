@@ -52,8 +52,6 @@ import app.discair.player.eq.bandLabel
 import app.discair.player.eq.bandSpoken
 import app.discair.player.eq.eqStatusLine
 import app.discair.player.eq.formatDb
-import app.discair.ui.common.IndexButton
-import app.discair.ui.common.IndexButtonKind
 import app.discair.ui.common.IndexIcons
 import app.discair.ui.common.IndexLabel
 import app.discair.ui.common.IndexMuted
@@ -142,9 +140,6 @@ internal fun IndexEqualizer(editor: EqEditor, settings: EqSettings, status: EqRu
             Step("Lower the volume change by half a decibel", IndexIcons.Minus, on && pre > -EQ_MAX_GAIN_DB) { editor.nudgePreGain(-1) }
             Text("Volume change · ${formatDb(pre)}".uppercase(), Modifier.weight(1f), color = p.text, textAlign = TextAlign.Center, style = IndexType.label().copy(fontSize = 13.sp))
             Step("Raise the volume change by half a decibel", IndexIcons.Plus, on && pre < 0.0) { editor.nudgePreGain(1) }
-        }
-        Row(Modifier.padding(start = Gutter, end = Gutter, top = 24.dp)) {
-            IndexButton("Reset to flat", onReset, kind = IndexButtonKind.Ghost, icon = IndexIcons.Refresh, enabled = on)
         }
     }
 }
