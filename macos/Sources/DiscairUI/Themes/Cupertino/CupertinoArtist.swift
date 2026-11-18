@@ -167,8 +167,8 @@ struct CupertinoArtistBanner: View {
                     }
                     .frame(maxWidth: 620, alignment: .leading)
                     .padding(.horizontal, 24).padding(.vertical, 20)
-                    // Keep the contrast aid local to the text group. The elliptical falloff softens every edge,
-                    // so it reads as a veil over the collage rather than a rectangular panel.
+                    // Keep the contrast aid local to the text group. Overscan and blur the elliptical
+                    // falloff so it dissolves into the collage without exposing a panel-shaped boundary.
                     .background {
                         EllipticalGradient(
                             stops: [
@@ -181,6 +181,10 @@ struct CupertinoArtistBanner: View {
                             startRadiusFraction: 0.04,
                             endRadiusFraction: 1
                         )
+                        // Overscan before blurring so the feather extends beyond the gradient's
+                        // original bounds instead of revealing its rectangular layout edge.
+                        .padding(-40)
+                        .blur(radius: 34)
                     }
                 }
             }
