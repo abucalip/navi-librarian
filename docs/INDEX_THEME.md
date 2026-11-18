@@ -1,6 +1,6 @@
 # Index theme for Android: design system and build plan
 
-Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. Nothing is built; I0 is next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
+Status: **design approved by the owner** (2026-11-17); every decision in section 13 is decided as proposed. Nothing is built; I0 audit is done (section 11a), the server PRs it lists come next. This document is the spec that implementing agents build from. The mockups beside it are the spec for every screen ("the mockups are the spec", Round 3 owner rule).
 
 Package: [`docs/design/index/`](design/index/). Start with its [`README.md`](design/index/README.md). The shared mockup kit is [`docs/design/_kit/`](design/_kit/).
 
@@ -385,6 +385,29 @@ Add the `Index*` files to `ARCHITECTURE.md` in I1.
 | Neighbours by ear segment meter | Closeness per neighbour | served (`matchCount`) | none |
 | Server page "v0.3.9 · 84 ms" | Version and latency per service | check (`/api/health`) | Optional `version` and `latency_ms` per service (same as Bento) |
 | Library "Unplayed", "Lossless" | Album filters (Bento needs them; Index can offer the same sort-line options once built) | missing | Same `filter` query as Bento; shared work, built once |
+
+### I0 audit (2026-11-18, against `main` at `9e810191`)
+
+Checked in the server code (routes, read models, stores) only. The Android decoders were **not** opened: "served" below means the server sends it. The missing rows are the follow-up server PRs, each before the client step that draws it. "Dropped" needs an owner answer.
+
+| Element | Result | What the code shows | Build (own server PR) |
+|---|---|---|---|
+| Lead pick data list | **Served** | `/api/dashboard-picks` items carry `artist`, `album`, `genres` (up to 4), `release_group_mbid`. Picks exclude owned albums (`lens_week.week_pool`), so `owned` is always false and needs no field | none; the client reads `genres[0]` and shows "No" |
+| Played "14 plays" (Home) | **Missing** | `/api/dashboard/albums/recent` items have no count; no per-week album play data on any route | Optional `play_count` (plays in the last 7 days) and `window` on `recent` shelf items, from ListenBrainz listens (owner decision I0-1, 2026-11-18: build the windowed count). **Built and merged**: PR #1192, `discovery/week_plays.py` |
+| Artist rows "212 plays" (Library) | **Missing** | The owned index already sums plays per artist (`artist["plays"]`), but `library_page` items do not return it | Optional `plays` on `/api/library/artists` items (one line, no new provider traffic) |
+| Artist data list: Owned, Plays, Active | **Missing** | `/api/artists/{key}` `artist` section has `album_count` (owned) only; no plays, no total, no years. `artist_life_span` (begin and end dates) is in the knowledge store | Optional `play_count`, `active_years` on the `artist` section; owned and total studio albums from the studio-albums catalog already on the page (`artist_sections`), shown only when it has loaded. New module under `discovery/search/` |
+| Album head "0418 / 1284" | **Missing** | Album `album` section has no position or total (decision I7: build) | Optional `library_position`, `library_total` on the `album` section, from the owned index |
+| Album "05 / 10 PLAYING" | **Served** | Tracks carry `track_number`; `song_count` on the header | none |
+| Genres with counts (Home) | **Served** | `genre_tiles` returns `album_count` | none |
+| Library tabs with counts | **Served** | Artists and albums pages return `total`; the genre count is the length of `/api/dashboard/genres` (limit up to 200) | none |
+| Downloads tabs with counts | **Served** | `/api/acquisitions` lists every record | none (client counts) |
+| Lyrics time stamps | **Served** | Read from Navidrome directly (`ANDROID_LYRICS_CONTRACT.md`): `synced` and per-line `start` | none; hide stamps for plain lyrics, as the contract says |
+| Artist Paths step: With, Owned, Albums together | **Missing** | Stops carry `begin_year` and `anchor_begin_year` for `scene_path` only; no years together, no shared albums with states | Optional `years` and `shared_albums` on stops, in `intelligence/graph/` (same as Bento) |
+| Neighbours by ear meter | **Served** (per spec; not re-read) | `matchCount` per spec | none |
+| Server page "v0.3.9 · 84 ms" | **Missing** | `/api/health` answers `status`, `service`, `message` only; no version or latency | Optional `version` and `latency_ms` on `/api/health`, timed around the existing Navidrome `ping` |
+| Library "Unplayed", "Lossless" | **Missing** | `/api/library/albums` has `q`, `sort`, `order`, `cursor`, `limit`; no filter | Shared `filter` query with Bento, built once. Needs per-album play and quality data on the index entry |
+
+**Stops and questions for the owner.** None of the builds above needs a new provider or more provider traffic. I0-1 is decided and built. Suggested server PR order, smallest first: `/api/health` fields; `plays` on library artists; `library_position` and `library_total`; artist page fields; path stop `years` and `shared_albums`; the library `filter`.
 
 The table lists every element in the mockups whose data is not plainly on today's screens. When an audit finds another gap, add a row and follow the same rule.
 

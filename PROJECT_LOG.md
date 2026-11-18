@@ -1,3 +1,8 @@
+## 2026-11-18 — Index theme I0 server data audit (docs PR)
+
+- **Done:** audited the 13 rows of `docs/INDEX_THEME.md` section 11a against `main` (`9e810191`): 6 served, 7 missing (played counts, artist plays, artist page counts and years, album library position, path stop years and shared albums, `/api/health` version and latency, library filters). Table filled in the spec.
+- **Tests:** none run; docs only. **Limits:** server code read only, Android decoders not opened, nothing built, no provider traffic needed. Owner decision I0-1 (played rows): a windowed count, built in PR #1192 (`ab19ed36`, 20 filtered tests pass, not run against a real ListenBrainz account). The Bento B0 audit shares the played, artist, paths, health and filter rows.
+
 ## 2026-11-18 — macOS Booklet B4 Your edition (PR #1190)
 
 - **Merged:** PR #1190, squash `c284e1e483c85010872831d9f0a1c69284547e49`; CI on the PR passed (5 checks). Slice B4 of `docs/MACOS_PATHS_BOOKLET.md`, built because the owner answered D3 (a). Server: `intelligence/artwork/index.py` adds `from_owned` to each `booklets` entry (and `booklet`): true when the booklet's release is the owned release, false when none is owned. Recorded in `docs/SERVER_V2_CONTRACT.md`; the artwork index fixtures were regenerated (two of them hold booklets). Mac: `ArtworkBooklet` and `BookletView` decode it (missing means false), `BookletLayout.editionTag`, and the editions row shows the "Your edition" tag (`ownedTag`/`ownedTagInk`). `navidrome_server.py` untouched.
