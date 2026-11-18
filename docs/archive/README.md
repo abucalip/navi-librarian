@@ -50,3 +50,7 @@ Build is complete; owner device or browser checks may remain and stay in `../ACT
 ## Release
 
 - `release/RELEASE_v0.2.md`: preparation record only; it does not mean the release was published.
+
+## Queue history, moved 2026-11-18
+
+- `completed/ACTIVE_WORK_DONE_2026-11-18.md`: finished and merged sections of the old `ACTIVE_WORK.md` (bug batches, Engine 2, search and library pages, Android client and player, Neobrut rounds, macOS M1 to M6, redesign, art themes, Gallery, Index, server efficiency, Server V2 history) with their PR numbers, SHAs and evidence. Owner checks on work merged before 2026-11-11 were dropped with them.
