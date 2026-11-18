@@ -9,7 +9,7 @@ from discovery.search.artist_facts import active_years, album_counts
 from discovery.search.artist_page import artist_page
 from discovery.search.artist_sections import network_sections
 from discovery.search.index import STATE_FRESH, IndexView, build_owned_data
-from discovery.search.providers import album_candidate, artist_candidate
+from discovery.search.providers import artist_candidate
 from intelligence.knowledge.artist_years import read_life_span
 from intelligence.store import open_store
 from intelligence.store import repositories as repo
