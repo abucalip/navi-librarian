@@ -28,6 +28,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from . import path_stop_facts
 from ..store import generations
 from ..musicbrainz.release_links import CREDIT_ROLES
 from ..store import repositories as repo
@@ -40,7 +41,7 @@ CACHE_PREFIX = "path:"
 SLICE_RESOURCE = "musicbrainz_slice"
 SCENE_YEARS = 10
 PROGRESS_OPS = 5000  # how many SQLite steps pass between deadline checks
-PRESENTATION_VERSION = 7
+PRESENTATION_VERSION = 8
 COVER_CANDIDATES = 5  # releases offered per recording, so the app can try each for a cover
 VARIOUS_NAMES = ("various artists", "various")
 # Performer credits only: a producer is not a musician on the record, so it never bridges two recordings.
@@ -392,6 +393,7 @@ def _path_presentation(
     album = album_artist = artist = None
     albums_out: list[dict[str, str]] = []
     begin_year = None
+    shared: list[dict[str, Any]] = []
     if kind == "follow_the_musician":
         # The song's own album (and its credited artist), so the sheet can write "Song (Album)" and open the album;
         # more releases follow so the app can try each for a cover.
@@ -433,9 +435,16 @@ def _path_presentation(
         album, album_artist = _recording_album(db, stop_id, generation)
     elif kind == "scene_path":
         begin_year = _begin_year(db, stop_id)
+    elif kind == "sideman_to_leader":
+        shared = path_stop_facts.shared_albums(db, [r["via"] for r in reasons])
     out = {"title": title, "context": context, "album": album, "album_artist": album_artist, "artist": artist}
     if albums_out:
         out["albums"] = albums_out
+    if shared:
+        out["shared_albums"] = shared
+        together = path_stop_facts.years_together(shared)
+        if together:
+            out["years"] = together
     if begin_year:
         out["begin_year"] = begin_year
         anchors = [r["anchor"] for r in reasons if r["anchor"] is not None]
