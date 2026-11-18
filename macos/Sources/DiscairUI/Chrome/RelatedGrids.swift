@@ -64,7 +64,7 @@ enum AlbumColumn {
 
 /// The album page's related lists (Cupertino), each a single row of six that fills the track table's width: similar artists in the
 /// library, then "Not in your library" with its similar artists as circles in one row and its albums as squares in the row below.
-/// Each block is centred under the table, with its heading on the block's left edge.
+/// Each block starts at the track table's left edge, with its heading on the block's left edge.
 struct AlbumRelatedGrids: View {
     let state: AppState
     @State private var salt = UInt64.random(in: 0...UInt64.max)
