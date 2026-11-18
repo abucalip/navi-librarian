@@ -11,12 +11,12 @@ struct ArtistBio: View {
         if let text = state.related.bio { cupertinoBody(text) }
     }
 
-    /// Cupertino: a justified biography in the same left-aligned column as the portrait and album grid, split into paragraphs.
+    /// Cupertino: a left-aligned biography in the same leading column as the portrait and album grid.
     private func cupertinoBody(_ text: String) -> some View {
         let paragraphs = BioParagraphs.split(text)
         return VStack(alignment: .leading, spacing: 10) {
             ForEach(Array((expanded ? paragraphs : Array(paragraphs.prefix(1))).enumerated()), id: \.offset) { _, p in
-                JustifiedText(text: p, size: 14, lineLimit: expanded ? 0 : 4)
+                JustifiedText(text: p, size: 14, lineLimit: expanded ? 0 : 4, alignment: .left)
             }
             HStack(spacing: 12) {
                 if text.count > 280 {
@@ -37,6 +37,7 @@ struct JustifiedText: NSViewRepresentable {
     let text: String
     var size: CGFloat = 14
     var lineLimit = 0
+    var alignment: NSTextAlignment = .justified
 
     func makeNSView(context: Context) -> NSTextField {
         let f = NSTextField(wrappingLabelWithString: "")
@@ -48,7 +49,7 @@ struct JustifiedText: NSViewRepresentable {
 
     func updateNSView(_ f: NSTextField, context: Context) {
         let style = NSMutableParagraphStyle()
-        style.alignment = .justified
+        style.alignment = alignment
         style.lineSpacing = 3
         style.lineBreakMode = .byWordWrapping
         f.attributedStringValue = NSAttributedString(string: text, attributes: [
