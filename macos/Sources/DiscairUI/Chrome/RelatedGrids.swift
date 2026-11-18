@@ -86,7 +86,7 @@ struct AlbumRelatedGrids: View {
         let owned = RandomPick.pick(r.ownedArtists, 6, salt: salt)
         let others = RandomPick.pick(r.otherArtists, 6, salt: salt)
         let albums = RandomPick.pick(r.albums, 6, salt: salt)
-        VStack(alignment: .center, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             if !owned.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     heading("Similar artists")
@@ -104,7 +104,7 @@ struct AlbumRelatedGrids: View {
                 Text("Looking for similar artists…").font(.system(size: 12)).foregroundStyle(CU.textSecondary).padding(.top, 14)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: state.selectedAlbum.id) { _, _ in salt = .random(in: 0...UInt64.max) }
     }
 
