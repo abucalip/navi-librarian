@@ -145,7 +145,7 @@ Status: D1 is on main at `dd95d6f9`; D2 implemented in draft PR #1207 on `macos/
 - D2.7: source review found the recommended hierarchy already present: 20 pt top-level headings and small-caps subgroup labels under "Not in your library". No duplicate style change was made.
 - D2.8: the playing-row quality badge uses accent text on the on-accent surface (white in Day, dark in Night). D2.9: the overflow action is leading-aligned within its trailing cell, beside Quality.
 - Added `HeroAlignmentTests` for shared inset/action metrics, pixel alignment and overlap across the 2–5 tile layouts.
-- **Verification not yet done:** no Swift test execution here; run `swift test --filter HeroAlignmentTests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
+- **Verification not yet done:** no Swift test execution here; the selector maps these UI changes to `DiscairUITests`; run `swift test --filter DiscairUITests` on a Mac. Visual acceptance still needs same-size Album and Artist before/after screenshots in Day and Night, the collage seam crop at 400%, and a contrast check over the lightest tile. The source changes are not a substitute for those checks.
 
 ## Slice D3: bottom insets and the Pipeline dock
 
