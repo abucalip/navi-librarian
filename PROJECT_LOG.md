@@ -1,3 +1,9 @@
+## 2026-11-18 — Index theme I0 server PR 3 (PR #1194)
+
+- **Merged:** PR #1194, squash `9cc0f746e78658748abf8cc4721b18bcc72c15e3`. Artist page fields: `play_count` and `active_years` (`{begin, end, ended}` from the stored life span, read-only by MBID) on the `artist` section; `owned_count` and `album_count` (provider-listed albums only) on the `albums` section. New `discovery/search/artist_facts.py` and `intelligence/knowledge/artist_years.py`; contract (`SEARCH_CONTRACT.md` 14.5), `ARCHITECTURE.md` and `INDEX_THEME.md` updated. No new provider traffic.
+- **Tests run:** `test_artist_facts` (new, 9), `test_discovery_search_artist_sections`, `test_api_search_routes`, `test_discovery_search_query` (all passed, 129 in total before a lint-only import fix; the new file re-run after it); `check_lint_changed.py` clean. CI result on the final head not re-checked here. Not run: full suite.
+- **Limitations:** no recorded fixture for the new fields; Android decoders not opened. Not built: path stop `years` and `shared_albums`, library `filter`. Not published or deployed.
+
 ## 2026-11-18 — Index theme I0 server PR 2 (PR #1193)
 
 - **Merged:** PR #1193, squash `2e169cf4034265fd6fd9f3def47e5fc5b773ad37`. Three of the missing I0 rows, all optional fields with no new provider traffic: `/api/health` `version` and `latency_ms`; `plays` on `/api/library/artists` items; `library_position` and `library_total` on the album page `album` section (new `discovery/search/album_position.py`). Contract (`SEARCH_CONTRACT.md` 14.5), `ARCHITECTURE.md` row and the audit table updated. The three share one PR at the owner's request (the spec says one each).
