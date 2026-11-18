@@ -28,7 +28,6 @@ struct CupertinoNowPlayingLive: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(alignment: .topLeading) { backdrop }
         .foregroundStyle(CU.onMedia)
-        .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
         .background(TwoFingerSwipeDown(maxX: 620) { state.closeNowPlaying() })
         .task(id: "\(live.stationID)|\(p.liveNow?.coverPath ?? "")|\(logos?.generation ?? 0)") { await loadArt() }

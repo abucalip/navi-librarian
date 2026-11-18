@@ -77,7 +77,6 @@ struct CupertinoNowPlaying: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(alignment: .topLeading) { backdrop(a) }   // a background never changes the layout size
         .foregroundStyle(CU.onMedia)
-        .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
         .background(WindowConfigurator())
         .background(TwoFingerSwipeDown(maxX: 620) { state.closeNowPlaying() })
         .task(id: "\(state.player.current?.artist ?? "")|\(state.player.current?.album ?? "")|\(artwork?.generation ?? 0)") {

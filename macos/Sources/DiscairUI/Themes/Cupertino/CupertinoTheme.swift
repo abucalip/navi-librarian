@@ -148,7 +148,6 @@ enum CU {
         /// 20 (sidebar) minus 8 (row padding), section 4.3.
         static let rowRadius: CGFloat = 12
     }
-    static let windowRadius: CGFloat = 26
     static func title(_ size: CGFloat) -> SwiftUI.Font { .system(size: size, weight: .bold).width(.standard) }
 
     /// Every text and accent pair that must reach 4.5:1, for the palette now in use. `text.tertiary` is left out on purpose: decorative only.
@@ -204,6 +203,8 @@ extension Text {
 
 struct CupertinoWindow: View {
     let state: AppState
+    /// How far the Album or Artist page has scrolled; the hero above it shrinks with it (D1.4).
+    @State private var heroOffset: CGFloat = 0
 
     var body: some View {
         if state.screen == .nowPlaying {
@@ -220,12 +221,12 @@ struct CupertinoWindow: View {
                 content
                     .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
                     .padding(.leading, CU.Shell.contentLeading)
-                    .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.bannerHeight : CU.Shell.contentTop)
+                    .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.compactHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(CU.content)
 
-                if state.screen == .artist { CupertinoArtistBanner(state: state) }
-                if state.screen == .album { CupertinoAlbumBanner(state: state) }   // under the sidebar and toolbar
+                if state.screen == .artist { CupertinoArtistBanner(state: state, offset: heroOffset) }
+                if state.screen == .album { CupertinoAlbumBanner(state: state, offset: heroOffset) }   // under the sidebar and toolbar
 
                 CupertinoSidebar(state: state)
                     .padding(.bottom, state.player.current != nil ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0)
@@ -243,16 +244,16 @@ struct CupertinoWindow: View {
         .overlay(alignment: .bottomLeading) { CupertinoArtworkSlot(state: state) }
         .background(CU.backdrop)
         .foregroundStyle(CU.text)
-        .clipShape(RoundedRectangle(cornerRadius: CU.windowRadius, style: .continuous))
+        .onChange(of: state.screen) { _, _ in heroOffset = 0 }
         .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width && p.y < size.height - CupertinoPlayerBar.height) }))
     }
 
     @ViewBuilder private var content: some View {
         switch state.screen {
         case .home: CupertinoHome(state: state)
-        case .album: CupertinoAlbum(state: state)
+        case .album: CupertinoAlbum(state: state, heroOffset: $heroOffset)
         case .queue, .albums, .library, .artists, .recent: CupertinoLibraryHub(state: state)
-        case .artist: CupertinoArtist(state: state)
+        case .artist: CupertinoArtist(state: state, heroOffset: $heroOffset)
         case .settings: CupertinoSettings(state: state)
         case .downloads: CupertinoDownloads(state: state)
         case .discover: CupertinoDiscover(state: state)
