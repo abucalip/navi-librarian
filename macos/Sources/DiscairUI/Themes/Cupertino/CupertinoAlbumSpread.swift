@@ -35,7 +35,7 @@ struct CupertinoAlbumSpread: View {
 
     @ViewBuilder private func notesColumn(_ c: AlbumSpreadContent) -> some View {
         if let notes = c.notes {
-            // The same column as the artist's biography: justified, split into paragraphs, centred on the page.
+            // The same reading width as the artist's biography, with album notes kept justified and centred on the page.
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(BioParagraphs.split(notes).enumerated()), id: \.offset) { _, p in JustifiedText(text: p, size: 14) }
                 if let src = c.notesSource, !src.isEmpty {

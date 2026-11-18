@@ -76,24 +76,14 @@ Finished and merged work, and owner checks on work merged before 2026-11-11, wer
 
 - All slices are merged (P0 to P2, B1 to B4; 2026-11-17 to 2026-11-18). Open: the owner's check of both sheets in a real window and the CPU measurements (Paths five cases from P1; Booklet open after B2 and B3). D4 unanswered (recommended: no language tag). Details: [`MACOS_PATHS_BOOKLET.md`](plans/MACOS_PATHS_BOOKLET.md).
 
-## 2s. macOS design details polish: plan written, no code yet
+## 2s. macOS design details polish: D1 on main; D2 implemented, verification open
 
-- The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The issues covered are alignment, overlaps, spacing, text sizes and small navigation details, including the album and artist hero not meeting the window's round corners.
-- The plan is [`MACOS_DESIGN_DETAILS.md`](plans/MACOS_DESIGN_DETAILS.md). It has slices D1 to D8:
-  - D1: shell, corners and hero edges
-  - D2: hero alignment
-  - D3: bottom insets and the Pipeline dock
-  - D4: control consistency
-  - D5: list columns
-  - D6: Now Playing
-  - D7: graph and map labels
-  - D8: copy
-- The owner's decisions (2026-11-18), all as recommended:
-  - the hero fades in the sidebar gutter and collapses on scroll;
-  - selected tabs use the dark neutral style in Night and a white chip on a light grey track in Day;
-  - inspectors run full height;
-  - the artist bio is left-aligned.
-- The cover stays shown twice (sidebar slot and player bar). No questions remain. Next: D1.
+- The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The plan is [`MACOS_DESIGN_DETAILS.md`](plans/MACOS_DESIGN_DETAILS.md), slices D1 to D8.
+- D1 (shell, corners and hero edges) is present on `main` at `dd95d6f9`.
+- D2 is implemented in draft PR #1208, branch `macos/d2-album-artist-hero-alignment-clean` (based on `dd95d6f9`, implementation commit recorded in PR #1208): shared Album/Artist hero insets, Album spine and body alignment, Artist text scrim and action rhythm, collage seam overlap, dark translucent capsule fill and light hairline, playing quality badge contrast and track-menu alignment. D2.7 was source-reviewed and already follows the recommended hierarchy (top-level 20 pt titles, small-caps subgroups), so it did not need a code change. New `HeroAlignmentTests` cover shared geometry and collage tile overlap.
+- **Not verified:** no Swift tests were run here (they must run on a Mac); no before/after Day and Night window screenshots, 400% seam crop, or visual contrast measurement. The owner must check the exact PR head. **Next:** the selected `DiscairUITests` target, then the Day/Night Album and Artist visual acceptance checks.
+- D3 to D8 remain unstarted: D3 bottom insets and Pipeline dock; D4 control consistency; D5 list columns; D6 Now Playing; D7 graph and map labels; D8 copy.
+- Owner decisions (2026-11-18, all as recommended): hero gutter fade and collapse; selected-tab styles by mode; full-height inspectors; left-aligned artist bio. The cover stays shown twice (sidebar slot and player bar).
 
 ## 2n. Simplification candidates
 

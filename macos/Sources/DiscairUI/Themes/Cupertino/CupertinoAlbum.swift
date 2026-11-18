@@ -89,7 +89,7 @@ struct CupertinoAlbumBanner: View {
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, 236 + CU.Space.xl).padding(.top, 76)
+            .padding(.leading, CupertinoArtistLayout.heroLeadingInset).padding(.top, CupertinoArtistLayout.heroTopInset)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
             .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }
@@ -117,7 +117,7 @@ struct CupertinoAlbum: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Color.clear.frame(height: CupertinoArtistLayout.span)   // the room the full hero takes above the compact one
-                tabBar.frame(maxWidth: .infinity).padding(.top, 16)
+                tabBar.frame(maxWidth: .infinity, alignment: .leading).padding(.top, 16)
                 switch tab {
                 case .tracks: tracksTab(a)
                 case .notes: CupertinoAlbumSpread(state: state, part: .notes).padding(.top, AlbumTabGap.value)
@@ -156,9 +156,9 @@ struct CupertinoAlbum: View {
 
     @ViewBuilder private func tracksTab(_ a: AlbumItem) -> some View {
         // One column as wide as the track table: the table, "More by" and the related lists share its edges, and each row of
-        // covers or photos is centred in it.
-        VStack(alignment: .center, spacing: 0) {
-            trackTable.frame(maxWidth: .infinity)
+        // covers or photos starts at the same leading edge.
+        VStack(alignment: .leading, spacing: 0) {
+            trackTable.frame(maxWidth: .infinity, alignment: .leading)
             let more = state.library.more(by: a)
             if !more.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
@@ -182,8 +182,8 @@ struct CupertinoAlbum: View {
             }
             AlbumRelatedGrids(state: state).padding(.top, 8)
         }
-        .frame(maxWidth: AlbumColumn.width)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: AlbumColumn.width, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, AlbumTabGap.value)
     }
 
@@ -227,10 +227,11 @@ struct CupertinoAlbum: View {
                 else if track!.owned {
                     Text(track!.format).font(CU.Font.caption.weighted(.bold))
                         .padding(.horizontal, 8).padding(.vertical, 0)
-                        .background(on ? CU.onAccent.opacity(0.25) : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
+                        .foregroundStyle(on ? CU.accent : CU.text)
+                        .background(on ? CU.onAccent : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
                 } else { Text("Not owned") }
             }
-            cell(width: cols[4], trailing: true) {
+            cell(width: cols[4]) {
                 if !isHeader {
                     if track!.owned { Text("···") }
                     else {
