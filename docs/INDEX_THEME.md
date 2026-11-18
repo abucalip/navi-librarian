@@ -288,8 +288,8 @@ Mockup: [`pages/home`](design/index/pages/home.html) (four frames). From top to 
 |---|---|---|---|
 | 1 | Top bar | Wordmark, mono date, downloads with badge, settings | as today |
 | 2 | Head | "Picks¹²" (count of the source), source switch PICKS · NEW · PLAYED (remembered, as Flow) | `picks`, recently added, recently played |
-| 3 | Lead | The first item: square cover, "01", title, data list (Artist, Year, Genre, Owned). Actions: Picks → Get album, Save, three dots; New and Played → Play, Shuffle, three dots | as above |
-| 4 | Strip | Items 02–05 in four columns; tap opens, long press makes it the lead | as above |
+| 3 | Lead | The first item: square cover, "01", title, data list (Artist, Year, Genre, Owned). Actions: Picks → Get album, Save, three dots; New and Played → Play, Shuffle, three dots. **The lead is a slideshow, as Gallery's hero:** swipe left or right and the cover, number, data list and actions follow the finger and settle into the next or previous album (`tabSlide` 380ms Firm, no overshoot; 0ms when reduced); it starts on the first album when the source changes | as above |
+| 4 | Strip | Items 02–05 in four columns; tap opens, long press slides the lead to it | as above |
 | 5 | Played | This week; three numbered rows with play counts; ALL → | recently played |
 | 6 | Artists | You return to; four portrait photos (74 × 92) with album counts | `HomeArtists` |
 | 7 | Radio | Four station plates (initials when no logo) with last heard ("TODAY" in `accent`); "Heard on FIP this morning" with two rows (In library / Requested / Get) | as Gallery section 9, row 6 |

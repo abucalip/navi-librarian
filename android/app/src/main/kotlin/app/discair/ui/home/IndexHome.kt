@@ -35,6 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -121,8 +123,6 @@ internal fun IndexHome(
     val artistTotal = (artistPage.state as? Load.Ready)?.value?.total
     val listeningKnown = recent.state !is Load.Loading && frequent.state !is Load.Loading
     var tab by remember { mutableStateOf(FlowHomeRules.tabOf(readTab(context))) }
-    // The lead is the album the owner picked from the strip (a long press); it starts on the first album and again whenever the source changes.
-    var leadAt by remember(tab) { mutableStateOf(0) }
     val bottom = 24.dp + app.discair.ui.LocalBottomClearance.current
 
     val state: Load<List<LeadItem>>
@@ -136,10 +136,21 @@ internal fun IndexHome(
         FlowHomeRules.Tab.Played -> { state = recent.state.leads(); retry = recent.reload }
     }
     val items = (state as? Load.Ready)?.value.orEmpty()
-    val at = IndexHomeRules.leadAt(leadAt, items.size)
-    val stripAt = IndexHomeRules.strip(items.size, at)
+    // The lead is a slideshow, as Gallery's hero: a pager, so the cover, number, data list and actions follow the finger and settle into the next or previous
+    // album (Index's 380ms Firm slide, no overshoot). A long press on the strip slides to that album. It starts on the first album whenever the source changes.
+    val pager = androidx.compose.runtime.key(tab) { androidx.compose.foundation.pager.rememberPagerState { items.size } }
+    val at = IndexHomeRules.leadAt(pager.currentPage, items.size)
+    val settled = IndexHomeRules.leadAt(pager.settledPage, items.size)
+    val reduced = app.discair.ui.theme.rememberReducedMotion()
+    val slide = app.discair.ui.theme.IndexMotion.firm<Float>(app.discair.ui.theme.IndexMotion.TAB_SLIDE_MS, reduced)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val goTo = { target: Int ->
+        scope.launch { if (reduced || kotlin.math.abs(target - at) > 1) pager.scrollToPage(target) else pager.animateScrollToPage(target, animationSpec = slide) }
+        Unit
+    }
+    val stripAt = IndexHomeRules.strip(items.size, settled)
     // One cover per album per screen is the shared element: the lead's and the strip's keys are taken, so a Played row of the same album leaves its cover out.
-    val taken = (listOf(at) + stripAt).mapNotNull { items.getOrNull(it) }.map { routeKey(it.artist, it.title) }.toSet()
+    val taken = (listOf(settled) + stripAt).mapNotNull { items.getOrNull(it) }.map { routeKey(it.artist, it.title) }.toSet()
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottom)) {
         var block = 0
@@ -158,13 +169,21 @@ internal fun IndexHome(
                     state is Load.Loading -> LeadSkeleton()
                     state is Load.Failed -> Failed(state.failure.message, retry)
                     items.isEmpty() -> Muted(IndexHomeRules.empty(tab), Modifier.padding(horizontal = Gutter, vertical = 16.dp))
-                    else -> Lead(tab, items[at], at, items.size, data.pickList.getOrNull(at), open, feedback)
+                    else -> androidx.compose.foundation.pager.HorizontalPager(
+                        pager, Modifier.fillMaxWidth().semantics { if (items.size > 1) stateDescription = "Swipe left or right for another album" },
+                        verticalAlignment = Alignment.Top,
+                        flingBehavior = androidx.compose.foundation.pager.PagerDefaults.flingBehavior(pager, snapAnimationSpec = slide),
+                    ) { shown ->
+                        val item = items.getOrNull(shown) ?: return@HorizontalPager
+                        // Only the settled album's cover is the shared element: a neighbour sliding by may be in the strip or Played too, and one key is never on the page twice.
+                        Column { Lead(tab, item, shown, items.size, data.pickList.getOrNull(shown), open, feedback, shared = shown == pager.settledPage) }
+                    }
                 }
             }
         }
         if (items.isNotEmpty() && stripAt.isNotEmpty()) {
             val stripBlock = block++
-            item(key = "strip") { Strip(items, stripAt, open, onLead = { leadAt = it }, Modifier.indexArrive(stripBlock, tab.name)) }
+            item(key = "strip") { Strip(items, stripAt, open, onLead = goTo, Modifier.indexArrive(stripBlock, tab.name)) }
         }
         val playedBlock = block++
         item(key = "played") { Played(recentList.take(IndexHomeRules.PLAYED_SHOWN), listeningKnown, taken, open, onLibrary, Modifier.indexArrive(playedBlock)) }
@@ -257,7 +276,7 @@ private fun LeadSkeleton() {
 }
 
 @Composable
-private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, total: Int, pick: Pick?, open: Opener, feedback: (FeedbackAction, Pick) -> Unit) {
+private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, total: Int, pick: Pick?, open: Opener, feedback: (FeedbackAction, Pick) -> Unit, shared: Boolean) {
     val p = LocalPalette.current
     val year = if (tab == FlowHomeRules.Tab.Picks) rememberAlbumYear(item.artist, item.title, item.year) else item.year
     val key = routeKey(item.artist, item.title)
@@ -265,7 +284,7 @@ private fun Lead(tab: FlowHomeRules.Tab, item: LeadItem, at: Int, total: Int, pi
     Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         AlbumCover(
             item.artist, item.title, item.artworkUrl,
-            Modifier.size(168.dp).sharedCover(key).clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum), rect = true,
+            Modifier.size(168.dp).then(if (shared) Modifier.sharedCover(key) else Modifier).clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = openAlbum), rect = true,
         )
         Column(Modifier.weight(1f).heightIn(min = 168.dp), verticalArrangement = Arrangement.SpaceBetween) {
             Column {
