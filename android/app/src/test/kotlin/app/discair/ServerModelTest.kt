@@ -99,6 +99,17 @@ class ServerModelTest {
         assertEquals(HealthRead(false, null), readHealth { throw ConnectionException(ConnectionFailure.Unreachable) })
     }
 
+    @Test fun `health reads the build label and the ping time a newer server adds`() {
+        // The body `app/api/dashboard.py::health` answers (SEARCH_CONTRACT.md, Index theme I0).
+        val body = """{"status": "ok", "service": "Navidrome", "message": "ok", "version": "0.3.9", "latency_ms": 84}"""
+        assertEquals(HealthRead(true, true, version = "0.3.9", latencyMs = 84), readHealth { body })
+        // An older server sends neither; a wrong type or a negative time is not a figure.
+        assertEquals(HealthRead(true, true), readHealth { """{"status": "ok", "service": "Navidrome", "message": "ok"}""" })
+        assertEquals(HealthRead(true, true), readHealth { """{"version": " ", "latency_ms": "84"}""" })
+        assertEquals(HealthRead(true, true, version = "0.3.9"), readHealth { """{"version": "0.3.9", "latency_ms": -1}""" })
+        assertEquals(HealthRead(true, true), readHealth { "not json" })
+    }
+
     // ----- state table ---------------------------------------------------------------------------------------------
 
     @Test fun `everything working gives the all working summary`() {

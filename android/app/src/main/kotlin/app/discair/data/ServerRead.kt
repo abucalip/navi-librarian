@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.intOrNull
 
 /** The Librarian answered with a status (even an error) instead of not answering at all. */
 internal fun answered(e: Throwable): Boolean = e is ConnectionException && when (e.failure) {
@@ -23,11 +24,22 @@ internal fun answered(e: Throwable): Boolean = e is ConnectionException && when 
     else -> true
 }
 
-/** What `GET /api/health` says: whether the Librarian answered, and whether Navidrome does behind it (null when not said). */
-internal data class HealthRead(val reachable: Boolean, val navidromeOk: Boolean?)
+/**
+ * What `GET /api/health` says: whether the Librarian answered, and whether Navidrome does behind it (null when not said). [version] (the build label) and
+ * [latencyMs] (the Navidrome ping's round trip) are optional fields a newer server adds (Index theme I0); an older server leaves them null.
+ */
+internal data class HealthRead(val reachable: Boolean, val navidromeOk: Boolean?, val version: String? = null, val latencyMs: Int? = null)
 
 internal fun readHealth(get: () -> String): HealthRead = try {
-    get(); HealthRead(true, true)
+    // The request runs outside the parse guard, so a refused or failed request still reaches the catch below; only an unreadable body is forgiven.
+    val body = get()
+    val o = runCatching { app.discair.model.ApiJson.parseToJsonElement(body) }.getOrNull() as? kotlinx.serialization.json.JsonObject
+    fun field(name: String) = o?.get(name) as? kotlinx.serialization.json.JsonPrimitive
+    HealthRead(
+        true, true,
+        version = field("version")?.takeIf { it.isString }?.content?.trim()?.ifEmpty { null },
+        latencyMs = field("latency_ms")?.takeIf { !it.isString }?.intOrNull?.takeIf { it >= 0 },
+    )
 } catch (e: Exception) {
     when {
         // The route answers 503 exactly when Navidrome does not answer the Librarian.
@@ -67,5 +79,6 @@ internal fun readServer(client: LibrarianClient, navidromeDirect: Boolean?, cloc
             slskdConfigured = configured[ServiceId.Slskd], lastFmConfigured = configured[ServiceId.LastFm],
             listenBrainzConfigured = configured[ServiceId.ListenBrainz], tests = tests, capabilities = caps.await(),
             lenses = lenses.await(), popularity = popularity.await(), checkedAtMillis = clock(),
+            librarianVersion = h.version, navidromeLatencyMs = h.latencyMs,
         )
     }

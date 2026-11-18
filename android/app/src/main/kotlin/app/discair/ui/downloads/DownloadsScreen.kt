@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
@@ -96,19 +97,35 @@ fun DownloadsScreen(open: Opener) {
         val softBrut = app.discair.ui.common.isCoverStack() // Soft Brut: a cover-stack bar and title, outlined cards (CoverStackDownloads.kt)
         val flow = app.discair.ui.common.isFlow() // Flow: its own bar, large title and white cards (FlowDownloads.kt)
         val gallery = app.discair.ui.common.isGallery() // Gallery: a page bar, a catalogue line over the title, hairline entries (GalleryDownloads.kt)
-        if (gallery) {
+        val index = app.discair.ui.common.isIndex() // Index: a page bar, the Display title with the active count, Active / Done / Failed tabs, numbered entries (IndexDownloads.kt)
+        var indexTab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<IndexDownloadsRules.Tab?>(null) }
+        val tab = indexTab ?: jobs?.let { IndexDownloadsRules.firstTab(it) } ?: IndexDownloadsRules.Tab.Active
+        if (index) {
+            app.discair.ui.common.IndexPageBar("Downloads", open.back)
+            app.discair.ui.common.IndexPageHead("Downloads", count = jobs?.let { app.discair.model.activeCount(it) }?.takeIf { it > 0 }?.toString())
+            jobs?.let { j ->
+                app.discair.ui.common.IndexTabs(IndexDownloadsRules.tabLabels(j), tab.ordinal, { indexTab = IndexDownloadsRules.Tab.entries[it] }, Modifier.padding(top = 8.dp))
+            }
+        } else if (gallery) {
             app.discair.ui.common.GalleryPageBar("Downloads", open.back)
             app.discair.ui.common.GalleryPageHead("Downloads", eyebrow = jobs?.let { GalleryDownloadsRules.eyebrow(it) })
         } else if (softBrut) app.discair.ui.common.CoverStackTopBar(open.back, emptyList(), title = "Downloads")
         else if (flow) app.discair.ui.common.FlowPageBar(open.back, emptyList(), title = "Downloads")
         else BackBar(open.back)
-        if (gallery) Unit
+        if (gallery || index) Unit
         else if (softBrut) app.discair.ui.common.CoverStackTitle("Downloads", Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp), maxLines = 1)
         else if (flow) app.discair.ui.common.FlowLargeTitle("Downloads", Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
         else PageHeading("Downloads", Modifier.padding(start = 16.dp, end = 16.dp), large = true)
-        if (!gallery || hub.listProblem != null) StatusLine(hub, jobs)
+        if ((!gallery && !index) || hub.listProblem != null) StatusLine(hub, jobs)
         val imported = jobs.orEmpty().count { it.isImported }
-        if (imported > 0 && gallery) app.discair.ui.common.GalleryTextLink("Dismiss all successful imports", Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) { confirm = Confirm.Imported(imported) }
+        if (index) {
+            // Index: the link sits on the Done tab, where the imports are, as a mono `accent` word.
+            if (imported > 0 && tab == IndexDownloadsRules.Tab.Done) Text(
+                "DISMISS ALL IMPORTS →", color = app.discair.ui.theme.LocalPalette.current.accent, style = app.discair.ui.common.IndexType.label(),
+                modifier = Modifier.padding(horizontal = 16.dp).heightIn(min = Target).clickable(role = Role.Button, onClickLabel = "Dismiss all successful imports") { confirm = Confirm.Imported(imported) }
+                    .padding(vertical = 14.dp),
+            )
+        } else if (imported > 0 && gallery) app.discair.ui.common.GalleryTextLink("Dismiss all successful imports", Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) { confirm = Confirm.Imported(imported) }
         else if (imported > 0 && softBrut) app.discair.ui.discover.CoverStackLink("Dismiss all successful imports", Modifier.padding(start = 16.dp)) { confirm = Confirm.Imported(imported) }
         else if (imported > 0 && flow) FlowDismissAll { confirm = Confirm.Imported(imported) }
         else if (imported > 0) Row(
@@ -131,11 +148,21 @@ fun DownloadsScreen(open: Opener) {
                     modifier = Modifier.padding(16.dp).heightIn(min = Target),
                 ) { Text("Try again") }
             }
-            jobs.isEmpty() -> Text(
+            jobs.isEmpty() && !index -> Text(
                 "No acquisition records yet. Requests you make from a discovery page appear here.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
             )
+            index -> {
+                val shown = IndexDownloadsRules.shown(jobs, tab)
+                if (shown.isEmpty()) app.discair.ui.common.IndexMuted(
+                    if (jobs.isEmpty()) "No acquisition records yet. Requests you make from a discovery page appear here." else "Nothing here.", Modifier.padding(16.dp),
+                ) else LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = app.discair.ui.LocalBottomClearance.current)) {
+                    itemsIndexed(shown, key = { _, it -> it.key }) { i, job ->
+                        Column(Modifier.animateItem()) { JobRow(job, hub, now, open, onDismiss = { confirm = Confirm.One(job) }, number = IndexDownloadsRules.number(i)) }
+                    }
+                }
+            }
             else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = app.discair.ui.LocalBottomClearance.current)) {
                 items(jobs, key = { it.key }) { job ->
                     Column(Modifier.animateItem()) {
@@ -187,7 +214,7 @@ private fun StatusLine(hub: AcquisitionHub, jobs: List<AcquisitionJob>?) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: Opener, onDismiss: () -> Unit) {
+private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: Opener, onDismiss: () -> Unit, number: String? = null) {
     val busy = hub.busy(job)
     val repo = app.discair.ui.common.LocalRepository.current
     val play = app.discair.ui.player.LocalPlayActions.current
@@ -200,6 +227,14 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
         } catch (e: kotlin.coroutines.cancellation.CancellationException) { throw e } catch (e: Exception) { null }
     }
     val openAlbum = { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) }
+    if (app.discair.ui.common.isIndex()) {
+        val arrived = job.updatedAt?.let { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date((it * 1000).toLong())) }
+        IndexJob(
+            job, number ?: "", busy, job.skipSecondsLeft(now), ownedId != null, arrived, openAlbum,
+            onPlay = { ownedId?.let { play.playAlbum(it) } }, onSkip = { hub.skipSource(job) }, onRetry = { hub.retry(job) }, onDismiss = onDismiss,
+        )
+        return
+    }
     if (app.discair.ui.common.isGallery()) {
         val arrived = job.updatedAt?.let { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date((it * 1000).toLong())) }
         GalleryJob(

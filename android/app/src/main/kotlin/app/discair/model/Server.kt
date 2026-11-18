@@ -107,5 +107,9 @@ data class ServerReads(
     val lenses: JobStatus?,
     val popularity: JobStatus?,
     val checkedAtMillis: Long,
+    /** `GET /api/health` `version`: the Librarian's build label. Null from an older server. */
+    val librarianVersion: String? = null,
+    /** `GET /api/health` `latency_ms`: the Librarian's ping of Navidrome, whole milliseconds. Null from an older server. */
+    val navidromeLatencyMs: Int? = null,
 )
 
