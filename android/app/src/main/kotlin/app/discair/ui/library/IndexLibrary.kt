@@ -22,8 +22,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -170,14 +168,17 @@ private fun SortLine(state: LibraryState, model: LibraryViewModel) {
                 .semantics(mergeDescendants = true) { contentDescription = "Sort $noun, now $label, ${directionLabel(state)}"; liveRegion = LiveRegionMode.Polite },
             verticalAlignment = Alignment.CenterVertically,
         ) { IndexLabel(IndexListsRules.sortLine(label, state.effectiveDescending), color = p.text) }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
-                DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortArtists(sort) })
-            } else AlbumSort.entries.forEach { sort ->
-                DropdownMenuItem(text = { Text(sort.label) }, onClick = { open = false; model.sortAlbums(sort) })
-            }
-            DropdownMenuItem(text = { Text("Reverse: " + directionLabel(state)) }, onClick = { open = false; model.flipDirection() })
-        }
+        if (open) app.discair.ui.common.IndexMenuSheet(
+            buildList {
+                if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
+                    add(app.discair.ui.common.IndexMenuItem(sort.label, icon = if (sort == state.artistSort) IndexIcons.Check else null) { model.sortArtists(sort) })
+                } else AlbumSort.entries.forEach { sort ->
+                    add(app.discair.ui.common.IndexMenuItem(sort.label, icon = if (sort == state.albumSort) IndexIcons.Check else null) { model.sortAlbums(sort) })
+                }
+                add(app.discair.ui.common.IndexMenuItem("Reverse", detail = "Now " + directionLabel(state)) { model.flipDirection() })
+            },
+            onDismiss = { open = false },
+        )
     }
 }
 
@@ -202,7 +203,7 @@ private fun ArtistRows(state: LibraryState, model: LibraryViewModel, open: Opene
                     artist.name, Modifier.animateItem().indexArrive(i, "artists"), meta = IndexListsRules.artistMeta(artist.albumCount, artist.plays),
                     number = IndexListsRules.letter(artist.key.ifBlank { artist.name }), onClick = { open.artist(artist.name, artist.key, artist.id, null) },
                     lead = { Cover(artist.artworkUrl?.let { repo.absolute(it) }, Modifier.size(48.dp), rect = true) },
-                    trail = { ArtistMenu(artist.name, artist.id) },
+                    trail = { ArtistMenu(artist.name, artist.id, artist.artworkUrl?.let { repo.absolute(it) }) },
                 )
             }
             if (state.loading) item { IndexMuted("Loading…", Modifier.padding(vertical = Gutter)) }
@@ -219,18 +220,21 @@ private fun ArtistRows(state: LibraryState, model: LibraryViewModel, open: Opene
 
 /** The three dots on an artist row: Play, Shuffle, Play next, Add to queue (the Standard row's play button and menu, in one place). */
 @Composable
-private fun ArtistMenu(name: String, id: String) {
+private fun ArtistMenu(name: String, id: String, artwork: String?) {
     val play = LocalPlayActions.current
-    var menu by remember { mutableStateOf(false) }
-    Box {
-        IndexIconButton(IndexIcons.More, "Play or queue $name", { menu = true }, tint = LocalPalette.current.textMuted, size = 20.dp)
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Play") }, onClick = { menu = false; play.playArtist(id, shuffle = false) })
-            DropdownMenuItem(text = { Text("Shuffle") }, onClick = { menu = false; play.playArtist(id, shuffle = true) })
-            DropdownMenuItem(text = { Text("Play next") }, onClick = { menu = false; play.queueArtist(id, next = true) })
-            DropdownMenuItem(text = { Text("Add to queue") }, onClick = { menu = false; play.queueArtist(id, next = false) })
-        }
-    }
+    app.discair.ui.common.IndexMenuButton(
+        "Play or queue $name",
+        app.discair.ui.common.indexMenuItems(
+            listOf(
+                "Play" to { play.playArtist(id, shuffle = false) },
+                "Shuffle" to { play.playArtist(id, shuffle = true) },
+                "Play next" to { play.queueArtist(id, next = true) },
+                "Add to queue" to { play.queueArtist(id, next = false) },
+            ),
+        ),
+        header = app.discair.ui.common.IndexMenuHeader(name, "Artist") { Cover(artwork, Modifier.size(app.discair.ui.common.IndexSheetRules.HEADER_ART.dp), rect = true) },
+        tint = LocalPalette.current.textMuted, size = 20.dp,
+    )
 }
 
 /**

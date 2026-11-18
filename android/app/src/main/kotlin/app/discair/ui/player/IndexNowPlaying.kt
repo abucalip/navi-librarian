@@ -38,8 +38,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -287,16 +285,10 @@ private fun Modifier.pullUp(by: Dp): Modifier = layout { measurable, constraints
 /** The bar (52dp): the Down button, the mono catalogue line centred, and the three dots with the player's menu. */
 @Composable
 internal fun IndexPlayerBar(title: String, backLabel: String, onBack: () -> Unit, menu: List<Pair<String, () -> Unit>>) {
-    var open by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth().statusBarsPadding().height(IndexRules.PAGE_BAR.dp).padding(horizontal = 4.dp)) {
         IndexIconButton(IndexIcons.Down, backLabel, onBack, Modifier.align(Alignment.CenterStart))
         IndexLabel(title, Modifier.align(Alignment.Center).padding(horizontal = 52.dp).semantics { heading() })
-        if (menu.isNotEmpty()) Box(Modifier.align(Alignment.CenterEnd)) {
-            IndexIconButton(IndexIcons.More, "More", { open = true })
-            DropdownMenu(open, onDismissRequest = { open = false }) {
-                menu.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; run() }) }
-            }
-        }
+        app.discair.ui.common.IndexMenuButton("More", app.discair.ui.common.indexMenuItems(menu), Modifier.align(Alignment.CenterEnd))
     }
 }
 
@@ -632,12 +624,13 @@ private fun IndexQueueView(state: PlayerUiState, controller: PlayerController) {
                     trail = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (unavailable) IndexState("Unavailable", color = p.chartRedText)
-                            Box {
-                                IndexIconButton(IndexIcons.More, "More for ${song.title}", { menu = true }, tint = p.textMuted, size = 18.dp)
-                                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                                    actions.forEach { (label, run) -> DropdownMenuItem(text = { Text(label) }, onClick = { menu = false; run() }) }
-                                }
-                            }
+                            IndexIconButton(IndexIcons.More, "More for ${song.title}", { menu = true }, tint = p.textMuted, size = 18.dp)
+                            if (menu) app.discair.ui.common.IndexMenuSheet(
+                                app.discair.ui.common.indexMenuItems(actions), onDismiss = { menu = false },
+                                header = app.discair.ui.common.IndexMenuHeader(song.title, app.discair.ui.common.IndexSheetRules.eyebrow("Queue", index + 1, items.size, song.artist)) {
+                                    Cover(song.coverUrl.ifBlank { null }, Modifier.size(app.discair.ui.common.IndexSheetRules.HEADER_ART.dp), rect = true)
+                                },
+                            )
                         }
                     },
                 )
