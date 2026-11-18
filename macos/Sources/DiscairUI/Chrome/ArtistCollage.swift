@@ -33,9 +33,10 @@ enum CollageLayout {
         let pixels = max(scale, 1)
         let x = (slot.minX * size.width * pixels).rounded() / pixels
         let y = (slot.minY * size.height * pixels).rounded() / pixels
-        let width = (slot.width * size.width * pixels).rounded() / pixels
-        let height = (slot.height * size.height * pixels).rounded() / pixels
-        return CGRect(x: x - overlap / 2, y: y - overlap / 2, width: width + overlap, height: height + overlap)
+        let right = (slot.maxX * size.width * pixels).rounded() / pixels
+        let bottom = (slot.maxY * size.height * pixels).rounded() / pixels
+        return CGRect(x: x - overlap / 2, y: y - overlap / 2,
+                      width: right - x + overlap, height: bottom - y + overlap)
     }
 
     static func slots(count: Int) -> [CGRect] {
