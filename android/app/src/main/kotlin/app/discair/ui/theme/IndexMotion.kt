@@ -66,6 +66,12 @@ object IndexMotion {
     fun <T> fade(ms: Int, reduced: Boolean): TweenSpec<T> =
         tween(MotionRules.duration(ms, MotionFamily.Standard, reduced), 0, androidx.compose.animation.core.LinearEasing)
 
+    /** Section 8.2 #5: the delay of row [index] in the cascade, or null for a row past [ROW_MAX], which simply appears. */
+    fun rowDelayMs(index: Int): Int? = if (index in 0 until ROW_MAX) index * ROW_STAGGER_MS else null
+
+    /** Section 8.2 #7: digit [index] of a rolling numeral starts this late. */
+    fun digitDelayMs(index: Int): Int = index * NUMERAL_DIGIT_DELAY_MS
+
     /** The bar's order, which decides the tab slide's direction (decision I3). Search is an overlay and has no slide. */
     val barOrder: List<String> = listOf("Home", "Discover", "Library", "Search")
 

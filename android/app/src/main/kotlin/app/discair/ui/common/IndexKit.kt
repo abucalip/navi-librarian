@@ -1,6 +1,26 @@
 package app.discair.ui.common
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import app.discair.model.GetState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -182,11 +202,14 @@ object IndexType {
 
 // ---------------------------------------------------------------- rules and text
 
-/** A rule across the page: 1dp `edge` between rows (the default), or the heavy 2dp `text` rule that opens a section. */
+/** A rule across the page: 1dp `edge` between rows (the default), or the heavy 2dp `text` rule that opens a section. [draw] draws it left to right on arrival (motion #6). */
 @Composable
-fun IndexRule(modifier: Modifier = Modifier, heavy: Boolean = false) {
+fun IndexRule(modifier: Modifier = Modifier, heavy: Boolean = false, draw: Boolean = false, key: Any? = null) {
     val p = LocalPalette.current
-    Box(modifier.fillMaxWidth().height((if (heavy) IndexRules.RULE_HEAVY else IndexRules.RULE_LIGHT).dp).background(if (heavy) p.text else p.edge))
+    Box(
+        modifier.fillMaxWidth().then(if (draw) Modifier.indexRuleDraw(key) else Modifier)
+            .height((if (heavy) IndexRules.RULE_HEAVY else IndexRules.RULE_LIGHT).dp).background(if (heavy) p.text else p.edge),
+    )
 }
 
 /** A mono data word or meta line (capitals). [color] defaults to `textMuted`. */
@@ -207,13 +230,13 @@ fun IndexCount(text: String, modifier: Modifier = Modifier) {
 
 /**
  * A section head: 28dp above, the 2dp `text` rule, 10dp, the Section title with a mono meta word, and a mono `accent` link pushed right.
- * (The rule draws left to right on arrival in step I2, motion #6.)
+ * The rule draws left to right on arrival (motion #6).
  */
 @Composable
 fun IndexSectionHead(title: String, modifier: Modifier = Modifier, meta: String? = null, link: String? = null, onLink: (() -> Unit)? = null, first: Boolean = false) {
     val p = LocalPalette.current
     Column(modifier.fillMaxWidth().padding(top = if (first) 0.dp else 28.dp, start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp)) {
-        IndexRule(heavy = true)
+        IndexRule(heavy = true, draw = true, key = title)
         Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             Text(title, style = IndexType.section(), color = p.text, maxLines = 1)
             if (meta != null) IndexLabel(meta, Modifier.padding(bottom = 2.dp))
@@ -243,7 +266,7 @@ fun IndexPageHead(title: String, modifier: Modifier = Modifier, count: String? =
             }
             trailing?.invoke()
         }
-        IndexRule(Modifier.padding(horizontal = IndexRules.GUTTER.dp).padding(top = 12.dp), heavy = true)
+        IndexRule(Modifier.padding(horizontal = IndexRules.GUTTER.dp).padding(top = 12.dp), heavy = true, draw = true, key = title)
     }
 }
 
@@ -452,5 +475,159 @@ fun IndexRow(
             trail?.invoke()
         }
         if (divider) IndexRule()
+    }
+}
+
+// ---------------------------------------------------------------- arrival motion (#5, #6)
+
+/**
+ * Motion #5, the row cascade: row [index] arrives from 12dp to the left, from alpha 0, 300ms on the Settle curve, 20ms after the row before it; a row past the
+ * twelfth appears at once. It runs once per [key] and screen: the flag is saved, so a row scrolled off and back, or a page Back returns to, does not replay.
+ * Pass the tab or lens as [key] and the list cascades again when it changes.
+ */
+@Composable
+fun Modifier.indexArrive(index: Int, key: Any? = null): Modifier {
+    val reduced = rememberReducedMotion()
+    val delay = IndexMotion.rowDelayMs(index)
+    var done by rememberSaveable(key?.toString()) { mutableStateOf(false) }
+    val progress = remember(key) { Animatable(if (done || reduced || delay == null) 1f else 0f) }
+    LaunchedEffect(key) {
+        if (progress.value < 1f) progress.animateTo(1f, IndexMotion.settle(IndexMotion.ROW_MS, reduced, delay ?: 0))
+        done = true
+    }
+    val from = IndexMotion.ROW_FROM_DP
+    return graphicsLayer {
+        translationX = (1f - progress.value) * from.dp.toPx()
+        alpha = progress.value
+    }
+}
+
+/** Motion #6, the rule draws: scaleX 0 to 1 from the left edge, 360ms on the Firm curve, saved per [key] like [indexArrive]. */
+@Composable
+fun Modifier.indexRuleDraw(key: Any? = null): Modifier {
+    val reduced = rememberReducedMotion()
+    var done by rememberSaveable(key?.toString()) { mutableStateOf(false) }
+    val progress = remember(key) { Animatable(if (done || reduced) 1f else 0f) }
+    LaunchedEffect(key) {
+        if (progress.value < 1f) progress.animateTo(1f, IndexMotion.firm(IndexMotion.RULE_MS, reduced))
+        done = true
+    }
+    return graphicsLayer {
+        scaleX = progress.value
+        transformOrigin = TransformOrigin(0f, 0.5f)
+    }
+}
+
+// ---------------------------------------------------------------- data list, insight block, numeral roll
+
+/** One line of a data list: a mono [key], its [value], and [accent] to draw the value in `accent` 600 ("Owned: No"). */
+data class IndexDatum(val key: String, val value: String, val accent: Boolean = false)
+
+/** The data list (index.css `.dl`): mono keys in `textMuted` (10), values in Inter 500 12.5, 8dp across and 3dp down. Keys share one column, as the mockup's grid does. */
+@Composable
+fun IndexDataList(rows: List<IndexDatum>, modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    Row(modifier.semantics(mergeDescendants = true) { contentDescription = rows.joinToString(", ") { "${it.key} ${it.value}" } }, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            rows.forEach { Text(it.key.uppercase(), style = IndexType.label().copy(fontSize = 10.sp, lineHeight = 18.sp), color = p.textMuted, maxLines = 1) }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            rows.forEach {
+                Text(
+                    it.value, style = IndexType.dataValue().let { s -> if (it.accent) s.copy(fontWeight = FontWeight.SemiBold) else s },
+                    color = if (it.accent) p.accent else p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Motion #7, the numeral roll: each character of [text] is its own slot; a digit that changes slides up out of the slot and the new one rises in from below,
+ * 420ms on the Firm curve, 40ms later for each digit. On first arrival the slots start blank, so the digits rise in. The spoken value is the final text.
+ */
+@Composable
+fun IndexNumeral(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+    val reduced = rememberReducedMotion()
+    var shown by remember { mutableStateOf(if (reduced) text else " ".repeat(text.length)) }
+    LaunchedEffect(text) { shown = text }
+    Row(modifier.clearAndSetSemantics { contentDescription = text }) {
+        text.forEachIndexed { i, _ ->
+            val ch = shown.getOrNull(i) ?: ' '
+            if (!ch.isDigit() && ch != ' ') { Text(ch.toString(), style = style, color = color); return@forEachIndexed }
+            AnimatedContent(
+                targetState = ch,
+                transitionSpec = {
+                    (slideInVertically(IndexMotion.firm(IndexMotion.NUMERAL_MS, reduced, IndexMotion.digitDelayMs(i))) { it } togetherWith
+                        slideOutVertically(IndexMotion.firm(IndexMotion.NUMERAL_MS, reduced)) { -it }) using SizeTransform(clip = true)
+                },
+                label = "indexNumeral",
+            ) { c -> Text(if (c == ' ') "\u00A0" else c.toString(), style = style, color = color, maxLines = 1) }
+        }
+    }
+}
+
+/**
+ * The insight block (section 7): the `insight` fill, 16dp padding, the numeral (92sp) spanning two rows at the left, the mono label in `insightLabel` and a
+ * 600 16 sentence beside it. A block with no [numeral] is just the label and the sentence.
+ */
+@Composable
+fun IndexInsightBlock(label: String, sentence: String, modifier: Modifier = Modifier, numeral: String? = null) {
+    val tones = indexTones()
+    Row(modifier.fillMaxWidth().background(tones.insight).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+        if (numeral != null) IndexNumeral(numeral, IndexType.numeral(), tones.onInsight)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label.uppercase(), style = IndexType.label(), color = tones.insightLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sentence, style = IndexType.body().copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 20.sp), color = tones.onInsight)
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Get (motion #11)
+
+/** The states of a Get control (section 7): idle, pending, requested, owned, failed, and none (no artist to get). */
+enum class IndexGet { Idle, Pending, Requested, Owned, Failed, None }
+
+/** The Get state of an acquisition's [GetState]; Owned and None come from the screen's own data (a radio play, an album already in the library). */
+fun indexGetOf(state: GetState): IndexGet = when (state) {
+    GetState.Idle -> IndexGet.Idle
+    GetState.Pending -> IndexGet.Pending
+    is GetState.Requested -> IndexGet.Requested
+    is GetState.Failed -> IndexGet.Failed
+}
+
+/**
+ * The Get control with its morph: Idle is a primary button ([idleLabel]), pending a ghost "Getting" with a turning refresh icon (turning only in that state),
+ * requested the mono word REQUESTED, owned IN LIBRARY in `ok`, failed a ghost "Try again" in `chartRedText`, none NO ARTIST. The change cross-fades 120ms in and
+ * 80ms out while the size settles over 220ms on the Firm curve.
+ */
+@Composable
+fun IndexGetButton(state: IndexGet, onGet: () -> Unit, modifier: Modifier = Modifier, idleLabel: String = "Get", small: Boolean = true) {
+    val p = LocalPalette.current
+    val reduced = rememberReducedMotion()
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = {
+            (fadeIn(IndexMotion.fade(120, reduced)) togetherWith fadeOut(IndexMotion.fade(80, reduced))) using SizeTransform { _, _ -> IndexMotion.firm(220, reduced) }
+        },
+        modifier = modifier, label = "indexGet",
+    ) { s ->
+        when (s) {
+            IndexGet.Idle -> IndexButton(idleLabel, onGet, icon = IndexIcons.Get, small = small)
+            IndexGet.Pending -> {
+                val turn by rememberInfiniteTransition(label = "indexGetTurn").animateFloat(0f, 360f, infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart), label = "turn")
+                IndexButtonBody(IndexButtonKind.Ghost, {}, Modifier, enabled = false, small = small) {
+                    Icon(IndexIcons.Refresh, null, Modifier.size(IndexRules.ICON_INLINE.dp).graphicsLayer { rotationZ = if (reduced) 0f else turn })
+                    Text("Getting")
+                }
+            }
+            IndexGet.Requested -> IndexState("Requested")
+            IndexGet.Owned -> IndexState("In library", color = p.ok)
+            IndexGet.Failed -> IndexButtonBody(IndexButtonKind.Ghost, onGet, Modifier, enabled = true, small = small, labelColor = p.chartRedText) {
+                Icon(IndexIcons.Refresh, null, Modifier.size(IndexRules.ICON_INLINE.dp))
+                Text("Try again")
+            }
+            IndexGet.None -> IndexState("No artist")
+        }
     }
 }

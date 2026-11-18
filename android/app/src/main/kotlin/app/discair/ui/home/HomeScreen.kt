@@ -154,6 +154,15 @@ fun HomeScreen(open: Opener, onRadio: () -> Unit = {}, onDownloads: () -> Unit =
         return
     }
 
+    // Index: its own arrangement, in IndexHome.kt (the Home bar is the shell's); every other theme continues below unchanged.
+    if (layout == app.discair.ui.theme.Layout.Index) {
+        IndexHome(
+            GalleryHomeData(picks.state, pickList, picks.reload, genres.state, data.hero, data.arrivals, data.insight, banner),
+            open, feedback, onRadio, onLibrary, onStats, onServer, onDownloads,
+        )
+        return
+    }
+
     @Composable
     fun Module(m: DashModule, wide: Boolean) {
         when (m) {

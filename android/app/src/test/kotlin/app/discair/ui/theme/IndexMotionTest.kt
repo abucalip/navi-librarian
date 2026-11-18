@@ -89,4 +89,20 @@ class IndexMotionTest {
         assertEquals(IndexMotion.signalX(0, width), IndexMotion.signalX(-1, width), 0f)
         assertTrue(IndexMotion.signalX(0, width) >= 0f)
     }
+
+    @Test fun theRowCascadeStaggersTwelveRowsAndTheRestAppearAtOnce() {
+        val c = motion.getValue("rowCascade").jsonObject
+        val stagger = c.getValue("staggerMs").jsonPrimitive.int
+        val max = c.getValue("maxStaggered").jsonPrimitive.int
+        assertEquals(0, IndexMotion.rowDelayMs(0))
+        assertEquals(stagger * (max - 1), IndexMotion.rowDelayMs(max - 1))
+        assertNull(IndexMotion.rowDelayMs(max))
+        assertNull(IndexMotion.rowDelayMs(-1))
+    }
+
+    @Test fun eachDigitOfTheNumeralRollStartsLaterThanTheOneBefore() {
+        val perDigit = motion.getValue("numeralRoll").jsonObject.getValue("perDigitDelayMs").jsonPrimitive.int
+        assertEquals(0, IndexMotion.digitDelayMs(0))
+        assertEquals(perDigit * 2, IndexMotion.digitDelayMs(2))
+    }
 }
