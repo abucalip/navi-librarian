@@ -1,3 +1,9 @@
+## 2026-11-18 — Index theme I2, Home (PR #1198)
+
+- **Merged:** PR #1198, squash `05b3df3c3cf42c417f787b274ac531a35e96a39c` (head `f20fa89a`). `IndexHome`, `IndexHomeRules`, kit additions (`indexArrive`, `indexRuleDraw`, `IndexNumeral`, `IndexGetButton`, `IndexDataList`, `IndexInsightBlock`), `IndexMotion.rowDelayMs`/`digitDelayMs`, `ShelfAlbum.playCount`; `ARCHITECTURE.md` row amended.
+- **Tests run:** `IndexHomeRulesTest`, `IndexMotionTest`, `IndexTest`, `ExistingLayoutsTest`, `PaletteTest`, `HomeArtistsTest` (JDK 17), all pass. CI on the merged head not re-checked here. Not run: full suite.
+- **Limitations:** no emulator or phone screenshot against `pages/home`; differences listed in `ACTIVE_WORK.md`. Not published or deployed.
+
 ## 2026-11-18 — Index theme I1, palettes, font pair and shell (PR #1197)
 
 - **Merged:** PR #1197, squash `cc1614b25ec4c3e23aa286bdd0c0388c72b95847`. `Layout.Index`, four palettes pinned to `tokens.json`, `IndexTones`, `FontPairs.Index`, `IndexIcons` (48), `IndexKit`, `IndexShell`, `IndexMotion`; Index branches in the shared controls, seek bar, chart style, `NavRules`, `ThemeGroups`, `NavIsland`, `MainShell`.
