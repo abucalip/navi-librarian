@@ -74,9 +74,10 @@ class DashboardRoutesTests(unittest.TestCase):
     def test_health_uses_injected_service_and_preserves_response(self):
         response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {
-            "status": "ok", "service": "Navidrome", "message": "pong",
-        })
+        body = response.json()
+        self.assertEqual({k: body[k] for k in ("status", "service", "message")},
+                         {"status": "ok", "service": "Navidrome", "message": "pong"})
+        self.assertEqual(set(body), {"status", "service", "message", "version", "latency_ms"})
         self.assertEqual(self.fake.calls, [("api_call", "ping")])
 
     def test_health_failure_is_sanitized(self):
