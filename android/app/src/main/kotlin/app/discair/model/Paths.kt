@@ -40,7 +40,16 @@ data class PathStop(
     val beginYear: Int? = null, val anchorBeginYear: Int? = null,
     /** Listen-through gaps: the server's play label (`Not played`, `Played 1 time`); null on every other path and when the history is not usable. */
     val play: String? = null,
+    /** Sideman: the releases behind the reasons (oldest first) and the first and last dated one; `null` when the server did not send them (Index theme I0). */
+    val sharedAlbums: List<SharedAlbum>? = null,
+    val years: PathYears? = null,
 )
+
+/** A release a sideman stop shares with the start, with its library state. */
+data class SharedAlbum(val album: String, val year: Int?, val owned: Boolean)
+
+/** The first and last year of the shared releases. */
+data class PathYears(val from: Int, val to: Int)
 
 /** A release and the artist it is credited to: the pair a cover is looked up by. */
 data class PathAlbum(val album: String, val artist: String)
@@ -340,6 +349,15 @@ fun parsePaths(body: String): PathsResponse {
             play = stop.obj("play")?.string("text")?.trim()?.takeIf { it.isNotEmpty() },
             beginYear = stop.obj("presentation")?.int("begin_year"),
             anchorBeginYear = stop.obj("presentation")?.int("anchor_begin_year"),
+            sharedAlbums = (stop.obj("presentation")?.get("shared_albums") as? JsonArray)?.mapNotNull { a ->
+                val o = a as? JsonObject ?: return@mapNotNull null
+                val album = o.string("album")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                SharedAlbum(album, o.int("year"), (o["owned"] as? JsonPrimitive)?.booleanOrNull ?: false)
+            },
+            years = stop.obj("presentation")?.obj("years")?.let { y ->
+                val from = y.int("from"); val to = y.int("to")
+                if (from != null && to != null) PathYears(from, to) else null
+            },
             reasons = (stop["reasons"] as? JsonArray).orEmpty().mapNotNull { r ->
                 val o = r as? JsonObject ?: return@mapNotNull null
                 val text = o.string("text")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null

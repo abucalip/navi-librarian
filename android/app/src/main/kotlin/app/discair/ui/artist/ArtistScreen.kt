@@ -92,6 +92,14 @@ fun ArtistScreen(route: ArtistRoute, open: Opener) {
         }
         return
     }
+    // Index: the plain page with its catalogue bar (no tint).
+    if (app.discair.ui.common.isIndex()) {
+        Box(Modifier.fillMaxSize()) {
+            LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = {}, pathsOn = pathsOn) }
+            if (loaded.state !is app.discair.ui.common.Load.Ready) app.discair.ui.common.IndexPageBar("Artist", open.back)
+        }
+        return
+    }
     TintedPage(tint, list) {
         LoadView(loaded) { page -> ArtistContent(route, page, open, list, onTint = { tint = it }, pathsOn = pathsOn) }
         // Back stays reachable while the page loads or fails.
@@ -153,6 +161,18 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 pathsOn && pathsMbid != null, { showPaths = true },
             ),
             open, list, showAllSongs, { showAllSongs = true }, showAllMissing, { showAllMissing = true },
+        )
+        return
+    }
+
+    // Index: the photo with its data list, in IndexArtist.kt.
+    if (app.discair.ui.common.isIndex()) {
+        IndexArtistContent(
+            CoverStackArtistData(
+                route, name, sections, owned, info?.albumCount, info?.owned == true, artistId, similar, collage,
+                pathsOn && pathsMbid != null, { showPaths = true },
+            ),
+            open, list, showAllSongs, { showAllSongs = true },
         )
         return
     }

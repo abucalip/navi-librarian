@@ -123,7 +123,12 @@ fun ArtistPathsSheet(artistName: String, mbid: String, open: Opener, onDismiss: 
         // Back with a step open closes the step; Back with none open closes the sheet.
         BackHandler(enabled = step in stops.indices) { step = -1 }
         Box(Modifier.fillMaxWidth().weight(1f)) { // the sheet height left after its handle; a fixed fraction overflowed the Soft Brut outline
-            PathList(
+            // Index draws its own numbered list and opened step (IndexArtistPaths.kt); the state above is the same for every theme.
+            if (app.discair.ui.common.isIndex()) IndexArtistPathList(
+                artistName, mbid, kind, state, step, lists.getValue(kind), go,
+                onKind = { step = -1; kindWire = it.wire },
+                onStep = { step = it }, onRetry = { attempt++ },
+            ) else PathList(
                 artistName, mbid, kind, state, step, lists.getValue(kind), go,
                 onKind = { step = -1; kindWire = it.wire },
                 onStep = { step = it }, onRetry = { attempt++ },
@@ -244,7 +249,8 @@ internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int, cover: Int = 0
         PathKind.LabelPath -> {
             if (stop.albumArtist != null) PathRowCover(stop.albumArtist, stop.name, cover, modifier) else PathTile(PlayerIcons.Album, size)
         }
-        PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = true)
+        // Index draws every picture square (rule 3).
+        PathKind.SidemanToLeader, PathKind.ScenePath -> ArtistPhoto(stop.name, null, modifier, circle = !app.discair.ui.common.isIndex(), rect = app.discair.ui.common.isIndex())
         PathKind.CompositionPath -> {
             // A recording's cover is its album's, when the server named the album.
             val by = stop.albumArtist ?: stop.artist
@@ -253,7 +259,7 @@ internal fun PathThumb(kind: PathKind, stop: PathStop, size: Int, cover: Int = 0
     }
 }
 
-private fun kindDescription(kind: PathKind, artist: String, startType: String) = when (kind) {
+internal fun kindDescription(kind: PathKind, artist: String, startType: String) = when (kind) {
     PathKind.FollowTheMusician -> "Songs, not in your library, by musicians who also played with $artist."
     PathKind.SidemanToLeader -> when (startType) {
         "group" -> "Artists whose records $artist appeared on as guests."
@@ -265,7 +271,7 @@ private fun kindDescription(kind: PathKind, artist: String, startType: String) =
     PathKind.ScenePath -> "Artists from the same place and era as $artist."
 }
 
-private fun truncatedWords(reason: String) = when (reason) {
+internal fun truncatedWords(reason: String) = when (reason) {
     "rows" -> "row limit"
     "time" -> "time limit"
     "stops" -> "stop limit"

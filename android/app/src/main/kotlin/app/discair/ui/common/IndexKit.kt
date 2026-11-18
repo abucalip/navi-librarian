@@ -64,6 +64,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -233,10 +234,13 @@ fun IndexCount(text: String, modifier: Modifier = Modifier) {
  * The rule draws left to right on arrival (motion #6).
  */
 @Composable
-fun IndexSectionHead(title: String, modifier: Modifier = Modifier, meta: String? = null, link: String? = null, onLink: (() -> Unit)? = null, first: Boolean = false) {
+fun IndexSectionHead(
+    title: String, modifier: Modifier = Modifier, meta: String? = null, link: String? = null, onLink: (() -> Unit)? = null, first: Boolean = false, rule: Boolean = true,
+) {
     val p = LocalPalette.current
-    Column(modifier.fillMaxWidth().padding(top = if (first) 0.dp else 28.dp, start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp)) {
-        IndexRule(heavy = true, draw = true, key = title)
+    // [rule] false: the section sits right under a page head, whose own heavy rule already opens it (Genre).
+    Column(modifier.fillMaxWidth().padding(top = if (first) 0.dp else if (rule) 28.dp else 12.dp, start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp)) {
+        if (rule) IndexRule(heavy = true, draw = true, key = title)
         Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             Text(title, style = IndexType.section(), color = p.text, maxLines = 1)
             if (meta != null) IndexLabel(meta, Modifier.padding(bottom = 2.dp))
@@ -520,23 +524,54 @@ fun Modifier.indexRuleDraw(key: Any? = null): Modifier {
 
 // ---------------------------------------------------------------- data list, insight block, numeral roll
 
-/** One line of a data list: a mono [key], its [value], and [accent] to draw the value in `accent` 600 ("Owned: No"). */
-data class IndexDatum(val key: String, val value: String, val accent: Boolean = false)
+/** One line of a data list: a mono [key], its [value], and [accent] to draw the value in `accent` 600 ("Owned: No"). [onClick] makes the value a link (the artist, the genre). */
+data class IndexDatum(val key: String, val value: String, val accent: Boolean = false, val onClick: (() -> Unit)? = null)
 
-/** The data list (index.css `.dl`): mono keys in `textMuted` (10), values in Inter 500 12.5, 8dp across and 3dp down. Keys share one column, as the mockup's grid does. */
+/**
+ * The data list (index.css `.dl`): mono keys in `textMuted` (10), values in Inter 500 12.5, 8dp across and 3dp down. Keys share one column, as the mockup's grid
+ * does, and each key sits on its value's baseline, so the two columns never drift apart however tall a line is.
+ */
 @Composable
 fun IndexDataList(rows: List<IndexDatum>, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
-    Row(modifier.semantics(mergeDescendants = true) { contentDescription = rows.joinToString(", ") { "${it.key} ${it.value}" } }, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            rows.forEach { Text(it.key.uppercase(), style = IndexType.label().copy(fontSize = 10.sp, lineHeight = 18.sp), color = p.textMuted, maxLines = 1) }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+    val keyStyle = IndexType.label().copy(fontSize = 10.sp, lineHeight = 18.sp)
+    val valueStyle = IndexType.dataValue()
+    androidx.compose.ui.layout.Layout(
+        content = {
             rows.forEach {
+                Text(it.key.uppercase(), style = keyStyle, color = p.textMuted, maxLines = 1)
+                val click = it.onClick
                 Text(
-                    it.value, style = IndexType.dataValue().let { s -> if (it.accent) s.copy(fontWeight = FontWeight.SemiBold) else s },
+                    it.value, style = if (it.accent) valueStyle.copy(fontWeight = FontWeight.SemiBold) else valueStyle,
                     color = if (it.accent) p.accent else p.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = if (click != null) Modifier.clickable(role = Role.Button, onClickLabel = "Open ${it.value}", onClick = click) else Modifier,
                 )
+            }
+        },
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = rows.joinToString(", ") { "${it.key} ${it.value}" } },
+    ) { measurables, constraints ->
+        val gapX = 8.dp.roundToPx()
+        val gapY = 3.dp.roundToPx()
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val keys = measurables.filterIndexed { i, _ -> i % 2 == 0 }.map { it.measure(loose) }
+        val keyW = keys.maxOfOrNull { it.width } ?: 0
+        val valueMax = if (constraints.hasBoundedWidth) (constraints.maxWidth - keyW - gapX).coerceAtLeast(0) else androidx.compose.ui.unit.Constraints.Infinity
+        val values = measurables.filterIndexed { i, _ -> i % 2 == 1 }.map { it.measure(loose.copy(maxWidth = valueMax)) }
+        fun base(pl: androidx.compose.ui.layout.Placeable) = pl[androidx.compose.ui.layout.FirstBaseline].takeIf { it != androidx.compose.ui.layout.AlignmentLine.Unspecified } ?: pl.height
+        val lines = keys.indices.map { i ->
+            val b = maxOf(base(keys[i]), base(values[i]))
+            val h = maxOf(b - base(keys[i]) + keys[i].height, b - base(values[i]) + values[i].height)
+            b to h
+        }
+        val width = (keyW + gapX + (values.maxOfOrNull { it.width } ?: 0)).coerceIn(constraints.minWidth, if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE)
+        val height = lines.sumOf { it.second } + gapY * (lines.size - 1).coerceAtLeast(0)
+        layout(width, height.coerceAtLeast(constraints.minHeight)) {
+            var y = 0
+            keys.indices.forEach { i ->
+                val (b, h) = lines[i]
+                keys[i].placeRelative(0, y + b - base(keys[i]))
+                values[i].placeRelative(keyW + gapX, y + b - base(values[i]))
+                y += h + gapY
             }
         }
     }
@@ -630,4 +665,96 @@ fun IndexGetButton(state: IndexGet, onGet: () -> Unit, modifier: Modifier = Modi
             IndexGet.None -> IndexState("No artist")
         }
     }
+}
+
+// ---------------------------------------------------------------- I3: key/value grid, sheet header, playing bars
+
+/**
+ * The key/value grid (index.css `.kv`): four columns between 1dp `edge` rules, each a mono key over an Inter 500 13 value, 9dp above and below. Fewer cells keep
+ * their column width; a value that is a link ([IndexDatum.onClick]) is tappable.
+ */
+@Composable
+fun IndexKeyValueGrid(cells: List<IndexDatum>, modifier: Modifier = Modifier, columns: Int = 4) {
+    val p = LocalPalette.current
+    Column(modifier.fillMaxWidth()) {
+        IndexRule()
+        cells.chunked(columns).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { c ->
+                    val click = c.onClick
+                    Column(
+                        Modifier.weight(1f).then(if (click != null) Modifier.clickable(role = Role.Button, onClickLabel = "Open ${c.value}", onClick = click) else Modifier)
+                            .semantics(mergeDescendants = true) {}.padding(vertical = 9.dp).padding(end = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        IndexLabel(c.key)
+                        Text(c.value, style = IndexType.dataValue().copy(fontSize = 13.sp), color = if (c.accent) p.accent else p.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                repeat(columns - row.size) { Box(Modifier.weight(1f)) }
+            }
+            IndexRule()
+        }
+    }
+}
+
+/**
+ * A sheet's header (index.css `.shd`): [art] (72dp, or the 96dp photo of an opened artist step) beside a mono [eyebrow], the Lead title at 30sp and a mono
+ * [line] (or [extra] in its place, a data list); then the heavy 2dp `text` rule edge to edge.
+ */
+@Composable
+fun IndexSheetHeader(
+    title: String, modifier: Modifier = Modifier, eyebrow: String? = null, eyebrowColor: Color? = null, line: String? = null,
+    art: @Composable () -> Unit, extra: (@Composable () -> Unit)? = null,
+) {
+    val p = LocalPalette.current
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            art()
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (eyebrow != null) IndexLabel(eyebrow, color = eyebrowColor ?: p.textMuted)
+                Text(title, style = IndexType.leadTitle().copy(fontSize = 30.sp, lineHeight = 28.sp), color = p.text, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                if (line != null) IndexLabel(line)
+                extra?.invoke()
+            }
+        }
+        IndexRule(heavy = true)
+    }
+}
+
+/**
+ * Motion #13, the playing bars: three 3dp `accent` bars, 2dp apart, swinging between 3 and 12dp (800ms each way, offset 0 / −300 / −600ms). They move only while
+ * [playing]; paused, or with animations removed, they stand at 7dp. The frame clock stops with the screen, so nothing runs while it is not shown.
+ */
+@Composable
+fun IndexPlayingBars(playing: Boolean, modifier: Modifier = Modifier) {
+    val accent = LocalPalette.current.accent
+    val reduced = rememberReducedMotion()
+    val still = !playing || reduced
+    val time = if (still) null else {
+        val loop by rememberInfiniteTransition(label = "indexBars").animateFloat(
+            0f, (IndexMotion.BARS_MS * 2).toFloat(), infiniteRepeatable(tween(IndexMotion.BARS_MS * 2, easing = LinearEasing), RepeatMode.Restart), label = "t",
+        )
+        loop
+    }
+    androidx.compose.foundation.Canvas(modifier.size(width = 13.dp, height = 12.dp).semantics { contentDescription = if (playing) "Now playing" else "Paused here" }) {
+        val w = 3.dp.toPx()
+        val gap = 2.dp.toPx()
+        IndexMotion.BARS_PHASE_MS.forEachIndexed { i, phase ->
+            val h = (if (time == null) IndexMotion.BARS_REST_DP.toFloat() else IndexMotion.barHeightDp(time.toLong(), phase)).dp.toPx()
+            drawRect(accent, Offset(i * (w + gap), size.height - h), Size(w, h))
+        }
+    }
+}
+
+/** "DISC 2" above the first song of each disc of an album that spans several discs: a mono label, 16dp above. */
+@Composable
+fun IndexDiscHeading(disc: Int, modifier: Modifier = Modifier) {
+    IndexLabel("Disc $disc", modifier.fillMaxWidth().padding(start = IndexRules.GUTTER.dp, end = IndexRules.GUTTER.dp, top = 16.dp, bottom = 4.dp).semantics { heading() })
+}
+
+/** A muted sentence (a loading line, an empty state): Inter 14 in `textMuted`. */
+@Composable
+fun IndexMuted(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = IndexType.body(), color = LocalPalette.current.textMuted, modifier = modifier)
 }

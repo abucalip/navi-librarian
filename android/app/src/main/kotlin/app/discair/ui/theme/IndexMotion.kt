@@ -50,6 +50,25 @@ object IndexMotion {
     const val SIGNAL_WIDTH_FRACTION = 0.14f
     const val SIGNAL_HEIGHT_DP = 3
 
+    /** Section 8.2 #13: the playing bars swing between [BARS_MIN_DP] and [BARS_MAX_DP] over [BARS_MS] each way, the three offset by [BARS_PHASE_MS]; still at [BARS_REST_DP]. */
+    const val BARS_MS = 800
+    const val BARS_MIN_DP = 3
+    const val BARS_MAX_DP = 12
+    const val BARS_REST_DP = 7
+    val BARS_PHASE_MS: List<Int> = listOf(0, -300, -600)
+
+    /**
+     * One bar's height at [timeMs] into the loop: CSS `alternate` with `ease-in-out`, so up over [BARS_MS] and back down over the next, starting [phaseMs] early
+     * (a negative CSS delay). Pure, so the test can pin the ends.
+     */
+    fun barHeightDp(timeMs: Long, phaseMs: Int): Float {
+        val period = BARS_MS * 2L
+        val t = Math.floorMod(timeMs - phaseMs, period)
+        val up = if (t < BARS_MS) t.toFloat() / BARS_MS else 2f - t.toFloat() / BARS_MS
+        val eased = androidx.compose.animation.core.CubicBezierEasing(0.42f, 0f, 0.58f, 1f).transform(up)
+        return BARS_MIN_DP + (BARS_MAX_DP - BARS_MIN_DP) * eased
+    }
+
     /** Generic, so the same call serves Float, Dp and IntOffset (slides) animations. */
     fun <T> firm(ms: Int, reduced: Boolean, delayMs: Int = 0): TweenSpec<T> =
         tween(MotionRules.duration(ms, MotionFamily.Standard, reduced), if (reduced) 0 else delayMs, Firm)

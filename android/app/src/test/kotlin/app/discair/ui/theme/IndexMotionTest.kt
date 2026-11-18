@@ -48,6 +48,11 @@ class IndexMotionTest {
         assertEquals(ms("snackIn"), IndexMotion.SNACK_MS)
         assertEquals(motion.getValue("snackIn").jsonObject.getValue("fromDp").jsonPrimitive.int, IndexMotion.SNACK_FROM_DP)
         assertEquals(motion.getValue("snackIn").jsonObject.getValue("holdMs").jsonPrimitive.int.toLong(), IndexMotion.SNACK_HOLD_MS)
+        val bars = motion.getValue("playingBars").jsonObject
+        assertEquals(bars.getValue("ms").jsonPrimitive.int, IndexMotion.BARS_MS)
+        assertEquals(bars.getValue("minDp").jsonPrimitive.int, IndexMotion.BARS_MIN_DP)
+        assertEquals(bars.getValue("maxDp").jsonPrimitive.int, IndexMotion.BARS_MAX_DP)
+        assertEquals(bars.getValue("phaseMs").jsonArray.map { it.jsonPrimitive.int }, IndexMotion.BARS_PHASE_MS)
         same(curve(motion.getValue("firm")), IndexMotion.Firm, "firm")
         same(curve(motion.getValue("rowCascade").jsonObject.getValue("curve")), IndexMotion.Settle, "settle")
         same(curve(motion.getValue("sheetIn").jsonObject.getValue("curve")), IndexMotion.Settle, "sheetIn")
@@ -71,6 +76,16 @@ class IndexMotionTest {
             assertEquals(ms, IndexMotion.firm<Float>(ms, reduced = false).durationMillis)
         }
         assertEquals(40, IndexMotion.firm<Float>(100, reduced = false, delayMs = 40).delay)
+    }
+
+    @Test fun thePlayingBarsSwingFromThreeToTwelveAndBackWithEachBarOffset() {
+        // #13: 3dp at the start, 12dp after 800ms, 3dp again after 1600ms; a bar 300ms early is already on its way up; still bars stand at 7dp.
+        assertEquals(3f, IndexMotion.barHeightDp(0, 0), 0.01f)
+        assertEquals(12f, IndexMotion.barHeightDp(800, 0), 0.01f)
+        assertEquals(3f, IndexMotion.barHeightDp(1600, 0), 0.01f)
+        assertEquals(IndexMotion.barHeightDp(300, 0), IndexMotion.barHeightDp(0, -300), 0.01f)
+        assertTrue(IndexMotion.barHeightDp(0, -300) > 3f)
+        assertEquals(7, IndexMotion.BARS_REST_DP)
     }
 
     @Test fun theBarOrderDecidesTheDirection() {

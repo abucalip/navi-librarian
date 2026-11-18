@@ -104,6 +104,11 @@ fun AlbumScreen(route: AlbumRoute, open: Opener) {
         LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = {}, pathsOn = pathsOn, sonicOn = sonicOn) }
         if (loaded.state !is Load.Ready) app.discair.ui.common.GalleryPageBar("Album", open.back)
     }
+    // Index: the plain page with its catalogue bar (no tint), in IndexAlbum.kt.
+    else if (app.discair.ui.common.isIndex()) Box(Modifier.fillMaxSize()) {
+        LoadView(loaded) { page -> AlbumContent(route, page, open, list, onTint = {}, pathsOn = pathsOn, sonicOn = sonicOn) }
+        if (loaded.state !is Load.Ready) app.discair.ui.common.IndexPageBar("Album", open.back)
+    }
     else if (app.discair.ui.common.isFlow()) Box(Modifier.fillMaxSize().flowWash(tint, list, app.discair.ui.theme.LocalPalette.current)) { body() }
     else TintedPage(tint, list) { body() }
 }
@@ -198,6 +203,19 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
     // Gallery: the cover as a matted print and a catalogue placard, in GalleryAlbum.kt.
     if (app.discair.ui.common.isGallery()) {
         GalleryAlbumContent(
+            CoverStackAlbumData(
+                route, info, title, artist, year, s.genre.genre, owned, albumId, tracks, app.discair.model.coverUrlFor(info?.artworkUrl, choice), backs,
+                editions.size, canPick, { showEditions = true }, booklet, s.description.description, page.done != Done(),
+                s.similarAlbums.items, similarArtists, pathsOn, { showPaths = true },
+            ),
+            open, list,
+        )
+        return
+    }
+
+    // Index: the catalogue page, in IndexAlbum.kt.
+    if (app.discair.ui.common.isIndex()) {
+        IndexAlbumContent(
             CoverStackAlbumData(
                 route, info, title, artist, year, s.genre.genre, owned, albumId, tracks, app.discair.model.coverUrlFor(info?.artworkUrl, choice), backs,
                 editions.size, canPick, { showEditions = true }, booklet, s.description.description, page.done != Done(),
