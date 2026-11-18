@@ -165,9 +165,22 @@ struct CupertinoArtistBanner: View {
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: 620, alignment: .leading)
+                    .padding(.horizontal, 24).padding(.vertical, 20)
+                    // Keep the contrast aid local to the text group. The elliptical falloff softens every edge,
+                    // so it reads as a veil over the collage rather than a rectangular panel.
                     .background {
-                        LinearGradient(colors: [CU.shadowInk.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
+                        EllipticalGradient(
+                            stops: [
+                                .init(color: CU.shadowInk.opacity(0.55), location: 0),
+                                .init(color: CU.shadowInk.opacity(0.42), location: 0.38),
+                                .init(color: CU.shadowInk.opacity(0.18), location: 0.76),
+                                .init(color: .clear, location: 1)
+                            ],
+                            center: UnitPoint(x: 0.24, y: 0.5),
+                            startRadiusFraction: 0.04,
+                            endRadiusFraction: 1
+                        )
                     }
                 }
             }
