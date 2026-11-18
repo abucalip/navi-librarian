@@ -31,6 +31,7 @@ from discovery.search.cache import (
     SIMILAR_TTL_SECONDS, provider_cache_key, read_or_revalidate, run_noting_stale, with_fetched_at,
 )
 from discovery.search.disc_layout import disc_of, is_multi_disc, place_unmatched
+from discovery.search.album_position import library_position
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys
 from discovery.search.normalize import normalize_key
@@ -271,6 +272,7 @@ def album_sections(
     def remaining() -> float:
         return deadline_at - network.clock()
 
+    place = library_position(data, album)
     yield _available("album", "album", {
         "name": album["name"] if album else name,
         "artist": album["artist"] if album else artist,
@@ -285,6 +287,9 @@ def album_sections(
         "artwork_choice": artwork_choice if album else None,
         "release_group_mbid": (album or {}).get("release_group_mbid") or release_group_mbid,
         "song_count": album["song_count"] if album else None,
+        # Place in the library by album name, "0418 / 1284" (Index theme); null for an album not owned.
+        "library_position": place[0] if place else None,
+        "library_total": place[1] if place else None,
         # One file-quality tag for the whole album (``FLAC``, ``lossless``, ``320k``); null when unknown.
         "quality": album_quality_label(s for s in data.songs if s["album_id"] == album["id"]) if album and data else None,
     })

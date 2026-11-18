@@ -94,10 +94,10 @@ Paged list of Navidrome artists, for the library page. Available in P1.
 | `cursor` | string, optional | Opaque; from the previous response. |
 | `limit` | int, 1–200 | Default 60. |
 
-Response:
+Response (`plays`: the artist's summed song play counts from the index, `0` when none; added 2026-11-18 for the Index theme, optional for clients):
 ```json
 {"items": [{"id": "...", "key": "...", "name": "...", "album_count": 12,
-            "artwork_url": "…|null"}],
+            "plays": 212, "artwork_url": "…|null"}],
  "next_cursor": "…|null", "total": 733, "index_state": "fresh|stale|building|unavailable",
  "snapshot_at": "2026-10-25T16:00:00Z"}
 ```
@@ -938,3 +938,10 @@ Layout record and the song-only Get proposal: `ALBUM_PAGE_REDESIGN_PROPOSAL.md`.
 - **Layout.** One centered column: cover, title, artist, genre and year, description (three lines, six on a phone, Read more only when there is more), tracklist (number, title, length, green check when owned), a summary line ("17 songs, 1 hour 1 minute", plus how many the library has when it has some but not all), service links, similar albums as a numbered list in the server's order (best similar artist first), and similar artists as circles. The Library heading is hidden on the album page and Back is an icon-only button.
 - **Not built:** a Get button on a track. Get requests a whole album; a song-only request needs its own acquisition path (see the proposal).
 
+### 14.5 Index theme fields (2026-11-18, I0)
+
+All optional; clients that ignore unknown keys are unaffected.
+
+- `GET /api/library/artists` items: `plays` (int, the artist's summed song play counts, `0` when none).
+- Album page, `album` section: `library_position` and `library_total` (ints, or both `null` for an album not owned or while the index is unavailable): the album's place, counted from 1, among the owned albums sorted by album name, then artist, then id, and the number of owned albums. Built in `discovery/search/album_position.py`.
+- `GET /api/health`: `version` (the build label, as the page rail shows) and `latency_ms` (the Navidrome ping's round trip, whole milliseconds), beside `status`, `service`, `message`.
