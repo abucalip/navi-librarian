@@ -6,6 +6,8 @@ Last checked: 2026-11-18. GitHub `main` is authoritative; this update is based o
 
 ## Current state
 
+- **Index theme I1 merged (2026-11-18):** PR #1197, squash `cc1614b2`. `Layout.Index` with the four palettes (no colour changed), `IndexTones`, `FontPairs.Index`, 48 icons, `IndexKit`, `IndexShell` (bar with signal block, ink strip, Home and page bars, snackbar, sheet look, tab slide and push) and `IndexMotion`; Index is choosable in Appearance. Screens still draw the Standard composition under the Index shell until I2 to I6. Not deployed or published. **Next action:** the owner checks I1 on the phone (and answers the eight questions in the PR), then I2 Home.
+
 - **Index theme I0 audit done (2026-11-18, docs PR):** 7 of 13 data rows missing on the server; list and build order in `docs/INDEX_THEME.md` section 11a.
   - I0-1 decided (windowed count) and built in PR #1192. I0 server PR 2 merged (#1193, squash `2e169cf4`): `/api/health` `version` and `latency_ms`, `plays` on `/api/library/artists`, `library_position` and `library_total` on the album section. I0 server PR 3 merged (#1194, squash `9cc0f746`): `play_count` and `active_years` on the artist section, `owned_count` and `album_count` on the `albums` section. I0 server PR 4 merged (#1195, squash `37441907`): `presentation.shared_albums` and `presentation.years` on `sideman_to_leader` path stops (`intelligence/graph/path_stop_facts.py`, `presentation_version` 8). I0 server PR 5 merged (#1196, squash `5b87060a`): `filter=unplayed|lossless` on `/api/library/albums` (shared with Bento). **I0 is complete** (all 7 missing rows built). **Next action:** the owner picks the next step: Index I1 (client) or Bento B0 (server audit).
 
