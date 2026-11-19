@@ -126,7 +126,7 @@ struct CupertinoAlbum: View {
                 case .reviews: CupertinoAlbumSpread(state: state, part: .reviews).padding(.top, AlbumTabGap.value)
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .reportsHeroOffset(heroOffset)

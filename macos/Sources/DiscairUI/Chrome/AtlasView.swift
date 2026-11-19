@@ -19,7 +19,7 @@ struct AtlasView: View {
                 if atlas.showsList { list } else { map }
                 footer
             }
-            .padding(.horizontal, 28).padding(.bottom, 20)
+            .padding(.horizontal, 28)
             inspector.frame(width: 290)
         }
         .task { await state.loadAtlas(); camera = .region(atlas.region) }

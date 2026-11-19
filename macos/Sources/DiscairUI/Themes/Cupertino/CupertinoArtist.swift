@@ -238,7 +238,7 @@ struct CupertinoArtist: View {
                     if state.library.isLive { TopSongsPanel(state: state).padding(.top, 16) }
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .reportsHeroOffset(heroOffset)

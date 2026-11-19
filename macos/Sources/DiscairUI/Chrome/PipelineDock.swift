@@ -4,6 +4,8 @@ import SwiftUI
 /// Pipeline card (active Gets) sits bottom right above the player bar; Downloads has the full list.
 struct PipelineDockView: View {
     @Bindable var state: AppState
+    /// The card's measured height. The page scroll views leave this much room above the player bar (D3.1).
+    var onCardHeight: (CGFloat) -> Void = { _ in }
     @State private var folded = false
 
     var body: some View {
@@ -15,13 +17,12 @@ struct PipelineDockView: View {
                 toastCard(toast)
                     .transition(.opacity)
             }
-            // The Pipeline card itself is hidden (owner decision); Downloads shows the full list. Only the
-            // notes for a Get that started or finished appear, and they fade by themselves.
+            // The card lives in the overlay below; the notes for a Get that started or finished fade by themselves.
         }
         .frame(width: Self.width, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(.leading, 246)
-        .padding(.bottom, CupertinoPlayerBar.height + 14)
+        .padding(.bottom, CupertinoPlayerBar.height + PipelineDockPlacement.barGap)
         .animation(RenderMode.offscreenScreenshot ? nil : .easeOut(duration: 1.2), value: toasts.map(\.id))
         .allowsHitTesting(!toasts.isEmpty)
         .overlay(alignment: .bottomTrailing) { pipeline }
@@ -30,11 +31,12 @@ struct PipelineDockView: View {
     /// The Pipeline card: bottom right, just above the player bar. Hidden on Downloads (which lists everything) and when idle.
     @ViewBuilder private var pipeline: some View {
         let content = state.acquisition.dock
-        if !content.isEmpty && state.screen != .downloads && state.screen != .nowPlaying {
+        if PipelineDockPlacement.shows(screen: state.screen, content: content) {
             card(content)
                 .frame(width: Self.width + 20)
-                .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 16 : 16)
-                .padding(.bottom, CupertinoPlayerBar.height + 14)
+                .padding(.trailing, PipelineDockPlacement.trailingMargin(queueOpen: state.queueOpen))
+                .padding(.bottom, CupertinoPlayerBar.height + PipelineDockPlacement.barGap)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in onCardHeight(height) }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
                 .animation(RenderMode.offscreenScreenshot ? nil : .easeOut(duration: 0.18), value: folded)
         }
@@ -119,5 +121,42 @@ struct PipelineDockView: View {
         if c.more > 0 {
             Text("and \(c.more) more").font(.system(size: 11)).opacity(0.7)
         }
+    }
+}
+
+/// Where the Pipeline card sits and how much room the pages leave for it (D3.1). Pure, so the rules are tested without a window.
+@MainActor
+enum PipelineDockPlacement {
+    /// Between the card and the player bar, in points.
+    static let barGap: CGFloat = 14
+    /// Between the card and the window's trailing edge, and between the card and the queue when it is open.
+    static let margin: CGFloat = 16
+
+    /// The card shows over every screen except Downloads (which lists the jobs) and Now Playing.
+    static func shows(screen: Screen, content: PipelineDockContent) -> Bool {
+        !content.isEmpty && screen != .downloads && screen != .nowPlaying
+    }
+
+    /// From the page's bottom edge (the player bar's top) to the card's top, plus one margin.
+    /// The scroll views take this as a bottom content inset, so the last row can scroll clear of the card.
+    static func bottomClearance(cardHeight: CGFloat) -> CGFloat {
+        barGap + cardHeight + margin
+    }
+
+    /// Inside the main column: the queue's width plus the same margin when the queue is open.
+    static func trailingMargin(queueOpen: Bool) -> CGFloat {
+        queueOpen ? CupertinoQueueInspector.width + margin : margin
+    }
+}
+
+private struct PipelineDockClearanceKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    /// The room the page scroll views leave above the player bar while the Pipeline card shows; 0 when it is hidden.
+    var pipelineDockClearance: CGFloat {
+        get { self[PipelineDockClearanceKey.self] }
+        set { self[PipelineDockClearanceKey.self] = newValue }
     }
 }
