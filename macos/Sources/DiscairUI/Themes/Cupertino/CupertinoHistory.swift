@@ -22,7 +22,7 @@ struct CupertinoHistory: View {
                 }
                 ForEach(days.prefix(shownDays)) { day in section(day) }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task { await state.loadHistory() }

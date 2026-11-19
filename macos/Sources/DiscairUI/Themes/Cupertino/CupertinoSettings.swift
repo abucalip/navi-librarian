@@ -53,7 +53,7 @@ struct CupertinoSettings: View {
                     Text("Settings are available in the running app.").foregroundStyle(CU.textSecondary)
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

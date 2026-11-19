@@ -56,7 +56,7 @@ struct CupertinoEQ: View {
                         .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .confirmationDialog("Reset the equalizer?", isPresented: $confirmReset, titleVisibility: .visible) {

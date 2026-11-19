@@ -88,7 +88,7 @@ struct CupertinoLibraryHub: View {
                         ForEach(state.visible(state.library.recent)) { a in AlbumTile(state: state, album: a) }
                     }
                 }
-                .padding(.leading, CU.Space.xl).padding(.trailing, 16).padding(.bottom, CU.Space.xl)
+                .padding(.leading, CU.Space.xl).padding(.trailing, 16)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
             recentlyPlayed

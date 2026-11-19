@@ -39,7 +39,7 @@ struct GraphExplorerView: View {
                 canvas
                 footer
             }
-            .padding(.horizontal, 28).padding(.bottom, 20)
+            .padding(.horizontal, 28)
             inspector.frame(width: 290)
         }
         .onChange(of: graph.depth) { _, _ in Task { await graph.reload(librarian: state.session?.librarian) } }

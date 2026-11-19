@@ -21,7 +21,7 @@ struct TimelineView: View {
                 rail
                 footer
             }
-            .padding(.horizontal, 28).padding(.bottom, 20)
+            .padding(.horizontal, 28)
             inspector.frame(width: 290)
         }
     }

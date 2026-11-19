@@ -31,7 +31,7 @@ struct CupertinoConnections: View {
                     startPanel
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .onChange(of: graph.depth) { _, _ in Task { await graph.reload(librarian: librarian) } }

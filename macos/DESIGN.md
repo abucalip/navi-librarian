@@ -331,7 +331,9 @@ Edit > Command Palette (⌘K) opens a search field over a short list (`CommandPa
 
 A small tray, bottom right over every screen except Downloads, lists the Gets that are moving or waiting while the owner listens (`PipelineDockView`, `DiscairUI/Chrome`; rules in `PipelineDockContent`, pure, `DiscairUI/Model`). Cupertino: rounded translucent card. Zine: square paper card with a hard shadow and mono type. It shows the 3 most active jobs (moving first, then newest), each with its title, status text ("Downloading 63%", "Searching", "Waiting · Queued") and a thin bar filled from the server's `live_progress.percent` (a short stub while the percentage is unknown), then "and N more". The header reads "N downloads" and "N failed" in words and opens Downloads; the chevron folds the tray to one line. A failed job keeps the tray visible until it is cleared on Downloads, so a failure is never hidden. Nothing shows when no job is active or failed. It reads `AcquisitionModel.visibleJobs`, so the existing polling (4 s while busy) drives it.
 
-**Tests run (filtered):** `swift test --filter PipelineDockTests` (6 passed: empty, ordering and percent, row cap and overflow count, failure keeps it open, percent clamp, a render in each theme).
+Since D3 (2026-11-19) the pages leave room for the card: every content scroll view takes the card's measured height plus 16 pt as a bottom content inset while it shows, so the last row can scroll clear of it. The card's own height is read from its layout, and the shell applies the inset once for every page.
+
+**Tests run (filtered):** `swift test --filter PipelineDockTests` (6 passed at M6: empty, ordering and percent, row cap and overflow count, failure keeps it open, percent clamp, a render in each theme; D3 added the placement rules, the scroll-inset check and a scrolled render).
 **Not verified:** not seen in a running app (placement over the player strips at other window sizes, fold state, VoiceOver); the fold state resets when the app restarts; look not owner-approved.
 
 ## M6 slice 6: Library table

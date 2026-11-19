@@ -35,7 +35,8 @@ struct CupertinoInsights: View {
                         }
                     }
                 }
-                .padding(.horizontal, CU.Space.xl).padding(.bottom, 60)
+                // The shell adds the shared bottom inset (D3.2); this extra room keeps the dismiss/undo bar clear of the last row.
+                .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.l + CU.Space.xs)
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width - CU.Space.xl * 2 } action: { width = $0 }
             .scrollEdgeEffectStyle(.hard, for: .top)

@@ -57,7 +57,7 @@ struct CupertinoDownloads: View {
                     .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in max(width / 2, 520) }
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

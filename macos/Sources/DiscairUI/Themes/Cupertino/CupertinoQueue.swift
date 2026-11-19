@@ -29,7 +29,7 @@ struct CupertinoAlbumsGrid: View {
                     ForEach(shown) { a in AlbumTile(state: state, album: a) }
                 }
             }
-            .padding(.horizontal, CU.Space.xl).padding(.bottom, CU.Space.xl)
+            .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
     }

@@ -90,12 +90,12 @@ struct CupertinoStations: View {
     @ViewBuilder private func withPanel(sideBySide: Bool, @ViewBuilder main: () -> some View) -> some View {
         if sideBySide {
             HStack(alignment: .top, spacing: CU.Space.l) {
-                ScrollView { main().padding(.bottom, CU.Space.xl) }.scrollEdgeEffectStyle(.hard, for: .top)
-                ScrollView { panelColumn.padding(.bottom, CU.Space.xl) }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
+                ScrollView { main() }.scrollEdgeEffectStyle(.hard, for: .top)
+                ScrollView { panelColumn }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
             }
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: CU.Space.m) { main(); panelColumn }.padding(.bottom, CU.Space.xl)
+                VStack(alignment: .leading, spacing: CU.Space.m) { main(); panelColumn }
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
         }

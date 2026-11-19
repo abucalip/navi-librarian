@@ -147,6 +147,9 @@ enum CU {
         static let toolbarTop: CGFloat = 12
         /// 20 (sidebar) minus 8 (row padding), section 4.3.
         static let rowRadius: CGFloat = 12
+        /// Room under the last row of every page: the player bar sits below the content, so this is the page's own bottom
+        /// space (D3.2). The shell adds it once for every content scroll view.
+        static let contentBottomInset: CGFloat = CU.Space.xl
     }
     static func title(_ size: CGFloat) -> SwiftUI.Font { .system(size: size, weight: .bold).width(.standard) }
 
@@ -205,6 +208,8 @@ struct CupertinoWindow: View {
     let state: AppState
     /// How far the Album or Artist page has scrolled; the hero above it shrinks with it (D1.4).
     @State private var heroOffset: CGFloat = 0
+    /// Room the Pipeline card needs above the player bar (D3.1); 0 when the card is hidden.
+    @Environment(\.pipelineDockClearance) private var pipelineDockClearance
 
     var body: some View {
         if state.screen == .nowPlaying {
@@ -224,6 +229,10 @@ struct CupertinoWindow: View {
                     .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.compactHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(CU.content)
+                    // One bottom inset for every page's scroll views (D3.2), widened while the Pipeline card shows (D3.1).
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: max(CU.Shell.contentBottomInset, pipelineDockClearance))
+                    }
 
                 if state.screen == .artist { CupertinoArtistBanner(state: state, offset: heroOffset) }
                 if state.screen == .album { CupertinoAlbumBanner(state: state, offset: heroOffset) }   // under the sidebar and toolbar
