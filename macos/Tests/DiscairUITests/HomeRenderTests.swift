@@ -164,4 +164,7 @@ struct HomeRenderTests {
     // The radio card (E7) is not one of the seven: it belongs to the radio plan and keeps its two renders.
     @Test func rendersRadioCardPlaying() throws { try render(.radioPlaying, name: "radio-playing") }
     @Test func rendersRadioCardResume() throws { try render(.radioResume, name: "radio-resume") }
+    // D4.2: the radio card's capsule sizes are the same in Night, so the two cards are also rendered in Night.
+    @Test func rendersRadioCardPlayingNight() throws { try render(.radioPlaying, name: "radio-playing-night", night: true) }
+    @Test func rendersRadioCardResumeNight() throws { try render(.radioResume, name: "radio-resume-night", night: true) }
 }

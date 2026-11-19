@@ -13,6 +13,12 @@ struct HomeRadioCardView: View {
 
     private var p: PlayerModel { state.player }
 
+    /// D4.2 (`docs/plans/MACOS_DESIGN_DETAILS.md`): the card's capsules all use the regular variant, so "Resume" matches the
+    /// Home primary capsules and Stop / Open Radio match it. `primary` picks the accent fill; the neutral uses the grey fill.
+    static func capsuleStyle(primary: Bool) -> CapsuleButtonStyle {
+        primary ? CapsuleButtonStyle(primary: true) : CapsuleButtonStyle()
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             picture
@@ -82,11 +88,9 @@ struct HomeRadioCardView: View {
             neutral(nil, "Open Radio", label: "Open the Radio page") { state.screen = .stations }
         case .resume(let station, _):
             Button { p.playStation(station) } label: {
-                HStack(spacing: 6) { Image(systemName: "play.fill"); Text("Resume").cuRole(CU.Font.callout) }
-                    .foregroundStyle(CU.onAccent).padding(.horizontal, 12).padding(.vertical, 4)
-                    .background(CU.accent, in: Capsule())
+                HStack(spacing: 6) { Image(systemName: "play.fill"); Text("Resume") }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(Self.capsuleStyle(primary: true))
             .accessibilityLabel("Resume \(station.name)")
         }
     }
@@ -95,12 +99,10 @@ struct HomeRadioCardView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 if let symbol { Image(systemName: symbol) }
-                Text(title).cuRole(CU.Font.callout)
+                Text(title)
             }
-            .foregroundStyle(CU.text).padding(.horizontal, 12).padding(.vertical, 4)
-            .background(CU.bgFill, in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(Self.capsuleStyle(primary: false))
         .accessibilityLabel(label)
     }
 }
