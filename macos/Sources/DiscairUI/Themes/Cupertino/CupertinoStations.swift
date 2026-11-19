@@ -49,7 +49,7 @@ struct CupertinoStations: View {
             }
             Spacer(minLength: 0)
             CUSegmented(StationsModel.Pane.allCases.map { (value: $0, label: $0.rawValue) },
-                        selection: Binding(get: { model.pane }, set: { model.pane = $0 }), accessibilityName: "Radio view", accented: true)
+                        selection: Binding(get: { model.pane }, set: { model.pane = $0 }), accessibilityName: "Radio view")
                 .padding(.top, CU.Space.s)
         }
         .padding(.top, CU.Space.xs)
@@ -62,6 +62,9 @@ struct CupertinoStations: View {
         return n == 1 ? "1 station" : "\(n) stations"
     }
 
+    /// Filter chips are kept as a separate, documented style from `CUSegmented` (D4.1): a pill whose selection is inverted,
+    /// `text` ground with a `content` label when on, `bg.fill` with `text.secondary` when off. The roles are the segmented
+    /// control's, so the page has one selection language (`macos/DESIGN.md`, "Radio, S2-1 item 7").
     private var chips: some View {
         HStack(spacing: 6) {
             ForEach(model.chips) { chip in

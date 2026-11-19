@@ -62,8 +62,7 @@ struct GraphExplorerView: View {
             ArtistPickerField(state: state, style: style) { a in Task { await state.loadConnections(for: a) } }
                 .zIndex(3)
             HStack(spacing: 14) {
-                Picker("Depth", selection: $g.depth) { ForEach(1...3, id: \.self) { Text("Depth \($0)").tag($0) } }
-                    .pickerStyle(.segmented).frame(width: 240).labelsHidden()
+                CUSegmented((1...3).map { (value: $0, label: "Depth \($0)") }, selection: $g.depth, accessibilityName: "Depth")
                 Toggle("Credits only", isOn: $g.creditsOnly).toggleStyle(.switch).tint(style.accent)
                 Toggle("Discs", isOn: $g.showsDiscs).toggleStyle(.switch).tint(style.accent)
                     .accessibilityHint("Shows each album's disc image behind its cover")

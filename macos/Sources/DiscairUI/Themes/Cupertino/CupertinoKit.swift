@@ -98,23 +98,37 @@ struct CapsuleButtonStyle: ButtonStyle {
 
 // MARK: Segmented control
 
-/// Track `bg.fill` (on a panel, `bg.fill.onPanel`), radius 8, padding 2; segment 24 high, the selected one white with a hairline shadow.
+/// D4.1 (`docs/plans/MACOS_DESIGN_DETAILS.md`): one neutral segmented control for every tab-like choice. The accent is kept for
+/// the page's one main action, never for a selected segment. Roles come from `CUPalette`; the selected chip is darker than its
+/// track in Night and lighter in Day, so selection reads from the chip and the semibold weight, never from colour alone.
+enum CUSegmentedSpec {
+    static let trackRadius: CGFloat = 8
+    static let chipRadius: CGFloat = 4
+    /// Spec exception: the segmented track is padded 2 (section 4.3).
+    static let trackPadding: CGFloat = 2
+    static let segmentHeight: CGFloat = 24
+    static let controlBarSegmentHeight: CGFloat = 28
+
+    /// How the selected chip keeps its edge in a mode. Night needs a hairline: its drop shadow does not read on near black.
+    enum ChipEdge: Equatable { case hairline, shadow }
+    static func chipEdge(isNight: Bool) -> ChipEdge { isNight ? .hairline : .shadow }
+}
+
+/// Track `bg.fill` (on a panel, `bg.fill.onPanel`), radius 8, padding 2; segment 24 high, 28 in a control bar. The selected chip
+/// is `content`: white on the grey track by day, near black on the dark track by night.
 struct CUSegmented<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     @Binding var selection: Value
     var accessibilityName: String?
     /// Segment height: 24, or 28 in a control bar.
-    var segmentHeight: CGFloat = 24
-    /// The selected segment is filled with the accent colour (white text) instead of a white chip.
-    var accented = false
+    var segmentHeight = CUSegmentedSpec.segmentHeight
     @Environment(\.cuInPanel) private var inPanel
 
-    init(_ options: [(value: Value, label: String)], selection: Binding<Value>, accessibilityName: String? = nil, inControlBar: Bool = false, accented: Bool = false) {
+    init(_ options: [(value: Value, label: String)], selection: Binding<Value>, accessibilityName: String? = nil, inControlBar: Bool = false) {
         self.options = options
         self._selection = selection
         self.accessibilityName = accessibilityName
-        self.segmentHeight = inControlBar ? 28 : 24
-        self.accented = accented
+        self.segmentHeight = inControlBar ? CUSegmentedSpec.controlBarSegmentHeight : CUSegmentedSpec.segmentHeight
     }
 
     var body: some View {
@@ -124,25 +138,32 @@ struct CUSegmented<Value: Hashable>: View {
                 Button { selection = option.value } label: {
                     Text(option.label)
                         .font(CU.Font.callout.weighted(on ? .semibold : .medium))
-                        .foregroundStyle(on ? (accented ? Color.white : CU.text) : CU.textSecondary)
+                        .foregroundStyle(on ? CU.text : CU.textSecondary)
                         .padding(.horizontal, 16).frame(height: segmentHeight)
-                        .background {
-                            if on {
-                                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(accented ? CU.accent : CU.content)
-                                    .shadow(color: CU.shadowInk.opacity(0.14), radius: 1.5, y: 1)
-                                    .shadow(color: CU.shadowInk.opacity(0.06), radius: 0.5)
-                            }
-                        }
+                        .background { if on { chip } }
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(2)   // spec exception: the segmented track is padded 2 (section 4.3)
-        .background(inPanel ? CU.bgFillOnPanel : CU.bgFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(CUSegmentedSpec.trackPadding)
+        .background(inPanel ? CU.bgFillOnPanel : CU.bgFill, in: RoundedRectangle(cornerRadius: CUSegmentedSpec.trackRadius, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityName ?? "")
+    }
+
+    /// The selected chip: a solid role and one edge treatment chosen by the palette mode.
+    private var chip: some View {
+        let shape = RoundedRectangle(cornerRadius: CUSegmentedSpec.chipRadius, style: .continuous)
+        return shape.fill(CU.content)
+            .overlay {
+                if CUSegmentedSpec.chipEdge(isNight: CU.isNight) == .hairline {
+                    shape.strokeBorder(CU.separator, lineWidth: 1)
+                }
+            }
+            .shadow(color: CU.shadowInk.opacity(0.14), radius: 1.5, y: 1)
+            .shadow(color: CU.shadowInk.opacity(0.06), radius: 0.5)
     }
 }
 
