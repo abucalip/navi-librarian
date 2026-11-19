@@ -1,3 +1,15 @@
+## 2026-11-19 — macOS design details D4.1, one neutral segmented control (PR #1210 merged)
+
+- **Merged:** PR [#1210](https://github.com/abucalip/navi-librarian/pull/1210), squash commit `fe90cc43151bb2b10156200d8384829f5bca0036`, from exact PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`; merged 2026-11-19 01:30:22 UTC. Branch `macos/d4-1-segmented-control`, based on `main` at `4274bc61` (D3 merged).
+- **Changes:** `CUSegmentedSpec` records the neutral control's sizes (track radius 8, chip radius 4, 2 pt track padding, 24 pt segments, 28 in a control bar). The selected chip is `CU.content` (white by Day, near black by Night), the selected label is `CU.text` semibold and the others `CU.textSecondary` medium; Day keeps the hairline drop shadow and Night adds a 1 pt `CU.separator` hairline because a shadow cannot read on near black. The unused `accented` variant was removed, Radio "Stations / Heard" stopped using it, and the last system `Picker(.segmented)` controls were replaced in Timeline ("By year / By decade"), Atlas ("Map / List") and the classic Connections header ("Depth 1 / 2 / 3", unreachable under the single Cupertino theme). Radio tag chips keep their separate inverted-pill style. The missing contrast pairs were added to `CUPalette.contrastPairs` (unselected segment text on a panel track; filter-chip label on its inverted ground); selected text on the chip and unselected on a content-ground track were already covered. All pass 4.5:1 in Day and Night.
+- **Tests run:** the agent's focused run `swift test --disable-sandbox --filter 'SegmentedControlTests|D4SegmentedRenderTests'` passed 9 tests in 2 suites. The owner reports a further 50 tests in 7 suites passed after 133.897 seconds. The selected `DiscairUITests` target was started but stalled and was stopped; no result is claimed for it.
+- **CI on head `4abdb36b`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Visual:** before/after renders of Timeline, Atlas, Radio, Connections and Downloads in Day and Night were taken and inspected; they show one neutral selected look and no system blue, and the Night hairline is visible. Owner visual acceptance in a live window is not recorded.
+- **Not verified:** owner visual acceptance in a live window, the classic Connections depth control (no theme uses it), and CPU (no motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks the D4.1 controls in Day and Night; D4.2 (capsule heights) can start.
+
+---
+
 ## 2026-11-19 — macOS design details D3, bottom insets and the Pipeline dock (PR #1209 merged)
 
 - **Merged:** PR [#1209](https://github.com/abucalip/navi-librarian/pull/1209), squash commit `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, from exact PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`; merged 2026-11-19 00:35:47 UTC. Branch `macos/d3-bottom-insets-pipeline-dock`, based on `main` at `4bbdfc10` (D2 merged). Implementation commit `d4614fd0`; docs record in the PR `2495876f`.

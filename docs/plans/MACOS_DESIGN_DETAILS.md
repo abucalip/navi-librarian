@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`) and D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`) are merged to main; D3's visual acceptance is still open; D4 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`) and D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`) are merged to main; D3's visual acceptance is still open; D4.2 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -204,6 +204,19 @@ Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726
   - Filter chips (Radio "All / Jazz") stay a separate, documented style. They use the same roles: selected chip `CU.text` ground with `CU.content` text, unselected `CU.bgFill` with `CU.textSecondary`.
   - Contrast check (`docs/UI_DESIGN_RULES.md`, 4.5:1): selected and unselected text on their grounds in both modes. Add the pairs to `CUPalette.contrastPairs` if they are not there.
 - **Acceptance:** screenshots of Timeline, Atlas, Radio, Connections and Downloads, in Night and in Day, show the same selected look, with no system blue.
+
+**D4.1 implementation record (2026-11-19; merged PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, branch `macos/d4-1-segmented-control`).**
+
+- `CUSegmentedSpec` holds the four style decisions: track radius 8, chip radius 4, 2 pt track padding, 24 pt segments (28 in a control bar). The selected chip is `CU.content` — white on the grey track by Day, near black on the dark track by Night — with a `CU.text` semibold label; unselected labels are `CU.textSecondary` medium. Day keeps the hairline drop shadow; Night adds a 1 pt `CU.separator` hairline around the selected chip, because the shadow cannot read on near black. Selection is the chip and the weight, never colour.
+- The unused `accented` variant of `CUSegmented` was removed. Radio "Stations / Heard" stopped passing it; Connections "Graph / List" and "1 / 2 / 3 steps", Downloads "All / Active / Needs you / Arrived", Library, Settings, Taste and the other call sites already used the neutral control and now get the Night hairline.
+- The system `Picker(.segmented)` controls were replaced with `CUSegmented`: Timeline "By year / By decade" (`TimelineView.swift`), Atlas "Map / List" (`AtlasView.swift`) and the classic Connections "Depth 1 / 2 / 3" control (`GraphExplorerView.swift`, unreachable under the single Cupertino theme but converted so no system segmented picker remains).
+- The Radio tag chips stay a separate, documented inverted-pill style (selected `CU.text` ground with a `CU.content` label, unselected `CU.bgFill` with `CU.textSecondary`); the code comment points at `macos/DESIGN.md`.
+- Contrast: added the pairs missing from `CUPalette.contrastPairs` — unselected segment text on a panel track (`textSecondary` on `fillOnPanel`) and the filter-chip label on its inverted ground (`content` on `text`). Selected segment text on the chip and unselected on a content-ground track were already `text on content` and `text secondary on fill`. All pass 4.5:1 in Day and Night.
+- Added `SegmentedControlTests` (spec sizes, the Night/Day edge rule, the Day/Night inversion, the four AA pairs) and `D4SegmentedRenderTests` (Timeline, Atlas, Radio, Connections and Downloads in Day and Night, written as `d4-<page>-<mode>.png`).
+- **Tests:** the agent's focused run passed 9 tests in 2 suites (`SegmentedControlTests`, `D4SegmentedRenderTests`). The owner reports a further 50 tests in 7 suites passed after 133.897 seconds. The selected `DiscairUITests` target was started but stalled and was stopped; no result is claimed for it.
+- **CI:** all five GitHub Actions workflows on exact PR head `4abdb36b` passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Visual:** before/after renders of the five pages in Day and Night were taken and inspected: no system blue, one neutral selected look, and the Night hairline is visible. Owner visual acceptance in a live window is not recorded.
+- **Release/deployment:** not published, deployed or runtime-verified.
 
 **D4.2 Capsule buttons in one row differ in height** (02.21.45, 02.37.08: Home "More" against "Get album / Save / Not for me"; Home "Resume")
 - **What is wrong:** "More" is about 19 pt tall against about 25 pt for its neighbours. "Resume" is also shorter than other primary capsules.
