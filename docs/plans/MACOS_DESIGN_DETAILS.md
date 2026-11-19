@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`) and D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`) are merged to main; D3's visual acceptance is still open; D4.2 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`) and D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`) are merged to main; D3's visual acceptance is still open; D4.3 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -221,6 +221,14 @@ Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726
 **D4.2 Capsule buttons in one row differ in height** (02.21.45, 02.37.08: Home "More" against "Get album / Save / Not for me"; Home "Resume")
 - **What is wrong:** "More" is about 19 pt tall against about 25 pt for its neighbours. "Resume" is also shorter than other primary capsules.
 - **Fix:** every capsule in a row uses the same size variant. Check `CapsuleButtonStyle(small:)` use in `CupertinoHomeMarquee.swift` and `CupertinoHomeRadio.swift`.
+
+**D4.2 implementation record (2026-11-19; merged PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, branch `macos/d4-2-capsule-heights`).**
+
+- The Home marquee's "More" menu now uses the regular variant beside Get album / Save / Not for me, and keeps the small variant on a Discover row, whose Get / Save / Not for me are all small. The size decision lives in `CupertinoPickFeedbackMenu.capsuleStyle(marquee:)`. The Home radio card's Resume, Stop and Open Radio move off their hand-rolled ~22 pt buttons onto the shared `CapsuleButtonStyle` at the regular height via `HomeRadioCardView.capsuleStyle(primary:)` (accent for Resume, neutral for Stop / Open Radio), so "Resume" matches the Home primary capsules and Stop / Open Radio match it.
+- **Tests:** `swift test --disable-sandbox --filter 'D4CapsuleTests|CupertinoControlsTests|HomeRadioCardTests|HomeRenderTests'` passed 25 tests in 4 suites. `D4CapsuleTests` (new) covers marquee More regular, Discover More small and the radio card regular; `HomeRenderTests` gained two Night radio-card renders. The rendered "Resume" capsule measured 22.5 pt before and 31.5 pt after (2 px = 1 pt).
+- **CI on head `92e36ccd`:** all five GitHub Actions checks passed (compile, container-smoke, lint-changed, test-and-build, validate-container).
+- **Visual:** before/after Home renders of the marquee and the radio card in Day and Night were taken and inspected; the "More" and "Resume"/"Stop"/"Open Radio" capsules now share one height per row. Owner visual acceptance in a live window is not recorded. No motion added, so no CPU measurement.
+- **Not verified:** owner visual acceptance in a live window. Not published, deployed or runtime-verified.
 
 **D4.3 Phone banner text is off-centre** (02.21.45, 02.37.08: "Playing on your phone …")
 - **What is wrong:** the text line sits about 3 pt above the banner's centre, while the info icon and "Continue on this Mac" are centred.

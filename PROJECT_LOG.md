@@ -1,3 +1,15 @@
+## 2026-11-19 — macOS design details D4.2, capsule buttons share one height per row (PR #1211 merged)
+
+- **Merged:** PR [#1211](https://github.com/abucalip/navi-librarian/pull/1211), squash commit `bb96dbbaaa1e14921b046c8690423761e3704b98`, from exact PR head `92e36ccd442833aa879083200cec934ef75054d2`; merged 2026-11-19 02:00:00 UTC. Branch `macos/d4-2-capsule-heights`, based on `main` at `f08dded1` (D4.1 merged).
+- **Changes:** capsules that sit in one row now share one size variant. The Home marquee's "More" menu is the regular variant (32 pt) beside Get album / Save / Not for me, and keeps the small variant on a Discover row, whose Get / Save / Not for me are all small; the decision lives in `CupertinoPickFeedbackMenu.capsuleStyle(marquee:)`. The Home radio card's Resume, Stop and Open Radio move off their hand-rolled ~22 pt buttons onto the shared `CapsuleButtonStyle` at the regular height via `HomeRadioCardView.capsuleStyle(primary:)` (accent for Resume, neutral for Stop / Open Radio), so "Resume" matches the Home primary capsules.
+- **Tests run:** `swift test --disable-sandbox --filter 'D4CapsuleTests|CupertinoControlsTests|HomeRadioCardTests|HomeRenderTests'` — 25 tests in 4 suites passed. `D4CapsuleTests` (new) covers marquee More regular, Discover More small and the radio card regular; `CupertinoControlsTests`, `HomeRadioCardTests` and `HomeRenderTests` re-ran unchanged, and `HomeRenderTests` gained two Night radio-card renders. The rendered "Resume" capsule measured 22.5 pt before and 31.5 pt after (2 px = 1 pt). No full suite.
+- **CI on head `92e36ccd`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Visual:** before/after Home renders of the marquee and the radio card in Day and Night were taken and inspected; the "More" and "Resume"/"Stop"/"Open Radio" capsules now share one height per row. Owner visual acceptance in a live window is not recorded.
+- **Not verified:** owner visual acceptance in a live window. No CPU measurement (no motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks the Home marquee and radio card capsule heights; D4.3 (phone banner) can start.
+
+---
+
 ## 2026-11-19 — macOS design details D4.1, one neutral segmented control (PR #1210 merged)
 
 - **Merged:** PR [#1210](https://github.com/abucalip/navi-librarian/pull/1210), squash commit `fe90cc43151bb2b10156200d8384829f5bca0036`, from exact PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`; merged 2026-11-19 01:30:22 UTC. Branch `macos/d4-1-segmented-control`, based on `main` at `4274bc61` (D3 merged).
