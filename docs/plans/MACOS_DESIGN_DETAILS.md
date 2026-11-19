@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`) and D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`) are merged to main; D3 to D8 not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`) and D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`) are merged to main; D3 is implemented in draft PR #1209 on `macos/d3-bottom-insets-pipeline-dock` and its visual acceptance is open; D4 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -170,6 +170,13 @@ Status: D1 (`dd95d6f9`) and D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121
 - **What is wrong:** the last row cannot be scrolled fully into view, or is clipped by a hard line above the bar.
 - **Fix:** one shared bottom inset for all content scroll views (player bar gap + `CU.Space.xl`), applied in the shell rather than per page.
 - **Acceptance:** scroll each page to the end. The last row sits fully above the bar with the standard gap.
+
+**D3 implementation record (2026-11-19; draft PR #1209, branch `macos/d3-bottom-insets-pipeline-dock`).**
+
+- D3.1: `PipelineDockPlacement` holds the rules. The card shows on every screen except Downloads and Now Playing, sits 14 pt above the player bar and 16 pt from the trailing edge, or the queue's width plus 16 while the queue is open. The card reports its laid-out height (`onGeometryChange`); the window publishes `height + 14 + 16` through the environment, and the shell takes the shared inset or that clearance, whichever is larger. Every page ScrollView therefore gets a bottom content inset high enough for the last row to scroll above the card. The queue-open anchoring was already correct in source; the rule is now explicit and tested. Side check: the active card is bottom right (added in #972), the finished-Get notes are bottom left; `macos/DESIGN.md` records both.
+- D3.2: one shared 32 pt bottom inset (`CU.Shell.contentBottomInset`) lives in the shell and applies to every content scroll view. The page-level bottom paddings were removed: pages that had 32 use the shared value, Timeline, Atlas and Connections go from 20 to 32, and Insights keeps 28 pt of its own for its dismiss/undo bar (60 pt total, as before). The player bar is a VStack sibling, so content never runs behind it; a measured end-of-page state on Downloads already showed the standard gap, so the cuts in the screenshots were mid-scroll positions. The consolidation puts that gap in one place.
+- Added to `PipelineDockTests`: the placement rules, the measured scroll inset (no card, one failed job, three rows) and a Home render scrolled to the end with the card showing.
+- **Verification:** 50 focused UI tests in six suites passed (`PipelineDockTests`, `ScreenshotTests`, `LiveScreenshotTests`, `CupertinoPagesRenderTests`, `HomeRenderTests`, `ConnectionsServicesRenderTests`). The selected `DiscairUITests` target ran 885 tests with 884 passing; the known wall-clock freshness test `dismissQueuesOneCardEventKeyedBySubject` failed inside the full run and passes alone. **Not done:** owner visual acceptance in Day and Night on the exact PR head, before/after crops of each listed page, and CPU measurement (no motion added; one one-shot geometry read per card layout).
 
 ## Slice D4: controls and type consistency
 

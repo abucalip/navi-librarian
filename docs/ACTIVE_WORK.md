@@ -76,13 +76,14 @@ Finished and merged work, and owner checks on work merged before 2026-11-11, wer
 
 - All slices are merged (P0 to P2, B1 to B4; 2026-11-17 to 2026-11-18). Open: the owner's check of both sheets in a real window and the CPU measurements (Paths five cases from P1; Booklet open after B2 and B3). D4 unanswered (recommended: no language tag). Details: [`MACOS_PATHS_BOOKLET.md`](plans/MACOS_PATHS_BOOKLET.md).
 
-## 2s. macOS design details polish: D1 on main; D2 implemented, verification open
+## 2s. macOS design details polish: D1 and D2 merged; D3 in PR #1209, verification open
 
 - The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The plan is [`MACOS_DESIGN_DETAILS.md`](plans/MACOS_DESIGN_DETAILS.md), slices D1 to D8.
 - D1 (shell, corners and hero edges) is present on `main` at `dd95d6f9`.
-- D2 is implemented in draft PR #1208, branch `macos/d2-album-artist-hero-alignment-clean` (based on `dd95d6f9`, implementation commit `079bed3efa8729644fef332bbeed92d961fcdb93`): shared Album/Artist hero insets, Album spine and body alignment, Artist text scrim and action rhythm, collage seam overlap, dark translucent capsule fill and light hairline, playing quality badge contrast and track-menu alignment. D2.7 was source-reviewed and already follows the recommended hierarchy (top-level 20 pt titles, small-caps subgroups), so it did not need a code change. New `HeroAlignmentTests` cover shared geometry and collage tile overlap.
-- **Not verified:** no Swift tests were run here (they must run on a Mac); no before/after Day and Night window screenshots, 400% seam crop, or visual contrast measurement. The owner must check the exact PR head. **Next:** the selected `DiscairUITests` target, then the Day/Night Album and Artist visual acceptance checks.
-- D3 to D8 remain unstarted: D3 bottom insets and Pipeline dock; D4 control consistency; D5 list columns; D6 Now Playing; D7 graph and map labels; D8 copy.
+- D2 (Album and Artist hero alignment) is merged in PR #1208, squash `5071453c`; the owner approved the visual checks, including the corrected soft scrim.
+- D3 (bottom insets and the Pipeline dock) is implemented in draft PR #1209, branch `macos/d3-bottom-insets-pipeline-dock`, based on `main` at `4bbdfc10`. The Pipeline card reports its laid-out height and the page scroll views take that height plus a 16 pt margin as a bottom content inset while it shows; the card stays 16 pt clear of the queue inside the main column when the queue is open. One shared 32 pt inset now lives in the shell instead of each page. New `PipelineDockTests` cover the placement rules, the measured inset and a Home page scrolled to the end.
+- **Verification:** 50 focused UI tests in six suites passed. The selected `DiscairUITests` target ran 885 tests with 884 passing; the known wall-clock freshness test `dismissQueuesOneCardEventKeyedBySubject` failed inside the full run and passes alone. **Not verified:** no owner visual acceptance of the exact PR head in Day and Night, no before/after crops, no CPU measurement (no motion added). **Next:** the owner checks the listed pages at the end of their scroll with the card showing; then D4 control consistency.
+- D4 to D8 remain unstarted: D4 control consistency; D5 list columns; D6 Now Playing; D7 graph and map labels; D8 copy.
 - Owner decisions (2026-11-18, all as recommended): hero gutter fade and collapse; selected-tab styles by mode; full-height inspectors; left-aligned artist bio. The cover stays shown twice (sidebar slot and player bar).
 
 ## 2n. Simplification candidates
