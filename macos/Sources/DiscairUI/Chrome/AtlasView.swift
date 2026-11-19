@@ -35,8 +35,7 @@ struct AtlasView: View {
             Text("places & scenes").font(.system(size: 12, weight: .semibold)).foregroundStyle(style.muted)
             Spacer()
             if atlas.loading { ProgressView().controlSize(.small) }
-            Picker("View", selection: $a.showsList) { Text("Map").tag(false); Text("List").tag(true) }
-                .pickerStyle(.segmented).frame(width: 140).labelsHidden()
+            CUSegmented([(value: false, label: "Map"), (value: true, label: "List")], selection: $a.showsList, accessibilityName: "View")
             Button("Refresh") { Task { await atlas.load(librarian: state.session?.librarian, force: true) } }
                 .buttonStyle(CapsuleButtonStyle(primary: false, small: true)).disabled(atlas.loading)
         }

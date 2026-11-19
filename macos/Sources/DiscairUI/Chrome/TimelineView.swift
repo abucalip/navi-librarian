@@ -35,8 +35,7 @@ struct TimelineView: View {
             if let person = timeline.person { Text(person.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(style.muted) }
             Spacer()
             if timeline.loading { ProgressView().controlSize(.small) }
-            Picker("Group by", selection: $t.byDecade) { Text("By year").tag(false); Text("By decade").tag(true) }
-                .pickerStyle(.segmented).frame(width: 190).labelsHidden()
+            CUSegmented([(value: false, label: "By year"), (value: true, label: "By decade")], selection: $t.byDecade, accessibilityName: "Group by")
         }
         .padding(.top, 4)
     }

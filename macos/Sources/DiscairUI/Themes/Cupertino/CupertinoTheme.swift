@@ -67,6 +67,8 @@ enum CU {
     static var chartBaseRGB: CURGB { p.chartBase }
     static var trackerTrackRGB: CURGB { p.tracker }             // unfilled stage-tracker segments
     static var heatRGB: [CURGB] { p.heat }
+    /// True for Night. Controls that need a different edge or weight by mode read this instead of the colour scheme.
+    static var isNight: Bool { p.isNight }
 
     static var content: Color { contentRGB.color }
     static var bgPanel: Color { bgPanelRGB.color }

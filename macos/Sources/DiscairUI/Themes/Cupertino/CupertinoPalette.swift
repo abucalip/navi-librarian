@@ -156,6 +156,10 @@ struct CUPalette: Equatable, Sendable {
             ("text on content", text, content), ("text on panel", text, panel), ("text on fill", text, fill),
             ("text secondary on content", textSecondary, content), ("text secondary on panel", textSecondary, panel),
             ("text secondary on fill", textSecondary, fill),
+            // D4.1 segmented control: the selected label sits on the chip ("text on content"); an unselected label on a panel
+            // sits on `bg.fill.onPanel`. The filter chip inverts the roles, so its label is `content` on a `text` ground.
+            ("segment text secondary on panel track", textSecondary, fillOnPanel),
+            ("filter chip label on selected chip", content, text),
             ("label on accent", onAccent, accent), ("accent on panel", accent, panel),
             ("accent strong on accent tint", accentStrong, accentTint),
             ("success on panel", success, panel), ("success on success tint", success, successTint),
