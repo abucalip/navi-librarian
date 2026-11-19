@@ -10,6 +10,12 @@ struct CupertinoPickFeedbackMenu: View {
     /// Over the Home marquee's banner: a translucent capsule, as its other buttons.
     var marquee = false
 
+    /// D4.2 (`docs/plans/MACOS_DESIGN_DETAILS.md`): the menu shares its row's capsule size — regular on the marquee, where it sits
+    /// beside Get album / Save / Not for me, and small on a Discover row, whose Get / Save / Not for me are all small.
+    static func capsuleStyle(marquee: Bool) -> CapsuleButtonStyle {
+        CapsuleButtonStyle(small: !marquee, outlined: !marquee, translucent: marquee)
+    }
+
     var body: some View {
         Menu {
             Button("More like \(album.artist)") { Task { await state.blocklist.lean(.more, on: album) } }
@@ -20,7 +26,7 @@ struct CupertinoPickFeedbackMenu: View {
             }
         } label: { Text("More") }
             .menuStyle(.button).menuIndicator(.hidden)
-            .buttonStyle(CapsuleButtonStyle(small: true, outlined: !marquee, translucent: marquee))
+            .buttonStyle(Self.capsuleStyle(marquee: marquee))
             .fixedSize()
             .accessibilityLabel("More options for \(album.title)")
     }
