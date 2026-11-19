@@ -1,11 +1,11 @@
-## 2026-11-19 — macOS design details D3, bottom insets and the Pipeline dock (draft PR #1209)
+## 2026-11-19 — macOS design details D3, bottom insets and the Pipeline dock (PR #1209 merged)
 
-- **Branch/base:** `macos/d3-bottom-insets-pipeline-dock`, draft PR [#1209](https://github.com/abucalip/navi-librarian/pull/1209), based on `main` at `4bbdfc10` (D2 merged). Implementation commit `d4614fd0`; docs record `2495876f`; exact PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`.
+- **Merged:** PR [#1209](https://github.com/abucalip/navi-librarian/pull/1209), squash commit `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, from exact PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`; merged 2026-11-19 00:35:47 UTC. Branch `macos/d3-bottom-insets-pipeline-dock`, based on `main` at `4bbdfc10` (D2 merged). Implementation commit `d4614fd0`; docs record in the PR `2495876f`.
 - **Changes:** D3.1 — `PipelineDockPlacement` holds the visibility rules, the card's 14 pt gap above the player bar and its 16 pt trailing margin (the queue's width plus 16 when the queue is open). The card reports its laid-out height and the window publishes the clearance; the shell takes the shared inset or the card clearance, whichever is larger, so the last row scrolls above the card. D3.2 — one shared 32 pt bottom inset in the Cupertino shell (`safeAreaInset`) replaces the page-level bottom paddings; Timeline, Atlas and Connections move from 20 to 32 pt and Insights keeps 28 pt of its own for the undo bar (60 pt total, as before). Side check: the active card is bottom right (#972), the finished-Get notes are bottom left. The stale comment that said the card was hidden was corrected.
 - **Tests run:** `swift test --disable-sandbox --filter 'PipelineDockTests|ScreenshotTests|LiveScreenshotTests|CupertinoPagesRenderTests|HomeRenderTests|ConnectionsServicesRenderTests'` — 50 tests in 6 suites passed. `swift test --disable-sandbox --filter DiscairUITests` — 885 tests, 884 passed; `dismissQueuesOneCardEventKeyedBySubject` hit its known wall-clock freshness assertion in the full run (the event measured 151 s old because the main actor was blocked by render tests) and passed alone (`swift test --filter InsightsModelTests`, 6 tests). No full suite.
 - **CI on head `2495876f`:** compile, lint-changed, test-and-build, container-smoke and validate-container all passed.
-- **Not verified:** owner visual acceptance in Day and Night, before/after crops of the listed pages, CPU measurement (no motion added; one one-shot geometry read). Not merged, published, deployed or runtime-verified.
-- **Next action:** the owner checks the listed pages at the end of their scroll with the card showing, then the PR merges and D4 starts.
+- **Not verified:** owner visual acceptance in Day and Night, before/after crops of the listed pages, CPU measurement (no motion added; one one-shot geometry read). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks the listed pages at the end of their scroll with the card showing; D4 (controls and type consistency) starts next.
 
 ---
 

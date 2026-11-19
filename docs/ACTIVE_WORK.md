@@ -76,14 +76,14 @@ Finished and merged work, and owner checks on work merged before 2026-11-11, wer
 
 - All slices are merged (P0 to P2, B1 to B4; 2026-11-17 to 2026-11-18). Open: the owner's check of both sheets in a real window and the CPU measurements (Paths five cases from P1; Booklet open after B2 and B3). D4 unanswered (recommended: no language tag). Details: [`MACOS_PATHS_BOOKLET.md`](plans/MACOS_PATHS_BOOKLET.md).
 
-## 2s. macOS design details polish: D1 and D2 merged; D3 in PR #1209, verification open
+## 2s. macOS design details polish: D1 to D3 merged; D3 visual checks open
 
 - The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The plan is [`MACOS_DESIGN_DETAILS.md`](plans/MACOS_DESIGN_DETAILS.md), slices D1 to D8.
 - D1 (shell, corners and hero edges) is present on `main` at `dd95d6f9`.
 - D2 (Album and Artist hero alignment) is merged in PR #1208, squash `5071453c`; the owner approved the visual checks, including the corrected soft scrim.
-- D3 (bottom insets and the Pipeline dock) is implemented in draft PR #1209, branch `macos/d3-bottom-insets-pipeline-dock`, based on `main` at `4bbdfc10`. The Pipeline card reports its laid-out height and the page scroll views take that height plus a 16 pt margin as a bottom content inset while it shows; the card stays 16 pt clear of the queue inside the main column when the queue is open. One shared 32 pt inset now lives in the shell instead of each page. New `PipelineDockTests` cover the placement rules, the measured inset and a Home page scrolled to the end.
-- **Verification:** 50 focused UI tests in six suites passed. The selected `DiscairUITests` target ran 885 tests with 884 passing; the known wall-clock freshness test `dismissQueuesOneCardEventKeyedBySubject` failed inside the full run and passes alone. **Not verified:** no owner visual acceptance of the exact PR head in Day and Night, no before/after crops, no CPU measurement (no motion added). **Next:** the owner checks the listed pages at the end of their scroll with the card showing; then D4 control consistency.
-- D4 to D8 remain unstarted: D4 control consistency; D5 list columns; D6 Now Playing; D7 graph and map labels; D8 copy.
+- D3 (bottom insets and the Pipeline dock) is merged in PR #1209, squash `7808ab8c`, from head `2495876f`, based on `main` at `4bbdfc10`. The Pipeline card reports its laid-out height and the page scroll views take that height plus a 16 pt margin as a bottom content inset while it shows; the card stays 16 pt clear of the queue inside the main column when the queue is open. One shared 32 pt inset now lives in the shell instead of each page. New `PipelineDockTests` cover the placement rules, the measured inset and a Home page scrolled to the end.
+- **Verification:** 50 focused UI tests in six suites passed. The selected `DiscairUITests` target ran 885 tests with 884 passing; the known wall-clock freshness test `dismissQueuesOneCardEventKeyedBySubject` failed inside the full run and passes alone. All five GitHub Actions checks passed on the exact head. **Not verified:** no owner visual acceptance in Day and Night, no before/after crops, no CPU measurement (no motion added). **Next:** the owner checks the listed pages at the end of their scroll with the card showing; D4 control consistency can start.
+- D4 to D8 are unstarted: D4 control consistency; D5 list columns; D6 Now Playing; D7 graph and map labels; D8 copy.
 - Owner decisions (2026-11-18, all as recommended): hero gutter fade and collapse; selected-tab styles by mode; full-height inspectors; left-aligned artist bio. The cover stays shown twice (sidebar slot and player bar).
 
 ## 2n. Simplification candidates
