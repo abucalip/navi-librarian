@@ -9,6 +9,9 @@ struct TimelineView: View {
     let style: GraphStyle
     private var timeline: TimelineModel { state.timeline }
 
+    /// Shared Cupertino page horizontal inset (`CU.Space.xl`, D4.4) so the title, search field and rail align with other pages.
+    static let horizontalPadding: CGFloat = CU.Space.xl
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
@@ -21,7 +24,7 @@ struct TimelineView: View {
                 rail
                 footer
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, Self.horizontalPadding)
             inspector.frame(width: 290)
         }
     }
