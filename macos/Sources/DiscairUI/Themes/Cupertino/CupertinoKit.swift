@@ -269,6 +269,10 @@ struct CUErrorLine: View {
 struct CUNotice: View {
     enum Kind: Equatable { case info, warning, danger, success }
 
+    /// D4.3 (`docs/plans/MACOS_DESIGN_DETAILS.md`): the icon, text and trailing button share the row's vertical centre, so a
+    /// one-line notice ("Playing on your phone: …") sits on the same centre line as its icon and "Continue on this Mac".
+    static let rowAlignment: VerticalAlignment = .center
+
     let kind: Kind
     let lead: String
     var message: String = ""
@@ -301,8 +305,8 @@ struct CUNotice: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: CU.Space.s) {
-            Image(systemName: symbol).font(CU.Icon.row()).foregroundStyle(color).padding(.top, 4).accessibilityHidden(true)
+        HStack(alignment: Self.rowAlignment, spacing: CU.Space.s) {
+            Image(systemName: symbol).font(CU.Icon.row()).foregroundStyle(color).accessibilityHidden(true)
             (Text(lead).fontWeight(.semibold) + Text(message.isEmpty ? "" : " " + message))
                 .font(CU.Font.body.weighted(.regular)).foregroundStyle(color)
                 .frame(maxWidth: .infinity, alignment: .leading)

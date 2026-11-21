@@ -36,7 +36,7 @@ struct HomeRenderTests {
         return try! JSONDecoder().decode(InsightsResponse.self, from: Data(#"{"data_version":3,"generation":1,"lenses":{"forgotten_gem":\#(off),"blind_spot":\#(off),"series_completion":\#(off),"hidden_canon":\#(off),"anniversary":\#(off)}}"#.utf8))
     }()
 
-    enum Scenario { case normal, notice, noPick, firstRun, unreachable, loading, radioPlaying, radioResume }
+    enum Scenario { case normal, notice, handoff, noPick, firstRun, unreachable, loading, radioPlaying, radioResume }
 
     static func job(_ album: String, _ status: String, message: String? = nil) -> Acquisition {
         let details = message.map { #","details":{"message":"\#($0)"}"# } ?? ""
@@ -48,7 +48,7 @@ struct HomeRenderTests {
         let state = AppState(themeID: .cupertino, screen: .home)
         let albums = Self.albums(now: now)
         switch scenario {
-        case .normal, .notice, .radioPlaying, .radioResume:
+        case .normal, .notice, .handoff, .radioPlaying, .radioResume:
             state.taste.set(Self.taste)
             let plays = [RadioPlay(id: 1, stationName: "FIP", artist: "The Blue Nile", title: "Sea Song", heardAt: now.timeIntervalSince1970 - 3600)]
             let finished = now.timeIntervalSince1970 - 7200
@@ -60,7 +60,8 @@ struct HomeRenderTests {
             // The mockup's shelf: a Get moving (a failed one first in the notice state), two arrived albums, a radio song, two added.
             let jobs = scenario == .notice ? [Self.job("Harbour Lights", "no_matches", message: "No source had the whole album."), Self.job("Spirit", "downloading")]
                                            : [Self.job("Spirit", "downloading")]
-            state.showHome(HomeDashboard.build(.init(albums: albums, jobs: jobs, taste: Self.taste, radioPlays: plays, now: now)))
+            let handoff = scenario == .handoff ? HomeDashboard.Handoff(songID: "s1", title: "Ascension Day", artist: "Talk Talk", positionSeconds: 161, durationSeconds: 360) : nil
+            state.showHome(HomeDashboard.build(.init(albums: albums, jobs: jobs, taste: Self.taste, radioPlays: plays, handoff: handoff, now: now)))
         case .noPick:
             state.taste.set(Self.taste)
             state.library.apply(newest: [], first: [], artists: [], picks: [], picksNote: "Nothing is missing from your recommendations right now.")
@@ -106,6 +107,9 @@ struct HomeRenderTests {
             if case .failedJob(let title, _, _)? = d.notice { #expect(title == "Harbour Lights") } else { Issue.record("expected the failed Get notice, got \(String(describing: d.notice))") }
             #expect(!picks.isEmpty)
             if case .job(_, _, _, _, let failure)? = d.arrivals.first { #expect(failure != nil) } else { Issue.record("the failed Get should be the first tile") }
+        case .handoff:
+            if case .handoff(let h)? = d.notice { #expect(h.title == "Ascension Day") } else { Issue.record("expected the phone handoff notice, got \(String(describing: d.notice))") }
+            #expect(!picks.isEmpty)
         case .noPick:
             #expect(picks.isEmpty && d.notice == nil)
             #expect(HomeScreen.pickEmpty(librarianReachable: true, hasListeningSource: true, note: s.library.picksNote) == .noneRightNow)
@@ -167,4 +171,7 @@ struct HomeRenderTests {
     // D4.2: the radio card's capsule sizes are the same in Night, so the two cards are also rendered in Night.
     @Test func rendersRadioCardPlayingNight() throws { try render(.radioPlaying, name: "radio-playing-night", night: true) }
     @Test func rendersRadioCardResumeNight() throws { try render(.radioResume, name: "radio-resume-night", night: true) }
+    // D4.3: the phone handoff notice ("Playing on your phone: …") in Day and Night.
+    @Test func rendersHandoff() throws { try render(.handoff, name: "handoff") }
+    @Test func rendersHandoffNight() throws { try render(.handoff, name: "handoff-night", night: true) }
 }
