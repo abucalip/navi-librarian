@@ -1,3 +1,15 @@
+## 2026-11-22 — macOS design details D4.3, centre-align phone banner and notice rows (PR #1212 merged)
+
+- **Merged:** PR [#1212](https://github.com/abucalip/navi-librarian/pull/1212), squash commit `2f62f933ac1c546754eefbced5ba0040dde398b5`, from exact PR head `d972ac1abccf607a0443215fc4725275b271b166`; merged 2026-11-21 23:45:44 UTC. Branch `macos/d4-3-phone-banner`, based on `main` at `9c46aede` (D4.2 merged).
+- **Changes:** `CUNotice` (`CupertinoKit.swift`) now centre-aligns its leading icon, notice sentence and trailing capsule button (`HStack(alignment: CUNotice.rowAlignment, spacing: CU.Space.s)` with `CUNotice.rowAlignment = .center`) and drops the 4 pt top padding on the icon that had previously aligned only the icon and the 24 pt trailing button while leaving a one-line sentence (`Playing on your phone: …`) 3.0 pt above the banner's vertical centre.
+- **Tests run:** `swift test --disable-sandbox --filter 'D4NoticeTests|CupertinoControlsTests|HomeRenderTests'` — 20 tests in 3 suites passed. `D4NoticeTests` (new) checks `CUNotice.rowAlignment == .center` and renders the phone handoff banner in Day and Night, verifying that the vertical centres of the icon, text line and trailing button all sit within 1.0 pt of the banner's vertical centre; `CupertinoControlsTests` re-ran unchanged; `HomeRenderTests` gained Day and Night phone handoff renders (`cupertino-home-handoff.png`, `cupertino-home-handoff-night.png`). In the 40.0 pt rendered phone banner (`68.0..107.5 pt`, centre `87.75 pt`, 2 px = 1 pt), the text centre moved from `84.75 pt` (`-3.00 pt`) before to `88.75 pt` (`+1.00 pt` with descenders; cap-height-to-baseline centre `87.50 pt`, `-0.25 pt`) after, matching the icon (`87.75 pt`) and button (`87.75 pt`). No full suite.
+- **CI on head `d972ac1a`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Visual:** before/after Home renders and banner crops in Day and Night were taken and inspected; the info icon, "Playing on your phone: …" sentence and "Continue on this Mac" capsule now sit on one centre line. Owner visual acceptance in a live window is not recorded.
+- **Not verified:** owner visual acceptance in a live window. No CPU measurement (no motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks the phone banner alignment; D4.4 (page title leading edge) can start.
+
+---
+
 ## 2026-11-19 — macOS design details D4.2, capsule buttons share one height per row (PR #1211 merged)
 
 - **Merged:** PR [#1211](https://github.com/abucalip/navi-librarian/pull/1211), squash commit `bb96dbbaaa1e14921b046c8690423761e3704b98`, from exact PR head `92e36ccd442833aa879083200cec934ef75054d2`; merged 2026-11-19 02:00:00 UTC. Branch `macos/d4-2-capsule-heights`, based on `main` at `f08dded1` (D4.1 merged).

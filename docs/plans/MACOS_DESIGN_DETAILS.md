@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`) and D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`) are merged to main; D3's visual acceptance is still open; D4.3 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`), D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`) and D4.3 (PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, PR head `d972ac1abccf607a0443215fc4725275b271b166`) are merged to main; D3's visual acceptance is still open; D4.4 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -234,6 +234,14 @@ Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726
 - **What is wrong:** the text line sits about 3 pt above the banner's centre, while the info icon and "Continue on this Mac" are centred.
 - **Fix:** centre-align the text, the icon and the button on one line (`.firstTextBaseline` or centre alignment in the `HStack`).
 - **Pointer:** the Home banner in `CupertinoHome.swift` or `CupertinoHomeParts.swift`.
+
+**D4.3 implementation record (2026-11-22; merged PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, branch `macos/d4-3-phone-banner`).**
+
+- `CUNotice` (`CupertinoKit.swift`) now centre-aligns its leading icon, notice sentence and trailing capsule button (`HStack(alignment: CUNotice.rowAlignment, spacing: CU.Space.s)` with `CUNotice.rowAlignment = .center`) and drops the 4 pt top padding on the icon that had previously aligned only the icon and the 24 pt trailing capsule button while leaving a one-line sentence ("Playing on your phone: …") 3.0 pt above the banner's vertical centre.
+- **Tests:** `swift test --disable-sandbox --filter 'D4NoticeTests|CupertinoControlsTests|HomeRenderTests'` passed 20 tests in 3 suites. `D4NoticeTests` (new) checks `CUNotice.rowAlignment == .center` and renders the phone handoff banner in Day and Night, verifying that the vertical centres of the icon, text line and trailing button all sit within 1.0 pt of the banner's vertical centre; `HomeRenderTests` gained Day and Night phone handoff renders. In the 40.0 pt rendered phone banner (`68.0..107.5 pt`, centre `87.75 pt`, 2 px = 1 pt), the text centre moved from `84.75 pt` (`-3.00 pt`) before to `88.75 pt` (`+1.00 pt` with descenders; cap-height-to-baseline centre `87.50 pt`, `-0.25 pt`) after, matching the icon (`87.75 pt`) and button (`87.75 pt`).
+- **CI on head `d972ac1a`:** all five GitHub Actions checks passed (compile, container-smoke, lint-changed, test-and-build, validate-container).
+- **Visual:** before/after Home renders and banner crops in Day and Night were taken and inspected; the info icon, "Playing on your phone: …" sentence and "Continue on this Mac" capsule now sit on one centre line. Owner visual acceptance in a live window is not recorded. No motion added, so no CPU measurement.
+- **Not verified:** owner visual acceptance in a live window. Not published, deployed or runtime-verified.
 
 **D4.4 Page title leading edge differs** (02.26.06 Timeline, 02.27.57 Atlas vs Home, Radio, Connections, Downloads)
 - **What is wrong:** "Timeline" and "Atlas" start about 3 pt further left than the other titles. Their search field and map share that offset.
