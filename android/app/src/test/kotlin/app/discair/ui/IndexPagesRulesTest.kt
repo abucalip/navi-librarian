@@ -30,11 +30,11 @@ class IndexPagesRulesTest {
         assertEquals("4:10", IndexPagesRules.clock(250))
     }
 
-    @Test fun theNumeralIsThePlayingSongOrElseTheSongCount() {
+    @Test fun theNumeralIsThePlayingSongOrElseTheTrackCount() {
         assertEquals(IndexPagesRules.Numeral("05", "/ 10", "Playing", true), IndexPagesRules.albumNumeral(4, 10))
-        assertEquals(IndexPagesRules.Numeral("10", null, "Songs", false), IndexPagesRules.albumNumeral(null, 10))
-        assertEquals(IndexPagesRules.Numeral("01", null, "Song", false), IndexPagesRules.albumNumeral(null, 1))
-        assertEquals(IndexPagesRules.Numeral("10", null, "Songs", false), IndexPagesRules.albumNumeral(12, 10))
+        assertEquals(IndexPagesRules.Numeral("10", null, "Tracks", false), IndexPagesRules.albumNumeral(null, 10))
+        assertEquals(IndexPagesRules.Numeral("01", null, "Track", false), IndexPagesRules.albumNumeral(null, 1))
+        assertEquals(IndexPagesRules.Numeral("10", null, "Tracks", false), IndexPagesRules.albumNumeral(12, 10))
         assertNull(IndexPagesRules.albumNumeral(null, 0))
     }
 

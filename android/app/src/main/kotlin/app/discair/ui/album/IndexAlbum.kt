@@ -43,7 +43,6 @@ import app.discair.ui.common.GalleryPagesRules
 import app.discair.ui.common.GetSongButton
 import app.discair.ui.common.IndexButton
 import app.discair.ui.common.IndexButtonKind
-import app.discair.ui.common.IndexDataList
 import app.discair.ui.common.IndexDiscHeading
 import app.discair.ui.common.IndexGetButton
 import app.discair.ui.common.IndexIconButton
@@ -78,8 +77,8 @@ private val Gutter = IndexRules.GUTTER.dp
 
 /*
  * Index's Album page (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frames 1 and 2.
- * In the library: the catalogue bar ("ALBUM 0418 / 1284"), a 200dp cover beside the playing song's numeral ("05 / 10 PLAYING") and the data list, the title,
- * Play / Shuffle / Paths, tabs Songs · Info · Reviews · Booklet and numbered songs. Not in the library: "NOT IN YOUR LIBRARY", a 150dp cover beside the title,
+ * In the library: the catalogue bar ("ALBUM 0418 / 1284"), a 200dp cover beside the playing song's numeral ("05 / 10 PLAYING" or "10 TRACKS"), the title,
+ * the key/value grid, Play / Shuffle / Paths, tabs Songs · Info · Reviews · Booklet and numbered songs. Not in the library: "NOT IN YOUR LIBRARY", a 150dp cover beside the title,
  * the key/value grid, Get album / Save. Similar albums and artists follow both. The data and the taps are the page every theme has ([CoverStackAlbumData]).
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -110,11 +109,19 @@ internal fun IndexAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyL
     LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 32.dp + app.discair.ui.LocalBottomClearance.current)) {
         item { IndexPageBar(catalogue, open.back, action = { if (menu.isNotEmpty()) MoreMenu("More for ${d.title}", menu) }) }
         if (d.owned) {
-            item { OwnedHead(d, albumId, openArtist, openGenre) }
+            item { OwnedHead(d, albumId) }
             item {
                 Text(
                     d.title, Modifier.fillMaxWidth().indexArrive(1).padding(start = Gutter, end = Gutter, top = 14.dp).semantics { heading() },
                     style = IndexType.pageTitle(), color = LocalPalette.current.text, maxLines = 4, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            item {
+                IndexKeyValueGrid(
+                    IndexPagesRules.albumRows(d.artist, d.year, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.info?.quality, genre).map {
+                        when (it.key) { "Artist" -> it.copy(onClick = openArtist); "Genre" -> it.copy(onClick = openGenre); else -> it }
+                    },
+                    Modifier.indexArrive(1).padding(start = Gutter, end = Gutter, top = 14.dp),
                 )
             }
         } else {
@@ -205,9 +212,9 @@ internal fun IndexAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyL
     }
 }
 
-/** The owned album's head: the 200dp cover (it flips to the back when the index has one; the edition stack picks a cover), and beside it the numeral and the data list. */
+/** The owned album's head: the 200dp cover (it flips to the back when the index has one; the edition stack picks a cover), and beside it the numeral in the upper corner. */
 @Composable
-private fun OwnedHead(d: CoverStackAlbumData, albumId: String?, openArtist: () -> Unit, openGenre: (() -> Unit)?) {
+private fun OwnedHead(d: CoverStackAlbumData, albumId: String?) {
     val p = LocalPalette.current
     val playingNow = LocalPlayingNow.current
     val playing = d.tracks.indices.firstOrNull { i -> val t = d.tracks[i]; t.owned && playingNow?.matches(albumId, t.title, t.number, t.disc ?: 1) == true }
@@ -222,19 +229,12 @@ private fun OwnedHead(d: CoverStackAlbumData, albumId: String?, openArtist: () -
                 }
             }
         }
-        Column(Modifier.weight(1f).heightIn(min = cover), verticalArrangement = Arrangement.SpaceBetween) {
-            if (numeral != null) Column(Modifier.semantics(mergeDescendants = true) {}) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(numeral.big, style = IndexType.index(), color = if (numeral.accent) p.accent else p.text, maxLines = 1)
-                    if (numeral.small != null) IndexLabel(numeral.small, Modifier.padding(start = 4.dp, bottom = 4.dp))
-                }
-                IndexLabel(numeral.word, Modifier.padding(top = 2.dp), color = if (numeral.accent) p.accent else p.textMuted)
-            } else Box(Modifier)
-            IndexDataList(
-                IndexPagesRules.albumRows(d.artist, d.year, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.info?.quality, d.genre).map {
-                    when (it.key) { "Artist" -> it.copy(onClick = openArtist); "Genre" -> it.copy(onClick = openGenre); else -> it }
-                },
-            )
+        if (numeral != null) Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(numeral.big, style = IndexType.index(), color = if (numeral.accent) p.accent else p.text, maxLines = 1)
+                if (numeral.small != null) IndexLabel(numeral.small, Modifier.padding(start = 4.dp, bottom = 4.dp))
+            }
+            IndexLabel(numeral.word, Modifier.padding(top = 2.dp), color = if (numeral.accent) p.accent else p.textMuted)
         }
     }
 }

@@ -49,14 +49,14 @@ object IndexPagesRules {
     /** A track's time: "4:10". */
     fun clock(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
 
-    /** The album's numeral beside the cover: the playing song's place ("05", "/ 10", "Playing"), or, when nothing of this album plays, the song count ("10", "Songs"). */
+    /** The album's numeral beside the cover: the playing song's place ("05", "/ 10", "Playing"), or, when nothing of this album plays, the track count ("10", "Tracks"). */
     data class Numeral(val big: String, val small: String?, val word: String, val accent: Boolean)
 
     /** [playing] is the 0-based place of the playing song in the list, or null. Null for an album with no songs listed. */
     fun albumNumeral(playing: Int?, songs: Int): Numeral? = when {
         songs <= 0 -> null
         playing != null && playing in 0 until songs -> Numeral(number(playing), "/ $songs", "Playing", accent = true)
-        else -> Numeral("%02d".format(songs), null, if (songs == 1) "Song" else "Songs", accent = false)
+        else -> Numeral("%02d".format(songs), null, if (songs == 1) "Track" else "Tracks", accent = false)
     }
 
     /** The owned album's data list: Artist, Year, Length, Format (index.css `.dl`), then Genre. A line whose data is unknown is left out. */

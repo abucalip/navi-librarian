@@ -63,7 +63,7 @@ private class GridAlbum(val name: String, val year: Int?, val key: String, val i
 
 /*
  * Index's Artist page (Layout.Index). Spec: docs/plans/INDEX_THEME.md step I3; mockup: docs/design/index/pages/album-artist-genre.html, frame 3.
- * A 150 by 180 photo beside the name and the data list (Genre, Owned "5 of 9", Plays, Active), then Play / Paths / Shuffle, numbered top songs, the albums as
+ * A 150 by 180 photo beside the name and the data list (Genre, Owned "5 of 9", Plays, Active), then Play / Shuffle / Paths, numbered top songs, the albums as
  * a four-column grid with the ones to get, the biography, the photo strip and similar artists. The data is [CoverStackArtistData]; the new I0 fields
  * (plays, active years, owned of total) are shown only when the server sends them.
  */
@@ -114,10 +114,10 @@ internal fun IndexArtistContent(d: CoverStackArtistData, open: Opener, list: Laz
                 horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 if (artistId != null) IndexButton("Play", { play.playArtist(artistId, shuffle = false) }, icon = IndexIcons.Play)
-                if (d.canPaths) IndexButton("Paths", d.onPaths, kind = IndexButtonKind.Ghost, icon = IndexIcons.Paths)
                 if (artistId != null) IndexButtonBody(IndexButtonKind.Ghost, { play.playArtist(artistId, shuffle = true) }, Modifier.semantics { contentDescription = "Shuffle" }, enabled = true, small = false) {
                     Icon(IndexIcons.Shuffle, null, Modifier.size(IndexRules.ICON_INLINE.dp))
                 }
+                if (d.canPaths) IndexButton("Paths", d.onPaths, kind = IndexButtonKind.Ghost, icon = IndexIcons.Paths)
             }
         }
         val allSongs = d.sections.topSongs.items
