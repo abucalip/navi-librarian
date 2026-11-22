@@ -33,13 +33,12 @@ from discovery.search.providers import (
     DISCOGS_ATTRIBUTION,
     DeezerSearch,
     DiscogsSearch,
-    LastFmSearch,
     ListenBrainzRadio,
     MusicBrainzSearch,
     ProviderError,
 )
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
-from discovery.search.similar import DEEZER, LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
+from discovery.search.similar import DEEZER, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
 from discovery.search.top_songs import top_songs
 
 MISSING_ALBUMS_LIMIT = 50
@@ -74,9 +73,6 @@ class ArtistNetwork:
     album_year: Callable[[str, str], int | None] | None = None
     # Apple Music's editorial notes for ``(artist, album)``, supplied by the route adapter.
     album_description: Callable[[str, str], dict[str, Any]] | None = None
-    # Last.fm, when a key is saved. ``lastfm_generation`` keys its cache entries (section 5.2).
-    lastfm: LastFmSearch | None = None
-    lastfm_generation: int = 0
     # ListenBrainz radio, which needs the artist's MBID. None when the source is not wired.
     listenbrainz: ListenBrainzRadio | None = None
     # Deezer fallback for top songs and similar artists when ListenBrainz has no data or no MBID.
@@ -152,22 +148,6 @@ def resolve_identity(
     return None
 
 
-def _lastfm_albums(network: ArtistNetwork, name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-    """Last.fm's top albums for the artist. Best effort: a failure contributes no albums."""
-    if network.lastfm is None:
-        return []
-    try:
-        return _cached_records(
-            network,
-            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "albums-plays"),
-            lambda remaining, cancelled: network.lastfm.top_albums(name, remaining=remaining, cancelled=cancelled),
-            remaining,
-            cancelled,
-        )
-    except Exception:
-        return []
-
-
 def _owned_match(album: dict[str, Any], owned_albums: list[dict[str, Any]]) -> dict[str, Any] | None:
     """The owned album (an ``owned_albums`` item) a provider album describes: same name key, compatible year."""
     key = album_match_key(album["name"])
@@ -191,7 +171,7 @@ def album_catalog(
     progress: dict | None = None,
     known_mbid: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Every album MusicBrainz or Last.fm lists for this artist, plus owned albums they do not list.
+    """Every album MusicBrainz lists for this artist, plus owned albums it does not list.
 
     Each item has ``owned``; owned items also carry the library ``id``, ``key`` and artwork. Most
     listened first (ListenBrainz). ``progress`` receives ``items`` as soon as the album list is
@@ -212,18 +192,12 @@ def album_catalog(
             remaining,
             cancelled,
         )
-    lastfm_albums = _lastfm_albums(network, name, remaining=remaining, cancelled=cancelled)
 
     unique: list[dict[str, Any]] = []
-    # Last.fm lists an artist's albums most played first; that order ranks albums ListenBrainz cannot.
-    lastfm_rank = {normalize_key(a["name"]): position for position, a in enumerate(lastfm_albums)}
-    lastfm_plays = {normalize_key(a["name"]): a.get("playcount") for a in lastfm_albums}
-    for album in [*mb_albums, *lastfm_albums]:
+    for album in mb_albums:
         match = next((seen for seen in unique if same_entity(album, seen)), None)
         if match is None:
-            unique.append({**album, "sources": [album["source"]],
-                           "rank": lastfm_rank.get(normalize_key(album["name"])),
-                           "lastfm_plays": lastfm_plays.get(normalize_key(album["name"]))})
+            unique.append({**album, "sources": [album["source"]]})
         elif album["source"] not in match["sources"]:
             match["sources"].append(album["source"])
 
@@ -300,17 +274,11 @@ def _shape_items(
 ) -> list[dict[str, Any]]:
     """Catalog items with ListenBrainz listen counts where known, most listened first."""
     items = []
-    # Last.fm's play counts stand in only when ListenBrainz knows none of the albums: the two services
-    # count on very different scales, so a list never mixes them.
-    has_listenbrainz = any((stats.get(a["release_group_mbid"]) or {}).get("playcount") is not None
-                           for a in albums if a["release_group_mbid"])
     for album in albums:
         mbid_album = album["release_group_mbid"]
         # "playcount" is the total listen count; "listeners" is the number of users.
         listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
         listen_source = "listenbrainz" if listens is not None else None
-        if listens is None and not has_listenbrainz and album.get("lastfm_plays"):
-            listens, listen_source = album["lastfm_plays"], "lastfm"
         sources = list(album["sources"]) + (["listenbrainz"] if listen_source == "listenbrainz" else [])
         entry = album.get("owned_entry")
         items.append({
@@ -571,13 +539,6 @@ def iter_network_sections(
                 owned_text = None  # A failed Navidrome read falls back to the public bio service.
             if owned_text:
                 return _available("bio", "bio", {"text": owned_text, "source": NAVIDROME_BIO_SOURCE})
-        if network.lastfm is not None:
-            try:
-                lastfm_text = network.lastfm.artist_bio(name, remaining=remaining, cancelled=cancelled)
-            except Exception:
-                lastfm_text = None  # Last.fm is best effort; the public bio service is next.
-            if lastfm_text:
-                return _available("bio", "bio", {"text": lastfm_text, "source": LASTFM})
         text = network.bio(name)
         if not text:
             return _available("bio", "bio", None)

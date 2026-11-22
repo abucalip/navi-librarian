@@ -18,7 +18,7 @@ from discovery.search.cache import (
     with_fetched_at,
 )
 from discovery.search.artist_sections import network_sections
-from tests.test_discovery_search_album_page import FakeLastFm, make_network, run, track
+from tests.test_discovery_search_album_page import make_network, run, track
 from tests.test_discovery_search_artist_sections import (
     ALBUMS,
     RADIOHEAD,
@@ -149,7 +149,7 @@ class ArtistPageTests(unittest.TestCase):
 
 class AlbumPageTests(unittest.TestCase):
     def test_stale_tracklist_section_states_its_time(self):
-        net = make_network(lastfm=FakeLastFm(tracks=[track(1, "New")]), refresh_submit=accept)
+        net = make_network(deezer_tracks=lambda a, b: [track(1, "New")], refresh_submit=accept)
         at = time.time() - 8 * DAY
         put(net.store, TRACKS_KEY, [track(1, "Old")], at)
         sections = run(net)
@@ -160,7 +160,7 @@ class AlbumPageTests(unittest.TestCase):
         self.assertNotIn(FETCHED_AT, net.store.data[TRACKS_KEY])
 
     def test_fresh_tracklist_states_nothing(self):
-        net = make_network(lastfm=FakeLastFm(tracks=[track(1, "New")]), refresh_submit=accept)
+        net = make_network(deezer_tracks=lambda a, b: [track(1, "New")], refresh_submit=accept)
         put(net.store, TRACKS_KEY, [track(1, "Old")], time.time() - 60)
         self.assertNotIn(FETCHED_AT, run(net)["tracks"])
 

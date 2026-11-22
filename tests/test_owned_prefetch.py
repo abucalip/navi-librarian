@@ -21,7 +21,7 @@ from intelligence.store import ensure_store, open_store
 
 NOON = datetime(2026, 11, 17, 12).timestamp()
 NEXT_DAY = datetime(2026, 11, 18, 12).timestamp()
-BUDGETS = {"OWNED_PREFETCH_BUDGETS": "musicbrainz=3,lastfm=100"}
+BUDGETS = {"OWNED_PREFETCH_BUDGETS": "musicbrainz=3,listenbrainz=100"}
 
 
 def owned(artists=3, albums=3):
@@ -49,8 +49,8 @@ class StoreCase(unittest.TestCase):
 
 class BudgetTextTests(unittest.TestCase):
     def test_only_named_positive_provider_caps_count(self):
-        self.assertEqual(ps.parse_budgets("musicbrainz=300, LastFM=5,qobuz=9,discogs=0,listenbrainz=x,=4,lastfm"),
-                         {"musicbrainz": 300, "lastfm": 5})
+        self.assertEqual(ps.parse_budgets("musicbrainz=300, Deezer=5,qobuz=9,discogs=0,listenbrainz=x,=4,deezer"),
+                         {"musicbrainz": 300, "deezer": 5})
         self.assertEqual(ps.parse_budgets(None), {})
         self.assertEqual(ps.parse_budgets("musicbrainz=-4"), {})
 
@@ -69,7 +69,7 @@ class RecommendedCapsTests(unittest.TestCase):
 
     def test_every_provider_parses(self):
         self.assertEqual(ps.parse_budgets(self.RECOMMENDED), {
-            "musicbrainz": 600, "listenbrainz": 300, "lastfm": 600, "deezer": 600, "apple": 400, "wikipedia": 300})
+            "musicbrainz": 600, "listenbrainz": 300, "deezer": 600, "apple": 400, "wikipedia": 300})
 
     def test_compose_defaults_the_worker_to_these_caps_and_off_switches_it_off(self):
         compose = (Path(__file__).resolve().parents[1] / "compose.yaml").read_text()
@@ -101,7 +101,7 @@ class SpendTests(unittest.TestCase):
             spend.get("https://musicbrainz.org/ws/2/artist")
             for call, url in ((spend.get, "https://musicbrainz.org/ws/2/artist"),
                               (spend.get, "https://api.deezer.com/search"),
-                              (spend.get, "https://ws.audioscrobbler.com/2.0/"),   # lastfm: no cap given
+                              (spend.get, "https://api.discogs.com/database/search"),
                               (spend.post, "https://api.listenbrainz.org/1/popularity/release-group")):
                 with self.assertRaises(httpx.TransportError):
                     call(url)
@@ -110,14 +110,14 @@ class SpendTests(unittest.TestCase):
         self.assertEqual(spend.snapshot()["musicbrainz"], 2)
         self.assertTrue(spend.exhausted())
         self.assertEqual(spend.cap_reached, {"musicbrainz"})
-        self.assertEqual(spend.not_named, {"deezer", "lastfm", "listenbrainz"})
+        self.assertEqual(spend.not_named, {"deezer", "discogs", "listenbrainz"})
 
     def test_spent_counts_are_per_provider_and_start_from_the_stored_day(self):
-        spend = ps.Spend({"lastfm": 5, "musicbrainz": 5}, {"lastfm": 4})
+        spend = ps.Spend({"deezer": 5, "musicbrainz": 5}, {"deezer": 4})
         self.assertFalse(spend.exhausted())
         with mock.patch("httpx.get"):
-            spend.get("https://ws.audioscrobbler.com/2.0/?method=x")      # Last.fm's API host counts as lastfm
-        self.assertEqual(spend.snapshot()["lastfm"], 5)
+            spend.get("https://api.deezer.com/search/artist?q=x")
+        self.assertEqual(spend.snapshot()["deezer"], 5)
         self.assertTrue(spend.exhausted())
         self.assertEqual(ps.provider_of("https://api.discogs.com/database/search"), "discogs")
         self.assertEqual(ps.provider_of("https://api.listenbrainz.org/1/x"), "listenbrainz")
@@ -295,16 +295,14 @@ class RunTests(StoreCase):
     def test_sources_without_a_cap_are_switched_off_in_the_network(self):
         librarian = SimpleNamespace(
             _discovery_read_list=lambda name: None, _discovery_write_list=mock.Mock(),
-            _discovery_settings_read=lambda: {"lastfm_api_key": "k", "discogs_token": "t"},
+            _discovery_settings_read=lambda: {"discogs_token": "t"},
             api_call=mock.Mock(), _metadata_cache_get=lambda key, ttl: None, _metadata_cache_set=mock.Mock())
         with mock.patch.object(op.similar_precompute, "network_kwargs", side_effect=lambda lib: {
                 "cache_read": lambda name: None, "cache_write": mock.Mock(), "navidrome_mbid": None,
-                "lastfm_api_key": "k", "lastfm_gen": 1, "discogs_token": "t", "discogs_gen": 1}):
+                "discogs_token": "t", "discogs_gen": 1}):
             bare = op.prefetch_network(librarian, ps.Spend({"musicbrainz": 5, "listenbrainz": 5}))
-            full = op.prefetch_network(librarian, ps.Spend({"musicbrainz": 5, "lastfm": 5, "discogs": 5}))
-        self.assertIsNone(bare.lastfm)
+            full = op.prefetch_network(librarian, ps.Spend({"musicbrainz": 5, "discogs": 5}))
         self.assertIsNone(bare.discogs)
-        self.assertIsNotNone(full.lastfm)
         self.assertIsNotNone(full.discogs)
 
 
@@ -317,7 +315,7 @@ class RealPagesTests(StoreCase):
             _discovery_settings_read=lambda: {}, api_call=mock.Mock(return_value={"artist": {}}),
             _metadata_cache_get=lambda key, ttl: None, _metadata_cache_set=mock.Mock())
         data = owned(artists=1, albums=1)
-        spend = ps.Spend({"lastfm": 5})                                   # MusicBrainz and ListenBrainz are not capped
+        spend = ps.Spend({"discogs": 5})                                  # MusicBrainz and ListenBrainz are not capped
         with mock.patch("httpx.get") as get, mock.patch("httpx.post") as post:
             network = op.prefetch_network(librarian, spend)
             from discovery.search.index import STATE_FRESH, IndexView

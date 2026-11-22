@@ -27,7 +27,7 @@ from discovery.search.index import build_owned_data, fetch_song_inventory
 from discovery.search.merge import OwnedKeys
 from discovery.search.network import artist_network
 from discovery.search.similar_precompute import run_precompute
-from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation, navidrome_generation
+from settings.service import discogs_generation, discogs_token_and_source, navidrome_generation
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +67,10 @@ def network_kwargs(librarian) -> dict:
         artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
         return artist.get("musicBrainzId") or None
 
-    settings = librarian._discovery_settings_read()
     return {
         "cache_read": cache_reader(librarian),
         "cache_write": librarian._discovery_write_list,
         "navidrome_mbid": navidrome_mbid,
-        "lastfm_api_key": str(settings.get("lastfm_api_key") or "").strip(),
-        "lastfm_gen": lastfm_generation(librarian._discovery_settings_read),
         "discogs_token": discogs_token_and_source(librarian._discovery_settings_read, os.environ)[0],
         "discogs_gen": discogs_generation(librarian._discovery_settings_read),
     }

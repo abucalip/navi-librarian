@@ -110,16 +110,12 @@ class BuildOwnedTests(unittest.TestCase):
 class NetworkTests(unittest.TestCase):
     def test_precompute_network_keeps_the_page_cache_key_inputs(self):
         lib = mock.Mock()
-        lib._discovery_settings_read.return_value = {"lastfm_api_key": " key "}
-        with mock.patch.object(sp, "lastfm_generation", return_value=4), \
-                mock.patch.object(sp, "discogs_generation", return_value=2), \
+        with mock.patch.object(sp, "discogs_generation", return_value=2), \
                 mock.patch.object(sp, "discogs_token_and_source", return_value=("", "none")):
             kwargs = sp.network_kwargs(lib)
             network = sp.precompute_network(lib)
-        self.assertEqual(kwargs["lastfm_api_key"], "key")
-        self.assertEqual(network.lastfm_generation, 4)
+        self.assertNotIn("lastfm_api_key", kwargs)
         self.assertEqual(network.discogs_generation, 2)
-        self.assertIsNotNone(network.lastfm)
         self.assertIsNone(network.discogs)
         self.assertIs(network.cache_write, lib._discovery_write_list)
 

@@ -3,13 +3,13 @@
 ``run_once`` is the worker scheduler's ``owned_prefetch`` entry. It walks the owned artists and the owned
 albums, one of each in turn, and builds each page's network sections exactly as the page routes do
 (``artist_page`` and ``album_sections``, with a worker-built network), discarding the sections. The
-provider rows those sections store (MusicBrainz, ListenBrainz, Last.fm, Discogs) are therefore the same
+provider rows those sections store (MusicBrainz, ListenBrainz, Discogs) are therefore the same
 rows, under the same keys, that a first view would have fetched on demand; there is no second key builder
 to drift. A row that is still fresh costs no request, so a repeated pass over a warm library is cheap.
 
 Off unless the owner sets daily caps (``prefetch_state.ENV_BUDGETS``). Every request goes through
-``prefetch_state.Spend``, which refuses a request past its provider's cap or to an unlisted provider. Last.fm
-and Discogs without a cap are switched off for the run; MusicBrainz and ListenBrainz are used by both pages,
+``prefetch_state.Spend``, which refuses a request past its provider's cap or to an unlisted provider. Discogs
+without a cap is switched off for the run; MusicBrainz and ListenBrainz are used by both pages,
 so a cap set without them makes those sections fail (the entity is counted ``partial``, the walk moves on).
 The run ends when a cap is reached, on shutdown, after ``RUN_SECONDS``, or after one pass over both lists.
 The walk resumes from a checkpoint saved after each entity, whatever its outcome, except that an entity
@@ -81,8 +81,6 @@ def prefetch_network(librarian, spend):
     shared = similar_precompute.network_kwargs(librarian)
     # A source with no cap is switched off, as on an instance without its key: its sections say so and send nothing,
     # instead of being refused on every entity. MusicBrainz and ListenBrainz are used by both pages, so they need caps.
-    if "lastfm" not in spend.caps:
-        shared["lastfm_api_key"] = ""
     if "discogs" not in spend.caps:
         shared["discogs_token"] = ""
     hooks = album_page_hooks(librarian, spend)

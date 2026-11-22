@@ -1,9 +1,9 @@
 import unittest
 
 from discovery.artist_links import (
-    COLLABORATOR_CACHE_PREFIX, LINK_MAX_CALLS, SIMILAR_CACHE_PREFIX, fetch_collaborators, fetch_similar_artists,
+    COLLABORATOR_CACHE_PREFIX, LINK_MAX_CALLS, LISTENBRAINZ_RADIO_URL, SIMILAR_CACHE_PREFIX,
+    fetch_collaborators, fetch_similar_artists,
 )
-from discovery.artist_tag_fallback import LASTFM_API_URL
 
 
 class _Response:
@@ -38,7 +38,7 @@ class _Cache:
 
 
 def similar_body(*mbids):
-    return {"similarartists": {"artist": [{"name": m, "mbid": m} for m in mbids] + [{"name": "no-mbid"}]}}
+    return {"seed": [{"similar_artist_mbid": m, "similar_artist_name": m} for m in mbids] + [{"similar_artist_name": "no-mbid"}]}
 
 
 def relations(*items):
@@ -46,36 +46,30 @@ def relations(*items):
 
 
 class SimilarArtistTests(unittest.TestCase):
-    def test_similar_mbids_come_from_last_fm_and_skip_entries_without_one(self):
+    def test_similar_mbids_come_from_listenbrainz_and_skip_entries_without_one(self):
         get, cache = _Get(similar_body("s1", "s2")), _Cache()
-        found = fetch_similar_artists(get, ["a"], api_key="k", cache_get=cache.get, cache_set=cache.set)
+        found = fetch_similar_artists(get, ["a"], headers={"User-Agent": "t"}, cache_get=cache.get, cache_set=cache.set)
         self.assertEqual(found, {"a": ["s1", "s2"]})
         url, params = get.calls[0]
-        self.assertEqual(url, LASTFM_API_URL)
-        self.assertEqual((params["method"], params["mbid"], params["api_key"]), ("artist.getSimilar", "a", "k"))
-
-    def test_no_api_key_asks_nothing(self):
-        get = _Get(similar_body("s1"))
-        self.assertEqual(fetch_similar_artists(get, ["a"], api_key="", cache_get=_Cache().get,
-                                               cache_set=_Cache().set), {})
-        self.assertEqual(get.calls, [])
+        self.assertEqual(url, f"{LISTENBRAINZ_RADIO_URL}a")
+        self.assertEqual(params["mode"], "easy")
 
     def test_cached_answer_costs_no_call_and_failure_is_not_cached(self):
         cache = _Cache()
-        fetch_similar_artists(_Get(similar_body("s1")), ["a"], api_key="k", cache_get=cache.get, cache_set=cache.set)
+        fetch_similar_artists(_Get(similar_body("s1")), ["a"], cache_get=cache.get, cache_set=cache.set)
         again = _Get(similar_body("x"))
-        self.assertEqual(fetch_similar_artists(again, ["a"], api_key="k", cache_get=cache.get,
+        self.assertEqual(fetch_similar_artists(again, ["a"], cache_get=cache.get,
                                                cache_set=cache.set), {"a": ["s1"]})
         self.assertEqual(again.calls, [])
         failing, fresh = _Get(raises=True), _Cache()
-        self.assertEqual(fetch_similar_artists(failing, ["b"], api_key="k", cache_get=fresh.get,
+        self.assertEqual(fetch_similar_artists(failing, ["b"], cache_get=fresh.get,
                                                cache_set=fresh.set), {})
         self.assertEqual(fresh.store, {})
 
     def test_provider_calls_are_capped_per_run(self):
         get, cache = _Get(similar_body()), _Cache()
         mbids = [f"m{i}" for i in range(LINK_MAX_CALLS + 5)]
-        fetch_similar_artists(get, mbids, api_key="k", cache_get=cache.get, cache_set=cache.set)
+        fetch_similar_artists(get, mbids, cache_get=cache.get, cache_set=cache.set)
         self.assertEqual(len(get.calls), LINK_MAX_CALLS)
         self.assertTrue(all(key.startswith(SIMILAR_CACHE_PREFIX) for key in cache.store))
 

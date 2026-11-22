@@ -1,6 +1,6 @@
 """Album page sections: ``album``, ``year``, ``genre``, ``description``, ``tracks``, ``similar_artists`` and ``similar_albums``.
 
-The tracklist comes from a race between the providers that can supply one (Deezer, Last.fm,
+The tracklist comes from a race between the providers that can supply one (Deezer,
 MusicBrainz): the first non-empty answer wins, so the page waits for the fastest source rather
 than the best one. Each track is marked ``owned`` against the library's songs for that album
 (by title, by track number and length, or by track number and a near-identical title), and library songs the provider does not list are
@@ -22,7 +22,6 @@ from discovery.search.artist_sections import (
     _available,
     _cached_records,
     _incomplete,
-    _lastfm_albums,
     resolve_identity,
     similar_items,
     tag_items,
@@ -188,8 +187,6 @@ def _race_and_store(
     attempts = []
     if network.deezer_tracks is not None:
         attempts.append(lambda: network.deezer_tracks(artist, album))
-    if network.lastfm is not None:
-        attempts.append(lambda: network.lastfm.album_tracks(artist, album, remaining=remaining, cancelled=cancelled))
     if release_group_mbid:
         attempts.append(lambda: network.musicbrainz.release_group_tracks(
             release_group_mbid, remaining=remaining, cancelled=cancelled))
@@ -230,7 +227,20 @@ def similar_albums(
         if remaining() <= 0 or cancelled.is_set():
             break
         try:
-            albums = _lastfm_albums(network, artist["name"], remaining=remaining, cancelled=cancelled)
+            mbid = artist.get("mbid") or resolve_identity(
+                network, artist["name"], None, remaining=remaining, cancelled=cancelled,
+            )
+            if not mbid:
+                continue
+            albums = _cached_records(
+                network,
+                provider_cache_key("musicbrainz", 0, f"artist-mbid:{mbid}", "studio-albums"),
+                lambda remaining, cancelled, m=mbid: network.musicbrainz.albums_by_artist(
+                    m, remaining=remaining, cancelled=cancelled,
+                ),
+                remaining,
+                cancelled,
+            )
         except Exception:
             continue
         for album in albums:
@@ -393,16 +403,12 @@ def album_sections(
                     continue
                 yield result
                 if section == "similar_artists":
-                    if network.lastfm is None:
-                        yield {"section": "similar_albums", "available": False, "complete": False,
-                               "reason": "source_disabled", "items": []}
-                    else:
-                        items = result.get("items") or []
-                        pending[submit(lambda items=items: {
-                            "section": "similar_albums", "available": True, "complete": result["complete"],
-                            "reason": None if result["complete"] else result["reason"],
-                            "items": similar_albums(network, items, owned, remaining=remaining, cancelled=cancelled),
-                        })] = "similar_albums"
+                    items = result.get("items") or []
+                    pending[submit(lambda items=items: {
+                        "section": "similar_albums", "available": True, "complete": result["complete"],
+                        "reason": None if result["complete"] else result["reason"],
+                        "items": similar_albums(network, items, owned, remaining=remaining, cancelled=cancelled),
+                    })] = "similar_albums"
     finally:
         cancelled.set()
         pool.shutdown(wait=False, cancel_futures=True)

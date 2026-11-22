@@ -5,7 +5,7 @@ import unittest
 from discovery.search.album_page import album_sections, find_album, mark_owned_tracks, owned_tracks
 from discovery.search.artist_sections import ArtistNetwork
 from discovery.search.index import build_owned_data
-from discovery.search.providers import artist_candidate
+from discovery.search.providers import album_candidate, artist_candidate
 
 
 class Store:
@@ -20,12 +20,17 @@ class Store:
 
 
 class FakeMusicBrainz:
-    def __init__(self, tracks=(), delay=0.0):
+    def __init__(self, tracks=(), delay=0.0, artists=(), albums=()):
         self.tracks = list(tracks)
         self.delay = delay
+        self._artists = list(artists)
+        self._albums = list(albums)
 
     def artists(self, query, *, remaining, cancelled):
-        return []
+        return self._artists
+
+    def albums_by_artist(self, mbid, *, remaining, cancelled):
+        return self._albums
 
     def artist_tags(self, mbid, *, remaining, cancelled):
         return []
@@ -35,21 +40,12 @@ class FakeMusicBrainz:
         return self.tracks
 
 
-class FakeLastFm:
-    def __init__(self, tracks=(), delay=0.0):
-        self.tracks = list(tracks)
-        self.delay = delay
+class FakeDeezer:
+    def __init__(self, related=()):
+        self._related = list(related)
 
-    def album_tracks(self, artist, album, *, remaining, cancelled):
-        time.sleep(self.delay)
-        return self.tracks
-
-    def top_albums(self, artist, *, remaining, cancelled):
-        from discovery.search.providers import album_candidate
-        return [album_candidate("lastfm", f"{artist} Greatest", artist, None, None)]
-
-    def similar(self, name, *, remaining, cancelled):
-        return [{"name": "Portishead", "mbid": None, "match": 0.9}]
+    def similar(self, artist_name, *, remaining, cancelled):
+        return self._related
 
 
 def track(n, title, seconds=100):
@@ -273,7 +269,7 @@ class DescriptionTests(unittest.TestCase):
 class TracklistRaceTests(unittest.TestCase):
     def test_fastest_non_empty_source_wins_and_is_cached(self):
         network = make_network(
-            lastfm=FakeLastFm([track(1, "Slow")], delay=0.5),
+            musicbrainz=FakeMusicBrainz([track(1, "Slow")], delay=0.5),
             deezer_tracks=lambda artist, album: [track(1, "Fast")],
         )
         sections = run(network)
@@ -282,7 +278,6 @@ class TracklistRaceTests(unittest.TestCase):
 
     def test_empty_answers_are_skipped(self):
         network = make_network(
-            lastfm=FakeLastFm([]),
             deezer_tracks=lambda artist, album: [],
             musicbrainz=FakeMusicBrainz([track(1, "From MusicBrainz")], delay=0.1),
         )
@@ -304,18 +299,26 @@ class TracklistRaceTests(unittest.TestCase):
 
 class SimilarTests(unittest.TestCase):
     def test_similar_albums_take_one_album_per_similar_artist(self):
-        fake = FakeLastFm([track(1, "x")])
-        network = make_network(lastfm=fake, deezer=fake, deezer_tracks=lambda a, b: [track(1, "x")])
+        mb = FakeMusicBrainz(
+            artists=[artist_candidate("musicbrainz", "Portishead", "mb-p")],
+            albums=[album_candidate("musicbrainz", "Dummy", "Portishead", 1994, "rg-p")],
+        )
+        network = make_network(
+            musicbrainz=mb,
+            deezer=FakeDeezer(related=[{"name": "Portishead", "mbid": None, "match": None}]),
+            deezer_tracks=lambda a, b: [track(1, "x")],
+        )
         sections = run(network)
         self.assertEqual([i["name"] for i in sections["similar_artists"]["items"]], ["Portishead"])
         albums = sections["similar_albums"]["items"]
         self.assertEqual(albums[0]["artist"], "Portishead")
-        self.assertEqual(albums[0]["key"], "portishead/portishead greatest")
+        self.assertEqual(albums[0]["key"], "portishead/dummy")
         self.assertFalse(albums[0]["owned"])
 
-    def test_without_lastfm_similar_albums_report_source_disabled(self):
+    def test_similar_albums_are_empty_when_no_similar_artists_found(self):
         sections = run(make_network(deezer_tracks=lambda a, b: [track(1, "x")]))
-        self.assertEqual(sections["similar_albums"]["reason"], "source_disabled")
+        self.assertTrue(sections["similar_albums"]["available"])
+        self.assertEqual(sections["similar_albums"]["items"], [])
 
 
 if __name__ == "__main__":

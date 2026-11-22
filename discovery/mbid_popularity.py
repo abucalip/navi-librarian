@@ -21,9 +21,6 @@ from integrations.listenbrainz.popularity import (
     fetch_release_group_popularity,
 )
 
-# Kept temporarily while discovery/artist_links.py still imports it (removed in F2.3).
-LASTFM_SPACING_SECONDS = 0.27
-
 
 def resolve_popularity(
     post: Callable[..., Any],
