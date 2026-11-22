@@ -1,10 +1,9 @@
 """Dynamic listening-history fetch for the daily lens lists (Engine 2, Phase 4).
 
-ListenBrainz and Last.fm hold the same listens, so the history is split between them rather
-than read from both: the walk goes back one window at a time, and window ``i`` is read from
-source ``i mod n``. If that source fails for a window, the next source answers it. The walk
-stops once enough usable listens are in hand, or when the floor of ``max_days`` is reached.
-Listens seen in more than one window or source are counted once.
+Walks back one window at a time from ListenBrainz (or any injected window readers, alternating
+across sources ``i mod n`` with failover when multiple are given). The walk stops once enough
+usable listens are in hand, or when the floor of ``max_days`` is reached. Listens seen in more
+than one window or source are counted once.
 
 Pure apart from the injected window readers: no provider is called here directly, and nothing
 is logged except aggregate counts. See docs/plans/engine2.md (Phase 4).
@@ -26,7 +25,6 @@ LENS_MIN_USABLE_LISTENS = 2000
 # Floor of the walk: 13 years back, which reaches 2013 from 2026 (the test history has 2014 data).
 LENS_HISTORY_MAX_DAYS = 13 * 365
 LISTENBRAINZ_PAGE = 100
-LASTFM_PAGE = 200
 MAX_PAGES_PER_WINDOW = 50
 # A window that returns this many listens may have been cut by MAX_PAGES_PER_WINDOW (50 pages of
 # 100 ListenBrainz listens). It is flagged so the cut is visible in the diagnostics.
@@ -34,14 +32,6 @@ WINDOW_LISTEN_CAP = LISTENBRAINZ_PAGE * MAX_PAGES_PER_WINDOW
 PAUSE_SECONDS = 0.25
 
 WindowReader = Callable[[int, int], list[dict[str, Any]]]
-
-
-class LastFmResponseError(RuntimeError):
-    """A Last.fm reply that is an API error or does not have the expected shape.
-
-    Last.fm sends errors (an unknown user, a bad key) with HTTP 200, so the status code alone
-    does not show a failed read. Raising lets the walk answer the window from the other source.
-    """
 
 
 def _key(listen: Mapping[str, Any]) -> tuple:
@@ -86,68 +76,6 @@ def listenbrainz_window(
         if len(page) < LISTENBRAINZ_PAGE or oldest <= start:
             break
         max_ts = oldest - 1
-        pause(PAUSE_SECONDS)
-    return listens
-
-
-def lastfm_window(
-    username: str,
-    api_key: str,
-    start: int,
-    end: int,
-    *,
-    get: Callable[..., Any],
-    pause: Callable[[float], None] = time.sleep,
-) -> list[dict[str, Any]]:
-    """Read Last.fm scrobbles in ``(start, end]`` and convert them to the ListenBrainz shape.
-
-    ``user.getRecentTracks`` is bounded by ``from`` and ``to`` and returns newest first. The
-    now-playing entry has no date and is skipped.
-    """
-    listens: list[dict[str, Any]] = []
-    total_pages = 1
-    page_number = 1
-    while page_number <= min(total_pages, MAX_PAGES_PER_WINDOW):
-        response = get(
-            "https://ws.audioscrobbler.com/2.0/",
-            params={
-                "method": "user.getrecenttracks", "user": username, "api_key": api_key,
-                "format": "json", "limit": LASTFM_PAGE, "page": page_number,
-                "from": start + 1, "to": end,
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
-        body = response.json()
-        if not isinstance(body, dict) or "error" in body:
-            raise LastFmResponseError("Last.fm returned an API error")
-        recent = body.get("recenttracks")
-        if not isinstance(recent, dict):
-            raise LastFmResponseError("Last.fm response has no recenttracks object")
-        tracks = recent.get("track", [])
-        # Last.fm sends a single track as an object rather than a one-item list.
-        if isinstance(tracks, dict):
-            tracks = [tracks]
-        if not isinstance(tracks, list):
-            raise LastFmResponseError("Last.fm track list has an unexpected shape")
-        total_pages = int(recent.get("@attr", {}).get("totalPages", 1) or 1)
-        for item in tracks:
-            stamp = (item.get("date") or {}).get("uts")
-            if stamp is None:
-                continue
-            artist = item.get("artist") or {}
-            album = item.get("album") or {}
-            artist_mbid = artist.get("mbid") or ""
-            listens.append({
-                "listened_at": int(stamp),
-                "track_metadata": {
-                    "artist_name": artist.get("#text") or artist.get("name") or "",
-                    "track_name": item.get("name") or "",
-                    "release_name": album.get("#text") or "",
-                    "additional_info": {"artist_mbids": [artist_mbid] if artist_mbid else []},
-                },
-            })
-        page_number += 1
         pause(PAUSE_SECONDS)
     return listens
 
