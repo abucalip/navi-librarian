@@ -146,7 +146,7 @@ fun DiscoverCard(
 ) {
     val item = entry.item
     val artist = item.artistName
-    val listeners = (item.albumListeners ?: item.listeners)?.takeIf { it > 0 }
+    val listeners = (item.albumListeners ?: item.effectiveListeners)?.takeIf { it > 0 }
     val openAlbum = { open.album(routeKey(artist, item.album), artist, item.album, null, item.year) }
     Column(modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface)) {
         Box {

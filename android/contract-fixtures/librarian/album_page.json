@@ -55,7 +55,7 @@
             "available": true,
             "reason": null
           },
-          "lastfm": {
+          "deezer": {
             "available": true,
             "reason": null
           },
@@ -154,7 +154,7 @@
               "id": null,
               "score": 0.962,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: british, pop, pop rock"
               ]
             },
@@ -167,7 +167,7 @@
               "id": null,
               "score": 0.905,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: british, classic rock, english"
               ]
             },
@@ -180,7 +180,7 @@
               "id": null,
               "score": 0.579,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: rock"
               ]
             }
@@ -200,7 +200,7 @@
               "owned": false,
               "release_group_mbid": null,
               "sources": [
-                "lastfm"
+                "deezer"
               ]
             },
             {
@@ -212,7 +212,7 @@
               "owned": false,
               "release_group_mbid": null,
               "sources": [
-                "lastfm"
+                "deezer"
               ]
             },
             {
@@ -224,7 +224,7 @@
               "owned": false,
               "release_group_mbid": null,
               "sources": [
-                "lastfm"
+                "deezer"
               ]
             }
           ]

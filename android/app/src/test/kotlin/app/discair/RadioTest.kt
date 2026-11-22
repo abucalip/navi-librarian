@@ -148,9 +148,12 @@ class RadioTest {
         assertTrue(app.discair.model.radioLogoRequest("https://x/logo", 512).startsWith("https://x/logo?size=512&v="))
     }
 
-    @Test fun scrobblingWordsAreHonestWhenLastFmIsNotSetUp() {
-        assertTrue(app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(false, false), null).contains("not set up"))
-        assertTrue(app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(true, true), null).startsWith("On."))
+    @Test fun scrobblingWordsAreHonestWhenListenBrainzIsNotSetUp() {
+        val disabledText = app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(false, false), null)
+        assertTrue(disabledText.contains("ListenBrainz is not set up"))
+        val enabledText = app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(true, true), null)
+        assertTrue(enabledText.startsWith("On.") && enabledText.contains("ListenBrainz"))
+        assertTrue(app.discair.ui.settings.scrobblingText(app.discair.model.RadioScrobbling(false, true), null).contains("ListenBrainz"))
         assertEquals("boom", app.discair.ui.settings.scrobblingText(null, "boom"))
     }
 

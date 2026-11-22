@@ -1,5 +1,7 @@
 package app.discair
 
+import app.discair.model.DiscoveryItem
+import app.discair.model.Pick
 import app.discair.net.ConnectionFailure
 import app.discair.net.Subsonic
 import app.discair.net.errorDetail
@@ -37,4 +39,23 @@ class FixtureParsingTest {
     @Test fun tokenIsMd5OfPasswordPlusSalt() =
         // Example from the Subsonic API documentation: password "sesame", salt "c19b2d".
         assertEquals("26719a1196d2a940705a59634eb18eab", Subsonic.token("sesame", "c19b2d"))
+
+    @Test fun discoveryAndPickDecodeNeutralAndLegacyPopularityFields() {
+        val json = Json { ignoreUnknownKeys = true }
+        val neutralItem = json.decodeFromString<DiscoveryItem>("""{"artist":"A","album":"B","listeners":1234,"playcount":5678}""")
+        assertEquals(1234L, neutralItem.effectiveListeners)
+        assertEquals(5678L, neutralItem.effectivePlaycount)
+
+        val legacyItem = json.decodeFromString<DiscoveryItem>("""{"artist":"A","album":"B","lastfm_listeners":4321,"lastfm_playcount":8765}""")
+        assertEquals(4321L, legacyItem.effectiveListeners)
+        assertEquals(8765L, legacyItem.effectivePlaycount)
+
+        val neutralPick = json.decodeFromString<Pick>("""{"artist":"A","album":"B","listeners":999,"playcount":8888}""")
+        assertEquals(999L, neutralPick.effectiveListeners)
+        assertEquals(8888L, neutralPick.effectivePlaycount)
+
+        val legacyPick = json.decodeFromString<Pick>("""{"artist":"A","album":"B","lastfm_listeners":111,"lastfm_playcount":2222}""")
+        assertEquals(111L, legacyPick.effectiveListeners)
+        assertEquals(2222L, legacyPick.effectivePlaycount)
+    }
 }

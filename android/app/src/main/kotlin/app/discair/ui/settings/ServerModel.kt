@@ -89,7 +89,6 @@ object ServerRules {
             ServiceRow(ServiceId.Librarian, "Librarian", "Picks, downloads, insights", if (up) StatusWord.Connected else StatusWord.NoAnswer),
             ServiceRow(ServiceId.Navidrome, "Navidrome", "Library and playback", navidrome),
             ServiceRow(ServiceId.Slskd, "slskd", "Downloads", viaLibrarian(testedState(r.tests[ServiceId.Slskd], r.slskdConfigured, "Key"))),
-            ServiceRow(ServiceId.LastFm, "Last.fm", "Listening history", viaLibrarian(testedState(r.tests[ServiceId.LastFm], r.lastFmConfigured, "Key"))),
             ServiceRow(ServiceId.ListenBrainz, "ListenBrainz", "Taste, popularity", viaLibrarian(testedState(r.tests[ServiceId.ListenBrainz], listenBrainzConfigured, "Token"))),
             ServiceRow(ServiceId.MusicBrainz, "MusicBrainz data", "Paths", viaLibrarian(musicBrainz)),
         )

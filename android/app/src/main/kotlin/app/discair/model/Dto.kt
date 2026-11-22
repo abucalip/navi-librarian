@@ -80,14 +80,20 @@ data class Pick(
     @SerialName("discovery_category") val category: String = "",
     @SerialName("dashboard_category") val dashboardCategory: String = "",
     val year: Int? = null,
-    @SerialName("lastfm_listeners") val listeners: Long? = null,
+    val listeners: Long? = null,
+    @SerialName("lastfm_listeners") val legacyListeners: Long? = null,
+    val playcount: Long? = null,
+    @SerialName("lastfm_playcount") val legacyPlaycount: Long? = null,
     val genres: List<String> = emptyList(),
     val reason: String = "",
     @SerialName("similar_to") val similarTo: List<String> = emptyList(),
     @SerialName("suggested_tracks") val suggestedTracks: List<String> = emptyList(),
     /** The MusicBrainz release group, when the list carries one (the liner note of the day, docs/archive/completed/artwork.md, idea 12). */
     @SerialName("release_group_mbid") val releaseGroupMbid: String? = null,
-)
+) {
+    val effectiveListeners get() = listeners ?: legacyListeners
+    val effectivePlaycount get() = playcount ?: legacyPlaycount
+}
 
 @Serializable
 data class Picks(val items: List<Pick> = emptyList(), val count: Int = 0)

@@ -35,11 +35,11 @@ class ServerModelTest {
 
     private fun reads(
         up: Boolean = true, health: Boolean? = true, direct: Boolean? = null,
-        slskd: Boolean? = true, lastfm: Boolean? = true, lb: Boolean? = true,
-        tests: Map<ServiceId, ServiceCheck> = mapOf(ServiceId.Slskd to ok, ServiceId.LastFm to ok, ServiceId.ListenBrainz to ok),
+        slskd: Boolean? = true, lb: Boolean? = true,
+        tests: Map<ServiceId, ServiceCheck> = mapOf(ServiceId.Slskd to ok, ServiceId.ListenBrainz to ok),
         caps: String? = "broad", lenses: JobStatus? = null, popularity: JobStatus? = null,
     ) = ServerReads(
-        up, health, direct, slskd, lastfm, lb, tests,
+        up, health, direct, slskd, lb, tests,
         caps?.let { app.discair.model.ServerCapabilities(it, false, true, 1, 3) }, lenses, popularity, nowMs,
     )
 
@@ -117,7 +117,7 @@ class ServerModelTest {
         assertEquals(SummaryKind.Working, v.summary.kind)
         assertEquals("Everything is working", v.summary.title)
         assertEquals("Checked at 21:14.", v.summary.detail)
-        assertEquals(listOf("Connected", "Connected", "Connected", "Connected", "Connected", "Loaded · broad"), v.services.map { it.status.word })
+        assertEquals(listOf("Connected", "Connected", "Connected", "Connected", "Loaded · broad"), v.services.map { it.status.word })
         assertTrue(v.attention.isEmpty())
     }
 
@@ -127,7 +127,7 @@ class ServerModelTest {
         assertEquals("Can't reach Librarian", v.summary.title)
         assertEquals(StatusWord.NoAnswer, status(v.services, ServiceId.Librarian))
         assertEquals(StatusWord.Connected, status(v.services, ServiceId.Navidrome))
-        listOf(ServiceId.Slskd, ServiceId.LastFm, ServiceId.ListenBrainz, ServiceId.MusicBrainz).forEach {
+        listOf(ServiceId.Slskd, ServiceId.ListenBrainz, ServiceId.MusicBrainz).forEach {
             assertEquals(StatusWord.Unknown, status(v.services, it))
             assertFalse(v.services.first { r -> r.id == it }.status.failing)
         }
@@ -141,23 +141,21 @@ class ServerModelTest {
     }
 
     @Test fun `a configured service that was not tested is Unknown, an unset one is Not set up`() {
-        val rows = ServerRules.serviceRows(reads(tests = emptyMap(), lastfm = false))
+        val rows = ServerRules.serviceRows(reads(tests = emptyMap(), lb = false))
         assertEquals(StatusWord.Unknown, status(rows, ServiceId.Slskd))
-        assertEquals(StatusWord.NotSetUp, status(rows, ServiceId.LastFm))
+        assertEquals(StatusWord.NotSetUp, status(rows, ServiceId.ListenBrainz))
     }
 
     @Test fun `a refused credential names the credential`() {
         val rows = ServerRules.serviceRows(
             reads(tests = mapOf(
                 ServiceId.Slskd to ServiceCheck(false, "authentication_failed", ""),
-                ServiceId.LastFm to ServiceCheck(false, "connection_failed", ""),
                 ServiceId.ListenBrainz to ServiceCheck(false, "not_found", ""),
             )),
         )
         assertEquals("Key rejected", status(rows, ServiceId.Slskd).word)
-        assertEquals("No answer", status(rows, ServiceId.LastFm).word)
         assertEquals("Username rejected", status(rows, ServiceId.ListenBrainz).word)
-        assertTrue(rows.all { it.status.tone != ServerTone.Success || it.id !in listOf(ServiceId.Slskd, ServiceId.LastFm, ServiceId.ListenBrainz) })
+        assertTrue(rows.all { it.status.tone != ServerTone.Success || it.id !in listOf(ServiceId.Slskd, ServiceId.ListenBrainz) })
     }
 
     @Test fun `ListenBrainz falls back to the capabilities flag when its settings were not read`() {
@@ -173,7 +171,7 @@ class ServerModelTest {
     }
 
     @Test fun `one failing service is one that needs attention`() {
-        val v = ServerRules.build(reads(tests = mapOf(ServiceId.Slskd to ServiceCheck(false, "connection_failed", ""), ServiceId.LastFm to ok, ServiceId.ListenBrainz to ok)), "9:05")
+        val v = ServerRules.build(reads(tests = mapOf(ServiceId.Slskd to ServiceCheck(false, "connection_failed", ""), ServiceId.ListenBrainz to ok)), "9:05")
         assertEquals(SummaryKind.Attention, v.summary.kind)
         assertEquals("One service needs attention", v.summary.title)
         assertEquals("slskd: No answer. Checked at 9:05.", v.summary.detail)
