@@ -134,10 +134,27 @@ public final class AcquisitionModel {
         case "imported": return "In your library"
         case "searching": return "Searching"
         case "importing": return "Importing"
+        case "download_complete_waiting_for_folder": return "Waiting for download folder"
+        case "monitoring": return "Monitoring download"
+        case "requested", "queued", "queued_unconfirmed": return "Queued"
+        case "retry_requested": return "Retry requested"
+        case "recovery_started": return "Recovering download"
+        case "source_switching", "skip_requested": return "Switching source"
+        case "destination_exists": return "Already in your library folder; nothing was copied"
+        case "download_complete_move_failed": return "Could not move download into your library"
+        case "download_failed": return "Download failed"
         case "no_matches": return "No source found"
         case "settings_required": return "Download service not set up"
         case "queue_failed", "slskd_error": return "Download service error"
-        default: return job.status.replacingOccurrences(of: "_", with: " ").capitalized
+        case "monitor_error", "monitor_timeout": return "Download monitor error"
+        case "monitor_recovery_failed", "recovery_unavailable": return "Could not recover download"
+        case "source_switch_failed": return "Could not switch source"
+        case "review_required": return "Needs review"
+        case "queue_uncertain": return "Queue status uncertain"
+        case "dismissed": return "Dismissed"
+        default:
+            let words = job.status.replacingOccurrences(of: "_", with: " ")
+            return words.prefix(1).uppercased() + words.dropFirst()
         }
     }
 

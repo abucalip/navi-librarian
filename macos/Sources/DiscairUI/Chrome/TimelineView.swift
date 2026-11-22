@@ -179,7 +179,8 @@ struct TimelineInspector: View {
                 Text("Why here").font(.system(size: 12, weight: .semibold))
                 Text(item.why).font(.system(size: 12))
                 ForEach(Array(item.evidence.enumerated()), id: \.offset) { _, e in
-                    Text("\(e.source) · \(e.evidenceClass) · \(e.matchQuality)").font(.system(size: 10)).foregroundStyle(style.muted)
+                    Text(GraphWording.provenanceLine(source: e.source, evidenceClass: e.evidenceClass, matchQuality: e.matchQuality))
+                        .font(.system(size: 10)).foregroundStyle(style.muted)
                 }
             }
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)

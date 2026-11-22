@@ -199,7 +199,8 @@ struct GraphExplorerView: View {
         ForEach(Array(n.evidence.enumerated()), id: \.offset) { _, e in
             VStack(alignment: .leading, spacing: 3) {
                 Text(e.label.capitalized).font(.system(size: 12, weight: .semibold))
-                Text("\(e.source) · \(e.evidenceClass) · \(e.matchQuality)").font(.system(size: 11)).foregroundStyle(style.muted)
+                Text(GraphWording.provenanceLine(source: e.source, evidenceClass: e.evidenceClass, matchQuality: e.matchQuality))
+                    .font(.system(size: 11)).foregroundStyle(style.muted)
                 if let url = e.sourceURL { Text(url).font(.system(size: 10)).foregroundStyle(style.muted).lineLimit(1).truncationMode(.middle) }
             }
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)
