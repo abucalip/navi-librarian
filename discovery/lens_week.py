@@ -11,6 +11,8 @@ from collections.abc import Callable, Mapping
 from datetime import date, timedelta
 from typing import Any
 
+from discovery.pick_why import build_pick_why
+
 LENS = "current_tastes"
 WEEK_DAYS = 7
 ARCHIVE_PREFIX = f"lens_week:{LENS}:"
@@ -90,7 +92,7 @@ def week_pool(
 def to_pick(album: Mapping[str, Any]) -> dict[str, Any]:
     """A lens album in the dashboard pick shape the clients already read."""
     tag = album.get("seed_tag")
-    return {
+    pick: dict[str, Any] = {
         "artist": str(album.get("artist") or ""),
         "album": str(album.get("album") or ""),
         "dashboard_category": CATEGORY,
@@ -99,6 +101,10 @@ def to_pick(album: Mapping[str, Any]) -> dict[str, Any]:
         "release_group_mbid": album.get("release_group_mbid"),
         "lastfm_listeners": album.get("album_listeners"),
     }
+    why = build_pick_why(album, list_name=LENS)
+    if why is not None:
+        pick["why"] = why
+    return pick
 
 
 def build_week_picks(

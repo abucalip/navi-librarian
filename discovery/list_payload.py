@@ -7,6 +7,7 @@ from typing import Any
 
 from discovery.genre_block import blocked_item_predicate
 from discovery.lens_storage import serve_lens_list
+from discovery.pick_why import attach_why
 from discovery.snapshot import serve_snapshot
 
 
@@ -136,19 +137,20 @@ def build_cached_discovery_list_response(
             extras = list(bridge(shown, hidden))
         except Exception:
             extras = []
+    items_with_why = attach_why(shown + extras, list_name=list_name)
     result = {
         "list": list_name,
         "generated_at": cached["generated_at"],
         "total_before_feedback": stored_total,
         "count": min(count, len(visible)),
-        "items": shown + extras,
+        "items": items_with_why,
         "source": payload.get("source"),
         "limitations": payload.get("limitations", []),
     }
     if bridge is not None and list_name in BRIDGED_LISTS:
         result["bridged_count"] = len(extras)
     if list_name == "personal":
-        result["recommendations"] = shown + extras
+        result["recommendations"] = items_with_why
         result["diagnostics"] = {
             key: payload.get(key)
             for key in (
@@ -251,7 +253,10 @@ def build_lens_list_response(
             extras = bridge(shown, payload.get("seed_tags") or [])
         except Exception:
             extras = []
-    shown = shown + [{**extra, "rank": position} for position, extra in enumerate(extras, start=len(shown) + 1)]
+    shown = attach_why(
+        shown + [{**extra, "rank": position} for position, extra in enumerate(extras, start=len(shown) + 1)],
+        list_name=lens_name,
+    )
     return json.dumps({
         "list": lens_name,
         "label": payload.get("label"),

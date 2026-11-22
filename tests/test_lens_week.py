@@ -57,6 +57,17 @@ class PoolTests(unittest.TestCase):
         out = lens_week.build_week_picks(
             [{"artist": "A", "album": "1", "seed_tag": "x", "bridge_label": "Discover more A"}], 1, lambda v: None)
         self.assertEqual(out["items"][0]["reason"], "Discover more A")
+        self.assertEqual(out["items"][0]["why"], {
+            "kind": "bridge", "sentence": "Discover more A", "chips": [],
+        })
+
+    def test_pick_includes_lens_why(self):
+        out = lens_week.build_week_picks(
+            [{"artist": "A", "album": "1", "lens": "current_tastes", "seed_tag": "ambient", "album_listeners": 5400}],
+            1, lambda v: None,
+        )
+        self.assertEqual(out["items"][0]["why"]["kind"], "lens")
+        self.assertEqual(out["items"][0]["why"]["sentence"], "Close to the ambient you play lately")
 
 
 class WeekPicksServiceTests(unittest.TestCase):
