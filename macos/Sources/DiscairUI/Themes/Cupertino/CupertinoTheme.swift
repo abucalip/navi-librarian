@@ -398,6 +398,7 @@ struct CupertinoSidebar: View {
 /// The services status button (M9), Search and the Queue button, top right. The player itself is `CupertinoPlayerBar`, along the bottom.
 struct CupertinoToolbar: View {
     let state: AppState
+    static let height: CGFloat = 44
     var body: some View {
         HStack(spacing: CU.Space.s) {
             Spacer(minLength: 0)
@@ -423,7 +424,7 @@ struct CupertinoToolbar: View {
             }
             .buttonStyle(.plain).contentShape(Circle()).accessibilityLabel(state.queueOpen ? "Close Queue" : "Queue")
         }
-        .frame(height: 44)
+        .frame(height: Self.height)
     }
 }
 

@@ -43,6 +43,8 @@ struct CupertinoQueueInspector: View {
     static let playingSlotWidth: CGFloat = 18
     static let actionSlotWidth: CGFloat = 24
     static let headerCountTrailingInset: CGFloat = rowHorizontalPadding + rowSpacing + actionSlotWidth
+    /// Aligns the Queue / Saved header band with `CupertinoToolbar` (D5.5).
+    static let headerTop: CGFloat = CU.Shell.toolbarTop
     private enum Tab { case queue, saved }
     @State private var tab = Tab.queue
     @State private var saving = false
@@ -60,7 +62,8 @@ struct CupertinoQueueInspector: View {
                     .minimumScaleFactor(0.8)
                     .padding(.trailing, tab == .queue ? Self.headerCountTrailingInset : Self.rowHorizontalPadding)
             }
-            .padding(.bottom, 16)
+            .frame(height: CupertinoToolbar.height)
+            .padding(.bottom, CU.Space.m)
 
             // Two ways to add songs now (each a labelled button with what it does), then the Autoplay switch on its own line.
             VStack(alignment: .leading, spacing: 10) {
@@ -118,7 +121,7 @@ struct CupertinoQueueInspector: View {
             .padding(.top, 8)
         }
         .font(CU.Font.body.weighted(.regular))
-        .padding(.top, 66).padding([.horizontal, .bottom], 16)
+        .padding(.top, Self.headerTop).padding([.horizontal, .bottom], CU.Space.m)
         .frame(width: Self.width).frame(maxHeight: .infinity)
         .glassEffect(CU.glass, in: Rectangle())
         .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
