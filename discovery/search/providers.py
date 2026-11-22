@@ -16,13 +16,20 @@ from urllib.parse import quote
 
 from discovery.search.cache import DEPTH
 from discovery.search.limiter import SourceLimiter
-from integrations.provider_gate import musicbrainz_lane
 from discovery.search.normalize import normalize_key
+from integrations.deezer.artist import (
+    DeezerPacer,
+    related_artists as deezer_related_artists,
+    search_artist_id as deezer_search_artist_id,
+    top_tracks as deezer_top_tracks,
+)
+from integrations.provider_gate import musicbrainz_lane
 
 MUSICBRAINZ = "musicbrainz"
 LASTFM = "lastfm"
 LISTENBRAINZ = "listenbrainz"
 DISCOGS = "discogs"
+DEEZER = "deezer"
 
 MB_BASE = "https://musicbrainz.org/ws/2"
 LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
@@ -834,3 +841,115 @@ class DiscogsSearch:
                 if folded:
                     counts[folded] = counts.get(folded, 0) + 1
         return [{"name": style} for style in sorted(counts, key=lambda s: (-counts[s], s))]
+
+
+class DeezerSearch:
+    """Paced, cached Deezer fallback for artist top songs and similar artists (FirstFM F2.2)."""
+
+    source = DEEZER
+
+    def __init__(
+        self,
+        *,
+        get: Callable[..., Any],
+        cache_read: Callable[[str], Any] | None = None,
+        cache_write: Callable[[str, Any], None] | None = None,
+        pacer: DeezerPacer | None = None,
+        clock: Callable[[], float] = time.time,
+    ):
+        self._get = get
+        self._cache_read = cache_read
+        self._cache_write = cache_write
+        self._pacer = pacer
+        self._clock = clock
+
+    def _cache_get(self, key: str, *, ttl_seconds: int) -> Any:
+        if self._cache_read is None:
+            return None
+        entry = self._cache_read(key)
+        if not isinstance(entry, dict):
+            return None
+        at = entry.get("at")
+        if not isinstance(at, (int, float)) or isinstance(at, bool):
+            return None
+        if self._clock() - at >= ttl_seconds:
+            return None
+        return entry.get("value")
+
+    def _cache_set(self, key: str, value: Any) -> None:
+        if self._cache_write is None:
+            return
+        self._cache_write(key, {"at": self._clock(), "value": value})
+
+    def _timeout(self, remaining, cancelled) -> float:
+        if cancelled.is_set():
+            raise ProviderError("failed")
+        budget = remaining()
+        if budget <= 0:
+            raise ProviderError("timeout")
+        return min(REQUEST_TIMEOUT, max(0.1, budget))
+
+    def similar(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Deezer related artists for ``artist_name``, ordered by Deezer relevance."""
+        timeout = self._timeout(remaining, cancelled)
+        artist_id = deezer_search_artist_id(
+            self._get,
+            self._cache_get,
+            self._cache_set,
+            artist_name,
+            timeout=timeout,
+            clock=self._clock,
+            pacer=self._pacer,
+        )
+        if artist_id is None:
+            return []
+        timeout = self._timeout(remaining, cancelled)
+        rows = deezer_related_artists(
+            self._get,
+            self._cache_get,
+            self._cache_set,
+            artist_id,
+            timeout=timeout,
+            clock=self._clock,
+            pacer=self._pacer,
+        )
+        return [
+            {"name": row["name"], "mbid": None, "match": None}
+            for row in rows
+            if row.get("name")
+        ]
+
+    def top_tracks(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Deezer top tracks for ``artist_name``, most popular first."""
+        timeout = self._timeout(remaining, cancelled)
+        artist_id = deezer_search_artist_id(
+            self._get,
+            self._cache_get,
+            self._cache_set,
+            artist_name,
+            timeout=timeout,
+            clock=self._clock,
+            pacer=self._pacer,
+        )
+        if artist_id is None:
+            return []
+        timeout = self._timeout(remaining, cancelled)
+        rows = deezer_top_tracks(
+            self._get,
+            self._cache_get,
+            self._cache_set,
+            artist_id,
+            timeout=timeout,
+            clock=self._clock,
+            pacer=self._pacer,
+        )
+        return [
+            {
+                "name": row["name"],
+                "listen_count": None,
+                "recording_mbid": None,
+                "album": row.get("album"),
+            }
+            for row in rows
+            if row.get("name")
+        ]

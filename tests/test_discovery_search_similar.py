@@ -10,7 +10,7 @@ from discovery.search.cache import SIMILAR_TTL_SECONDS
 from discovery.search.index import build_owned_data
 from discovery.search.limiter import SourceLimiter
 from discovery.search.merge import OwnedKeys
-from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError, artist_candidate
+from discovery.search.providers import DeezerSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError, artist_candidate
 from discovery.search.similar import OWNER_BOOST_WEIGHT, SIMILAR_LIMIT, TAG_WEIGHT, fuse_similar, owner_boost
 
 
@@ -150,6 +150,16 @@ class FuseTests(unittest.TestCase):
         self.assertEqual([i["name"] for i in items], ["First", "Second"])
         self.assertEqual([i["score"] for i in items], [0.5, 0.333])
 
+    def test_deezer_ranks_by_position_with_deezer_reason(self):
+        records = [
+            {"source": "deezer", "name": "First", "mbid": None, "match": None},
+            {"source": "deezer", "name": "Second", "mbid": None, "match": None},
+        ]
+        items = fuse_similar(records, "Seed", None, OwnedKeys(None))
+        self.assertEqual([i["name"] for i in items], ["First", "Second"])
+        self.assertEqual([i["score"] for i in items], [0.5, 0.333])
+        self.assertEqual(items[0]["reasons"], ["Deezer similar artist"])
+
     def test_the_seed_is_never_suggested(self):
         records = [
             {"source": "lastfm", "name": "Radiohead", "mbid": "mb-rh", "match": 1.0},
@@ -263,6 +273,39 @@ class ListenBrainzRadioTests(unittest.TestCase):
         self.assertEqual(str(raised.exception), "rate_limited")
 
 
+class DeezerSimilarTests(unittest.TestCase):
+    def test_parses_related_artists_and_caches(self):
+        from integrations.deezer.artist import DeezerPacer
+
+        store = Store()
+        calls = []
+
+        def get(url, **kwargs):
+            calls.append(url)
+            if "/search/artist" in url:
+                return Response({"data": [{"id": 399, "name": "Radiohead", "nb_fan": 1000}]})
+            return Response({"data": [
+                {"id": 10, "name": "Thom Yorke", "nb_fan": 500},
+                {"id": 11, "name": "Portishead", "nb_fan": 400},
+            ]})
+
+        deezer = DeezerSearch(
+            get=get,
+            cache_read=store.read,
+            cache_write=store.write,
+            pacer=DeezerPacer(0.0),
+        )
+        result = deezer.similar("Radiohead", remaining=lambda: 10.0, cancelled=never_cancelled())
+        self.assertEqual(result, [
+            {"name": "Thom Yorke", "mbid": None, "match": None},
+            {"name": "Portishead", "mbid": None, "match": None},
+        ])
+        self.assertEqual(len(calls), 2)
+        again = deezer.similar("Radiohead", remaining=lambda: 10.0, cancelled=never_cancelled())
+        self.assertEqual(again, result)
+        self.assertEqual(len(calls), 2)
+
+
 class LastFmSimilarTests(unittest.TestCase):
     def test_parses_names_mbids_and_clamped_match_scores(self):
         payload = {"similarartists": {"artist": [
@@ -316,7 +359,7 @@ class SimilarSectionTests(unittest.TestCase):
                 raise ProviderError("failed")
             return [dict(r) for r in self._records]
 
-    def network(self, lastfm=None, listenbrainz=None, store=None, mbid="mb-rh", musicbrainz=None):
+    def network(self, deezer=None, listenbrainz=None, store=None, mbid="mb-rh", musicbrainz=None):
         store = store or Store()
         return ArtistNetwork(
             musicbrainz=musicbrainz or self.MusicBrainz(mbid),
@@ -324,9 +367,8 @@ class SimilarSectionTests(unittest.TestCase):
             bio=lambda name: None,
             cache_read=store.read,
             cache_write=store.write,
-            lastfm=lastfm,
+            deezer=deezer,
             listenbrainz=listenbrainz,
-            lastfm_generation=3,
             deadline_seconds=3.0,
         )
 
@@ -336,46 +378,54 @@ class SimilarSectionTests(unittest.TestCase):
             remaining=lambda: 10.0, cancelled=never_cancelled(),
         )
 
-    def test_both_sources_fuse_into_a_complete_section(self):
-        net = self.network(
-            lastfm=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}]),
-            listenbrainz=self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}]),
-        )
-        section = self.run_similar(net)
+    def test_listenbrainz_answers_without_calling_deezer_when_non_empty(self):
+        dz = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}])
+        lb = self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}])
+        section = self.run_similar(self.network(deezer=dz, listenbrainz=lb))
         self.assertEqual(section["section"], "similar")
         self.assertTrue(section["available"])
         self.assertTrue(section["complete"])
-        self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke", "Atoms for Peace"])
+        self.assertEqual(dz.calls, 0)
+        self.assertEqual([i["name"] for i in section["items"]], ["Atoms for Peace"])
+
+    def test_deezer_answers_when_listenbrainz_is_empty(self):
+        dz = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}])
+        lb = self.Fake([])
+        section = self.run_similar(self.network(deezer=dz, listenbrainz=lb))
+        self.assertTrue(section["complete"])
+        self.assertEqual(dz.calls, 1)
+        self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke"])
+        self.assertEqual(section["items"][0]["reasons"], ["Deezer similar artist"])
 
     def test_a_failed_source_gives_a_partial_section_that_is_not_cached(self):
         store = Store()
         net = self.network(
-            lastfm=self.Fake(fail=True),
-            listenbrainz=self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}]),
+            deezer=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}]),
+            listenbrainz=self.Fake(fail=True),
             store=store,
         )
         section = self.run_similar(net)
         self.assertFalse(section["complete"])
         self.assertEqual(section["reason"], "source_failed")
-        self.assertEqual([i["name"] for i in section["items"]], ["Atoms for Peace"])
+        self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke"])
         self.assertFalse(any(key.startswith("similar:") for key in store.data))
 
     def test_a_complete_answer_is_served_from_cache_without_provider_calls(self):
         store = Store()
-        lastfm = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}])
-        first = self.run_similar(self.network(lastfm=lastfm, store=store))
-        self.assertEqual(lastfm.calls, 1)
+        deezer = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}])
+        first = self.run_similar(self.network(deezer=deezer, store=store))
+        self.assertEqual(deezer.calls, 1)
 
         again = self.Fake(fail=True)
-        second = self.run_similar(self.network(lastfm=again, store=store))
+        second = self.run_similar(self.network(deezer=again, store=store))
         self.assertEqual(again.calls, 0)
         self.assertEqual(second["items"], first["items"])
-        self.assertIn("similar:mb-rh:radiohead:lastfm3:listenbrainz0", store.data)
+        self.assertIn("similar:mb-rh:radiohead:deezer0:listenbrainz0", store.data)
 
     def test_cache_entries_for_similar_artists_last_seven_days(self):
         store = Store()
-        self.run_similar(self.network(lastfm=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}]), store=store))
-        entry = store.data["similar:mb-rh:radiohead:lastfm3:listenbrainz0"]
+        self.run_similar(self.network(deezer=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}]), store=store))
+        entry = store.data["similar:mb-rh:radiohead:deezer0:listenbrainz0"]
         self.assertEqual(len(entry["results"]), 1)
         self.assertEqual(SIMILAR_TTL_SECONDS, 7 * 24 * 60 * 60)
 
@@ -386,8 +436,10 @@ class SimilarSectionTests(unittest.TestCase):
             "mb-o": ["jazz"],
         })
         net = self.network(
-            lastfm=self.Fake([{"name": "Other", "mbid": "mb-o", "match": 0.6}]),
-            listenbrainz=self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}]),
+            listenbrainz=self.Fake([
+                {"name": "Other", "mbid": "mb-o", "match": None},
+                {"name": "Atoms for Peace", "mbid": "mb-afp", "match": None},
+            ]),
             musicbrainz=musicbrainz,
         )
         section = self.run_similar(net)
@@ -398,7 +450,7 @@ class SimilarSectionTests(unittest.TestCase):
 
     def test_a_rate_limited_tag_lookup_makes_the_section_incomplete_with_deadline(self):
         net = self.network(
-            lastfm=self.Fake([{"name": "Thom Yorke", "mbid": "mb-ty", "match": 0.9}]),
+            listenbrainz=self.Fake([{"name": "Thom Yorke", "mbid": "mb-ty", "match": None}]),
             musicbrainz=self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True),
         )
         section = self.run_similar(net)
@@ -410,11 +462,11 @@ class SimilarSectionTests(unittest.TestCase):
     def test_a_rate_limited_tag_refresh_still_stores_the_complete_provider_records(self):
         import time
         store = Store()
-        key = "similar:mb-rh:radiohead:lastfm3:listenbrainz0"
-        previous = {"at": time.time(), "results": [{"source": "lastfm", "name": "Old", "mbid": None, "match": 0.1}]}
+        key = "similar:mb-rh:radiohead:deezer0:listenbrainz0"
+        previous = {"at": time.time(), "results": [{"source": "deezer", "name": "Old", "mbid": None, "match": None}]}
         store.data[key] = previous
         net = self.network(
-            lastfm=self.Fake([{"name": "New", "mbid": None, "match": 0.9}]),
+            deezer=self.Fake([{"name": "New", "mbid": None, "match": None}]),
             store=store,
             musicbrainz=self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True),
         )
@@ -429,22 +481,22 @@ class SimilarSectionTests(unittest.TestCase):
     def test_a_rate_limited_tag_lookup_does_not_refetch_the_records_on_the_next_request(self):
         store = Store()
         musicbrainz = self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True)
-        lastfm = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}])
+        deezer = self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}])
         listenbrainz = self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}])
-        self.run_similar(self.network(lastfm=lastfm, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
-        second = self.run_similar(self.network(lastfm=lastfm, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
-        self.assertEqual((lastfm.calls, listenbrainz.calls), (1, 1))
+        self.run_similar(self.network(deezer=deezer, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
+        second = self.run_similar(self.network(deezer=deezer, listenbrainz=listenbrainz, store=store, musicbrainz=musicbrainz))
+        self.assertEqual((deezer.calls, listenbrainz.calls), (0, 1))
         self.assertEqual(second["reason"], "deadline")
 
     def test_a_failed_provider_refresh_leaves_the_previous_cache_entry_unchanged(self):
         import time
         store = Store()
-        key = "similar:mb-rh:radiohead:lastfm3:listenbrainz0"
-        previous = {"at": time.time(), "results": [{"source": "lastfm", "name": "Old", "mbid": None, "match": 0.1}]}
+        key = "similar:mb-rh:radiohead:deezer0:listenbrainz0"
+        previous = {"at": time.time(), "results": [{"source": "deezer", "name": "Old", "mbid": None, "match": None}]}
         store.data[key] = previous
         net = self.network(
-            lastfm=self.Fake(fail=True),
-            listenbrainz=self.Fake([{"name": "New", "mbid": "mb-new", "match": None}]),
+            deezer=self.Fake([{"name": "New", "mbid": None, "match": None}]),
+            listenbrainz=self.Fake(fail=True),
             store=store,
         )
         section = similar_items(
@@ -456,31 +508,31 @@ class SimilarSectionTests(unittest.TestCase):
 
     def test_refresh_skips_the_cached_records_and_calls_the_sources(self):
         store = Store()
-        self.run_similar(self.network(lastfm=self.Fake([{"name": "Old", "mbid": None, "match": 0.1}]), store=store))
-        fresh = self.Fake([{"name": "New", "mbid": None, "match": 0.9}])
+        self.run_similar(self.network(deezer=self.Fake([{"name": "Old", "mbid": None, "match": None}]), store=store))
+        fresh = self.Fake([{"name": "New", "mbid": None, "match": None}])
         section = similar_items(
-            self.network(lastfm=fresh, store=store), "Radiohead", None, owned_keys(),
+            self.network(deezer=fresh, store=store), "Radiohead", None, owned_keys(),
             remaining=lambda: 10.0, cancelled=never_cancelled(), refresh=True,
         )
         self.assertEqual(fresh.calls, 1)
         self.assertEqual([i["name"] for i in section["items"]], ["New"])
 
     def test_every_source_failing_is_a_source_failed_section_on_the_page(self):
-        net = self.network(lastfm=self.Fake(fail=True), listenbrainz=self.Fake(fail=True))
+        net = self.network(deezer=self.Fake(fail=True), listenbrainz=self.Fake(fail=True))
         sections = network_sections(net, "Radiohead", None, None)
         self.assertEqual(sections["similar"]["reason"], "source_failed")
         self.assertEqual(sections["similar"]["items"], [])
 
     def test_no_source_able_to_answer_is_source_disabled(self):
-        net = self.network(lastfm=None, listenbrainz=None)
+        net = self.network(deezer=None, listenbrainz=None)
         section = self.run_similar(net)
         self.assertFalse(section["available"])
         self.assertEqual(section["reason"], "source_disabled")
 
-    def test_without_an_mbid_only_last_fm_answers(self):
+    def test_without_an_mbid_only_deezer_answers(self):
         radio = self.Fake([{"name": "Should not be asked", "mbid": "mb-x", "match": None}])
         net = self.network(
-            lastfm=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": 0.9}]),
+            deezer=self.Fake([{"name": "Thom Yorke", "mbid": None, "match": None}]),
             listenbrainz=radio,
             mbid=None,
         )

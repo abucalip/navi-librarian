@@ -29,9 +29,17 @@ from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import album_match_key, normalize_key
 from intelligence.editions.ownership import edition_awareness_enabled, edition_match
-from discovery.search.providers import DISCOGS_ATTRIBUTION, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
+from discovery.search.providers import (
+    DISCOGS_ATTRIBUTION,
+    DeezerSearch,
+    DiscogsSearch,
+    LastFmSearch,
+    ListenBrainzRadio,
+    MusicBrainzSearch,
+    ProviderError,
+)
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
-from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
+from discovery.search.similar import DEEZER, LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
 from discovery.search.top_songs import top_songs
 
 MISSING_ALBUMS_LIMIT = 50
@@ -71,6 +79,8 @@ class ArtistNetwork:
     lastfm_generation: int = 0
     # ListenBrainz radio, which needs the artist's MBID. None when the source is not wired.
     listenbrainz: ListenBrainzRadio | None = None
+    # Deezer fallback for top songs and similar artists when ListenBrainz has no data or no MBID.
+    deezer: DeezerSearch | None = None
     # Discogs styles join the shared tags when a token is saved. ``discogs_generation`` keys their cache entries.
     discogs: DiscogsSearch | None = None
     discogs_generation: int = 0
@@ -409,21 +419,12 @@ def similar_items(
     mbid = resolve_identity(
         network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
     )
-    key = f"similar:{mbid or 'none'}:{normalize_key(name)}:lastfm{network.lastfm_generation}:listenbrainz0"
+    key = f"similar:{mbid or 'none'}:{normalize_key(name)}:deezer0:listenbrainz0"
     records = None if refresh else read_cached(
         network.cache_read, key, time.time(), positive_ttl=SIMILAR_TTL_SECONDS,
     )
     if records is None:
         records, failed, attempted = [], 0, 0
-        if network.lastfm is not None:
-            attempted += 1
-            try:
-                records += [
-                    {"source": LASTFM, **record}
-                    for record in network.lastfm.similar(name, remaining=remaining, cancelled=cancelled)
-                ]
-            except Exception:
-                failed += 1
         if network.listenbrainz is not None and mbid:
             attempted += 1
             try:
@@ -433,8 +434,17 @@ def similar_items(
                 ]
             except Exception:
                 failed += 1
+        if not records and network.deezer is not None:
+            attempted += 1
+            try:
+                records += [
+                    {"source": DEEZER, **record}
+                    for record in network.deezer.similar(name, remaining=remaining, cancelled=cancelled)
+                ]
+            except Exception:
+                failed += 1
         if attempted == 0:
-            # No source can answer for this artist (no Last.fm key, and no MBID for radio).
+            # No source can answer for this artist (no MBID for radio, and no Deezer fallback).
             return {"section": "similar", "available": False, "complete": False,
                     "reason": "source_disabled", "items": []}
         if failed == attempted:

@@ -1,6 +1,6 @@
 """The ``top_songs`` section of the artist page (contract section 14.3).
 
-ListenBrainz top recordings for the artist's MBID come first; Last.fm top tracks answer when
+ListenBrainz top recordings for the artist's MBID come first; Deezer top tracks answer when
 ListenBrainz has none or no MBID is known. One list never mixes the two scales. The fetched
 records are cached; the ``owned`` flag is computed on every read against the current index.
 """
@@ -13,7 +13,7 @@ from typing import Any
 from discovery.search.cache import provider_cache_key, read_or_revalidate, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.normalize import normalize_key
-from discovery.search.providers import LASTFM, LISTENBRAINZ, ProviderError
+from discovery.search.providers import DEEZER, LISTENBRAINZ, ProviderError
 
 TOP_SONGS_LIMIT = 10
 
@@ -73,18 +73,18 @@ def _fetch(network, name: str, mbid: str | None, *, remaining, cancelled):
             failed += 1
         if records:
             return LISTENBRAINZ, records
-    if network.lastfm is not None:
+    if getattr(network, "deezer", None) is not None:
         attempted += 1
         records = _source_records(
             network,
-            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "top-tracks"),
-            lambda **budget: network.lastfm.top_tracks(name, **budget),
+            provider_cache_key("deezer", 0, f"artist-top:{normalize_key(name)}", "top-tracks"),
+            lambda **budget: network.deezer.top_tracks(name, **budget),
             remaining=remaining, cancelled=cancelled,
         )
         if records is None:
             failed += 1
         if records:
-            return LASTFM, records
+            return DEEZER, records
     if attempted == 0:
         return None, None
     if failed == attempted:
