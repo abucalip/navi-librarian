@@ -128,4 +128,11 @@ class AlbumPathStepsTest {
         assertEquals("Within 2 years", yearGap("within 2 years"))
         assertEquals(null, yearGap("no number"))
     }
+
+    @Test fun guestReasonEyebrowShowsInstrumentOrCreditBeforeFallingBack() {
+        val withInstrument = parsePaths(body("paths_album_guests")).toAlbumAnswer().steps.first().reasons.first()
+        assertEquals("Saxophone", reasonEyebrow(withInstrument))
+        val bare = withInstrument.copy(credits = emptyList())
+        assertEquals("Guest credit", reasonEyebrow(bare))
+    }
 }
