@@ -47,13 +47,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The words under the scrobbling switch (contract section 3.7): off by default, and honest when Last.fm is not set up on the server. */
+/** The words under the scrobbling switch (contract section 3.7): off by default, and honest when ListenBrainz is not set up on the server. */
 internal fun scrobblingText(s: RadioScrobbling?, failed: String?): String = when {
     failed != null -> failed
     s == null -> "Checking the server."
-    !s.configured && !s.enabled -> "Off. Last.fm is not set up on the server, so this cannot be switched on yet."
-    s.enabled -> "On. The server sends each radio song to Last.fm once you have heard it for 30 seconds."
-    else -> "Off. Radio songs are not sent to Last.fm."
+    !s.configured && !s.enabled -> "Off. ListenBrainz is not set up on the server, so this cannot be switched on yet."
+    s.enabled -> "On. The server sends each radio song to ListenBrainz once you have heard it for 30 seconds."
+    else -> "Off. Radio songs are not sent to ListenBrainz."
 }
 
 /** Reads at most [RADIO_LOGO_MAX_BYTES] + 1 bytes, so an oversized picture is refused without loading all of it. Null when unreadable. */

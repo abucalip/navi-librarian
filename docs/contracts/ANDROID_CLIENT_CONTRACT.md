@@ -15,7 +15,7 @@ In scope (v1):
 
 Out of scope for v1:
 - Playback in the first release. It is now specified in [`ANDROID_PLAYER_CONTRACT.md`](ANDROID_PLAYER_CONTRACT.md) (D-018) and is built in its own phases.
-- Radio, Librarian service settings (Navidrome, slskd, Last.fm, ListenBrainz, Discogs), household or multi-user use.
+- Radio, Librarian service settings (Navidrome, slskd, ListenBrainz, Discogs), household or multi-user use.
 - Any on-device ranking, matching or similarity logic.
 - Tailscale itself. The Tailscale app must be connected on the phone.
 

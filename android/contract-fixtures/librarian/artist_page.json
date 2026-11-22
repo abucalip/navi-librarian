@@ -57,7 +57,7 @@
             "available": true,
             "reason": null
           },
-          "lastfm": {
+          "deezer": {
             "available": true,
             "reason": null
           },
@@ -185,7 +185,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ],
               "rank": 0,
@@ -203,7 +203,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ],
               "rank": 2,
@@ -221,7 +221,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ],
               "rank": 6,
@@ -247,7 +247,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ]
             },
@@ -260,7 +260,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ]
             },
@@ -273,7 +273,7 @@
               "popularity_source": "listenbrainz",
               "sources": [
                 "musicbrainz",
-                "lastfm",
+                "deezer",
                 "listenbrainz"
               ]
             }
@@ -293,7 +293,7 @@
               "id": null,
               "score": 1.083,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: hip hop"
               ]
             },
@@ -306,7 +306,7 @@
               "id": null,
               "score": 0.95,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: conscious hip hop, hip hop"
               ]
             },
@@ -319,7 +319,7 @@
               "id": null,
               "score": 0.768,
               "reasons": [
-                "Last.fm similar artist",
+                "Deezer similar artist",
                 "Shared tags: hip hop"
               ]
             }

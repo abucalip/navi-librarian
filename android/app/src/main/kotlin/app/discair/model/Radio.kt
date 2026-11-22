@@ -222,7 +222,7 @@ fun radioDownloadState(playId: Long?, inLibrary: Boolean, requested: Boolean, wo
     else -> RadioDownload.Ready
 }
 
-/** Radio scrobbling as the server reports it (`GET`/`PUT /api/radio/scrobbling`): the switch, and whether Last.fm is set up there. */
+/** Radio scrobbling as the server reports it (`GET`/`PUT /api/radio/scrobbling`): the switch, and whether ListenBrainz is set up there. */
 data class RadioScrobbling(val enabled: Boolean, val configured: Boolean)
 
 /** Parses the scrobbling answer. An unreadable body reads as off and not set up, never as on. */

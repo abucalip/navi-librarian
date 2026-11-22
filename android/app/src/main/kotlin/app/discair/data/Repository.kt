@@ -301,10 +301,10 @@ interface LibraryRepository : AcquisitionApi {
     /** Sets or clears a station's favourite flag (`PUT /api/radio/stations/{id}/favourite`); returns the value the server saved. */
     fun setRadioFavourite(stationId: String, favourite: Boolean): Boolean = throw UnsupportedOperationException()
 
-    /** Whether the server scrobbles radio songs to Last.fm, and whether Last.fm is set up there (`GET /api/radio/scrobbling`). Live. */
+    /** Whether the server scrobbles radio songs to ListenBrainz, and whether ListenBrainz is set up there (`GET /api/radio/scrobbling`). Live. */
     fun radioScrobbling(): RadioScrobbling = throw UnsupportedOperationException()
 
-    /** Switches radio scrobbling (`PUT /api/radio/scrobbling`); the server refuses with a message when Last.fm is not set up. */
+    /** Switches radio scrobbling (`PUT /api/radio/scrobbling`); the server refuses with a message when ListenBrainz is not set up. */
     fun setRadioScrobbling(enabled: Boolean): RadioScrobbling = throw UnsupportedOperationException()
 
     /** The address the phone reaches the relay at (`GET /api/radio/settings`), blank when none is saved. Read only here. */

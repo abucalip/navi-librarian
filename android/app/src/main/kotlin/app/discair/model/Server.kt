@@ -47,9 +47,6 @@ fun parseSlskdConfigured(body: String): Boolean? {
     return key && !o.str("slskd_url").isNullOrBlank()
 }
 
-/** Last.fm is set up once an API key is stored. */
-fun parseLastFmConfigured(body: String): Boolean? = parseConfigured(body, "api_key_configured")
-
 /**
  * A test answer. Without a `status` the answer is read from `ok` and the words, as the Mac does: a refused credential is
  * authentication_failed, anything else that failed is connection_failed.
@@ -89,7 +86,7 @@ fun parseJobStatus(body: String): JobStatus? {
     return JobStatus(parseRun(o.obj("status")), parseRun(o.obj("last_good")), o.bool("running") ?: false, o.num("retry_after"))
 }
 
-enum class ServiceId { Librarian, Navidrome, Slskd, LastFm, ListenBrainz, MusicBrainz }
+enum class ServiceId { Librarian, Navidrome, Slskd, ListenBrainz, MusicBrainz }
 
 /** Everything one pass over the server's routes found. A null is "could not be read", never "off". */
 data class ServerReads(
@@ -100,7 +97,6 @@ data class ServerReads(
     /** The phone's own check of Navidrome; used when the Librarian does not answer. Null before the first check. */
     val navidromeDirect: Boolean?,
     val slskdConfigured: Boolean?,
-    val lastFmConfigured: Boolean?,
     val listenBrainzConfigured: Boolean?,
     val tests: Map<ServiceId, ServiceCheck>,
     val capabilities: ServerCapabilities?,

@@ -44,7 +44,7 @@
                 "available": true,
                 "reason": null
               },
-              "lastfm": {
+              "deezer": {
                 "available": true,
                 "reason": null
               },
@@ -93,7 +93,7 @@
         {
           "event": "source",
           "data": {
-            "source": "lastfm",
+            "source": "deezer",
             "state": "pending",
             "count": null,
             "ms": null
@@ -104,12 +104,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik cocknbullkid",
+            "id": "deezer:abd al malik cocknbullkid",
             "key": "abd al malik cocknbullkid",
             "name": "Abd al Malik & Cocknbullkid",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -121,12 +121,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik ezra koenig",
+            "id": "deezer:abd al malik ezra koenig",
             "key": "abd al malik ezra koenig",
             "name": "Abd al Malik & Ezra Koenig",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -138,12 +138,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik juliette greco",
+            "id": "deezer:abd al malik juliette greco",
             "key": "abd al malik juliette greco",
             "name": "Abd al Malik & Juliette Gréco",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -155,12 +155,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik matteo falkone",
+            "id": "deezer:abd al malik matteo falkone",
             "key": "abd al malik matteo falkone",
             "name": "Abd al Malik & Matteo Falkone",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -172,12 +172,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik papa wemba",
+            "id": "deezer:abd al malik papa wemba",
             "key": "abd al malik papa wemba",
             "name": "Abd al Malik & Papa Wemba",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -189,12 +189,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik primary 1",
+            "id": "deezer:abd al malik primary 1",
             "key": "abd al malik primary 1",
             "name": "Abd al Malik & Primary 1",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -206,12 +206,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik wallen",
+            "id": "deezer:abd al malik wallen",
             "key": "abd al malik wallen",
             "name": "Abd Al Malik & Wallen",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -223,12 +223,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik feat wallen",
+            "id": "deezer:abd al malik feat wallen",
             "key": "abd al malik feat wallen",
             "name": "Abd Al Malik Feat Wallen",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -240,12 +240,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik feat aissa",
+            "id": "deezer:abd al malik feat aissa",
             "key": "abd al malik feat aissa",
             "name": "Abd Al Malik feat. Aïssa",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -257,12 +257,12 @@
           "data": {
             "type": "artist",
             "owned": false,
-            "id": "lastfm:abd al malik feat juliette greco",
+            "id": "deezer:abd al malik feat juliette greco",
             "key": "abd al malik feat juliette greco",
             "name": "Abd Al Malik feat. Juliette Gréco",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "album_count": null,
@@ -274,12 +274,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/2008 by popof",
+            "id": "deezer:abd al malik/2008 by popof",
             "key": "abd al malik/2008 by popof",
             "name": "-2008-BY POPOF",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -293,12 +293,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/12 septembre 2001",
+            "id": "deezer:abd al malik/12 septembre 2001",
             "key": "abd al malik/12 septembre 2001",
             "name": "12 Septembre 2001",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -312,12 +312,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/abd al malik",
+            "id": "deezer:abd al malik/abd al malik",
             "key": "abd al malik/abd al malik",
             "name": "Abd Al Malik",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -331,12 +331,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/allogene j suis un stremon",
+            "id": "deezer:abd al malik/allogene j suis un stremon",
             "key": "abd al malik/allogene j suis un stremon",
             "name": "Allogène (j'suis un stremon)",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -350,12 +350,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/c est du lourd",
+            "id": "deezer:abd al malik/c est du lourd",
             "key": "abd al malik/c est du lourd",
             "name": "C'Est Du Lourd",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -369,12 +369,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/daniel darc",
+            "id": "deezer:abd al malik/daniel darc",
             "key": "abd al malik/daniel darc",
             "name": "Daniel Darc",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -388,12 +388,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/dante",
+            "id": "deezer:abd al malik/dante",
             "key": "abd al malik/dante",
             "name": "Dante",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -407,12 +407,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik wallen/dante",
+            "id": "deezer:abd al malik wallen/dante",
             "key": "abd al malik wallen/dante",
             "name": "Dante",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik & Wallen",
@@ -426,12 +426,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik juliette greco/dante",
+            "id": "deezer:abd al malik juliette greco/dante",
             "key": "abd al malik juliette greco/dante",
             "name": "Dante",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd al Malik & Juliette Gréco",
@@ -445,12 +445,12 @@
           "data": {
             "type": "album",
             "owned": false,
-            "id": "lastfm:abd al malik/dante bonus track version",
+            "id": "deezer:abd al malik/dante bonus track version",
             "key": "abd al malik/dante bonus track version",
             "name": "Dante (Bonus Track Version)",
             "mbid": null,
             "sources": [
-              "lastfm"
+              "deezer"
             ],
             "artwork_url": null,
             "artist": "Abd Al Malik",
@@ -462,7 +462,7 @@
         {
           "event": "source",
           "data": {
-            "source": "lastfm",
+            "source": "deezer",
             "state": "cached",
             "count": 100,
             "ms": 0
