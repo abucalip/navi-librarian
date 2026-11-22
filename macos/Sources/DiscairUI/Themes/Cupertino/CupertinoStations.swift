@@ -48,11 +48,25 @@ struct CupertinoStations: View {
                 if let summary { Text(summary).cuRole(CU.Font.body).foregroundStyle(CU.textSecondary) }
             }
             Spacer(minLength: 0)
-            CUSegmented(StationsModel.Pane.allCases.map { (value: $0, label: $0.rawValue) },
-                        selection: Binding(get: { model.pane }, set: { model.pane = $0 }), accessibilityName: "Radio view")
-                .padding(.top, CU.Space.s)
+            HStack(spacing: CU.Space.s) {
+                if model.pane == .stations { addStationButton }
+                CUSegmented(StationsModel.Pane.allCases.map { (value: $0, label: $0.rawValue) },
+                            selection: Binding(get: { model.pane }, set: { model.pane = $0 }), accessibilityName: "Radio view")
+            }
+            .padding(.top, CU.Space.s)
         }
         .padding(.top, CU.Space.xs)
+    }
+
+    private var addStationButton: some View {
+        Button { addingStation = true } label: {
+            HStack(spacing: 6) { Image(systemName: "plus"); Text("Add station") }
+        }
+        .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+        .accessibilityLabel("Add station")
+        .sheet(isPresented: $addingStation) {
+            AddStationSheet { draft in await state.addStation(draft) }
+        }
     }
 
     private var summary: String? {
@@ -94,30 +108,13 @@ struct CupertinoStations: View {
         if sideBySide {
             HStack(alignment: .top, spacing: CU.Space.l) {
                 ScrollView { main() }.scrollEdgeEffectStyle(.hard, for: .top)
-                ScrollView { panelColumn }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
+                ScrollView { OnAirPanel(state: state) }.frame(width: Self.panelWidth).scrollEdgeEffectStyle(.hard, for: .top)
             }
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: CU.Space.m) { main(); panelColumn }
+                VStack(alignment: .leading, spacing: CU.Space.m) { main(); OnAirPanel(state: state) }
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
-        }
-    }
-
-    /// The On Air panel, and on the Stations tab the Add station button under it (and under its "Heard on" list).
-    private var panelColumn: some View {
-        VStack(alignment: .leading, spacing: CU.Space.m) {
-            OnAirPanel(state: state)
-            if model.pane == .stations {
-                Button { addingStation = true } label: {
-                    HStack(spacing: 6) { Image(systemName: "plus"); Text("Add station") }
-                }
-                .buttonStyle(CapsuleButtonStyle(outlined: true))
-                .accessibilityLabel("Add station")
-                .sheet(isPresented: $addingStation) {
-                    AddStationSheet { draft in await state.addStation(draft) }
-                }
-            }
         }
     }
 
@@ -250,7 +247,7 @@ private struct StationRow: View {
 
 /// The fixed panel on the right (mockup A2, "On Air"). Nothing playing: a sentence. A station playing: the hero from the mockup, the
 /// logo, LIVE, the station and the time since tuning in, the live song with Download, and Stop; under it the station's Heard box.
-private struct OnAirPanel: View {
+struct OnAirPanel: View {
     let state: AppState
     private var player: PlayerModel { state.player }
     private var stations: StationsModel { state.stations }
@@ -269,7 +266,7 @@ private struct OnAirPanel: View {
                     .foregroundStyle(player.notice == nil ? CU.textSecondary : CU.danger)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .accessibilityElement(children: .combine)
         }
