@@ -64,6 +64,31 @@ internal fun crewKind(relation: String?): String = when (relation) {
     else -> "production credit"
 }
 
+/**
+ * The label for a guest/sideman credit on an album path: prefers the instrument played, then any other specific
+ * credit relation (vocals, engineer, producer, etc.), and falls back to "guest credit" only when none is present.
+ */
+internal fun guestKind(credits: List<PathCreditFact>): String {
+    credits.firstNotNullOfOrNull { c ->
+        if (c.relation.equals("instrument", ignoreCase = true)) cleanRole(c.role)?.lowercase() else null
+    }?.let { return it }
+    credits.firstNotNullOfOrNull { c ->
+        val rel = c.relation.trim().lowercase()
+        val role = cleanRole(c.role)?.lowercase()
+        when (rel) {
+            "instrument", "", "guest", "guest_on" -> null
+            "vocal" -> role ?: "vocals"
+            "producer" -> "producer"
+            "engineer" -> "engineer"
+            "mix" -> "mixing"
+            "mastering" -> "mastering"
+            "performer", "main performer", "performing orchestra" -> role ?: "performer"
+            else -> role ?: rel.replace('_', ' ')
+        }
+    }?.let { return it }
+    return "guest credit"
+}
+
 private fun sameYearKind(code: String) = when (code) {
     "same_period_label" -> "same label"
     "same_period_area" -> "same area"
@@ -81,11 +106,14 @@ fun AlbumStep.trailLink(tab: AlbumTab, seeds: Int = 0): TrailLink {
     val code = reason?.code.orEmpty()
     return when (tab) {
         AlbumTab.StudioCrew -> TrailLink(via, crewKind(reason?.credits?.firstOrNull()?.relation))
-        AlbumTab.GuestList -> TrailLink(via, "guest credit")
+        AlbumTab.GuestList -> TrailLink(via, guestKind(reason?.credits.orEmpty()))
         AlbumTab.CoversAndSources -> TrailLink(via, if (code == "derived_work") "related work" else "same work")
         AlbumTab.SameYearSameScene -> TrailLink(via, sameYearKind(code))
         AlbumTab.SameRoom -> TrailLink(via, "recorded at")
-        AlbumTab.ListenThroughGaps -> TrailLink(via, reasonEyebrow(code).lowercase())
+        AlbumTab.ListenThroughGaps -> TrailLink(
+            via,
+            if (code == "guest_on") guestKind(reason?.credits.orEmpty()) else reasonEyebrow(code).lowercase(),
+        )
         AlbumTab.NeighboursByEar -> TrailLink(
             if (seeds > 0) "$matchCount of $seeds tracks" else "$matchCount ${if (matchCount == 1) "track" else "tracks"}",
             "sound alike",

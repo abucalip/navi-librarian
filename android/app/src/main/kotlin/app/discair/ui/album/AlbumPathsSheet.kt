@@ -246,7 +246,7 @@ private fun ReasonCard(tab: AlbumTab, reason: AlbumStepReason) {
         val gap = yearGap(reason.text)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             InfoCard(Modifier.weight(1f)) {
-                Eyebrow(reasonEyebrow(reason.code))
+                Eyebrow(reasonEyebrow(reason))
                 Spacer(Modifier.size(8.dp))
                 Text(via, style = MaterialTheme.typography.titleLarge)
             }
@@ -260,7 +260,7 @@ private fun ReasonCard(tab: AlbumTab, reason: AlbumStepReason) {
         return
     }
     InfoCard() {
-        Eyebrow(reasonEyebrow(reason.code))
+        Eyebrow(reasonEyebrow(reason))
         if (via != null) {
             Spacer(Modifier.size(8.dp))
             Text(via, style = MaterialTheme.typography.titleLarge)

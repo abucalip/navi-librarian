@@ -160,3 +160,9 @@ internal fun reasonEyebrow(code: String): String = when (code) {
     "sonic_neighbour" -> "Sounds alike"
     else -> "Why it's here"
 }
+
+/** The small label above a reason's card, using the credit's instrument or role for guest credits. */
+internal fun reasonEyebrow(reason: AlbumStepReason): String = when (reason.code) {
+    "guest_on" -> guestKind(reason.credits).replaceFirstChar { it.uppercaseChar() }
+    else -> reasonEyebrow(reason.code)
+}

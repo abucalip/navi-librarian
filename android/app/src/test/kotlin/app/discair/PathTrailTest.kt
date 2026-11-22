@@ -66,6 +66,43 @@ class PathTrailTest {
         assertEquals("mixing credit", links.first().kind)
     }
 
+    @Test fun guestListPrefersInstrumentThenSpecificCreditThenFallback() {
+        fun link(vararg credits: PathCreditFact) =
+            album("guest_on", ref("Bob"), credits.toList()).trailLink(AlbumTab.GuestList)
+
+        assertEquals(TrailLink("Bob", "saxophone"), link(PathCreditFact("instrument", "saxophone"), PathCreditFact("instrument", "flute")))
+        assertEquals(TrailLink("Bob", "drums"), link(PathCreditFact("instrument", "drums (drum set)")))
+        assertEquals(TrailLink("Bob", "guitar"), link(PathCreditFact("instrument", "additional, guitar")))
+        // Instrument on a later credit wins over a non-instrument or bare instrument credit.
+        assertEquals(TrailLink("Bob", "piano"), link(PathCreditFact("engineer", null), PathCreditFact("instrument", "piano")))
+        assertEquals(TrailLink("Bob", "bass"), link(PathCreditFact("instrument", null), PathCreditFact("instrument", "bass")))
+        // Specific non-instrument credits when no instrument is present.
+        assertEquals(TrailLink("Bob", "lead vocals"), link(PathCreditFact("vocal", "lead vocals")))
+        assertEquals(TrailLink("Bob", "vocals"), link(PathCreditFact("vocal", null)))
+        assertEquals(TrailLink("Bob", "engineer"), link(PathCreditFact("engineer", null)))
+        assertEquals(TrailLink("Bob", "producer"), link(PathCreditFact("producer", null)))
+        assertEquals(TrailLink("Bob", "mixing"), link(PathCreditFact("mix", null)))
+        assertEquals(TrailLink("Bob", "mastering"), link(PathCreditFact("mastering", null)))
+        assertEquals(TrailLink("Bob", "performer"), link(PathCreditFact("performer", "guest")))
+        assertEquals(TrailLink("Bob", "composer"), link(PathCreditFact("composer", null)))
+        // Fallback only when no instrument or specific credit exists.
+        assertEquals(TrailLink("Bob", "guest credit"), link(PathCreditFact("instrument", null)))
+        assertEquals(TrailLink("Bob", "guest credit"), link())
+    }
+
+    @Test fun guestListInstrumentComesFromTheRecordedServerAnswer() {
+        val steps = parsePaths(body("paths_album_guests")).toAlbumAnswer().steps
+        val first = steps.first().trailLink(AlbumTab.GuestList)
+        assertEquals(TrailLink("Fèqadu Amdè‐Mesqel", "saxophone"), first)
+    }
+
+    @Test fun listenThroughGapsUsesGuestInstrumentWhenAvailable() {
+        val withInstrument = album("guest_on", ref("Bob"), listOf(PathCreditFact("instrument", "trumpet")))
+        assertEquals(TrailLink("Bob", "trumpet"), withInstrument.trailLink(AlbumTab.ListenThroughGaps))
+        val withEngineer = album("guest_on", ref("Bob"), listOf(PathCreditFact("engineer", null)))
+        assertEquals(TrailLink("Bob", "engineer"), withEngineer.trailLink(AlbumTab.ListenThroughGaps))
+    }
+
     @Test fun otherAlbumTabsNameTheViaAndTheKindOfLink() {
         assertEquals(TrailLink("Bob", "guest credit"), album("guest_on", ref("Bob")).trailLink(AlbumTab.GuestList))
         assertEquals(TrailLink("So What", "same work"), album("same_work", ref("So What", "work")).trailLink(AlbumTab.CoversAndSources))
