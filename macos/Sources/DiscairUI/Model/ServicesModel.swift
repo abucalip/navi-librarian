@@ -16,7 +16,7 @@ public struct ServicesModel: Equatable, Sendable {
     // MARK: Vocabulary
 
     public enum ServiceID: String, CaseIterable, Codable, Sendable {
-        case librarian, navidrome, slskd, lastfm, listenbrainz, musicbrainz, sonic, discogs, smb
+        case librarian, navidrome, slskd, listenbrainz, musicbrainz, sonic, discogs, smb
     }
 
     public enum Group: String, CaseIterable, Sendable {
@@ -125,7 +125,6 @@ public struct ServicesModel: Equatable, Sendable {
         public var navidromeCheck: DirectCheck
         public var navidromeSettings: NavidromeSettings?
         public var slskdSettings: SlskdSettings?
-        public var lastFMSettings: LastFMSettings?
         public var listenBrainzSettings: ListenBrainzSettings?
         public var discogsSettings: DiscogsSettings?
         /// The most recent `POST …/test` answer for each service. A service with settings and no test is Unknown.
@@ -141,14 +140,14 @@ public struct ServicesModel: Equatable, Sendable {
 
         public init(librarianReachable: Bool? = nil, librarianAddress: String? = nil, tailscaleHint: Bool = false,
                     navidromeCheck: DirectCheck = .unchecked, navidromeSettings: NavidromeSettings? = nil,
-                    slskdSettings: SlskdSettings? = nil, lastFMSettings: LastFMSettings? = nil,
+                    slskdSettings: SlskdSettings? = nil,
                     listenBrainzSettings: ListenBrainzSettings? = nil, discogsSettings: DiscogsSettings? = nil,
                     tests: [ServiceID: ServiceTestResult] = [:], capabilities: ServerCapabilities? = nil, sonicAvailable: Bool? = nil,
                     share: ShareState = .off, shareAddress: String = "", history: History = History(), now: Date = Date(),
                     calendar: Calendar = .current) {
             self.librarianReachable = librarianReachable; self.librarianAddress = librarianAddress; self.tailscaleHint = tailscaleHint
             self.navidromeCheck = navidromeCheck; self.navidromeSettings = navidromeSettings; self.slskdSettings = slskdSettings
-            self.lastFMSettings = lastFMSettings; self.listenBrainzSettings = listenBrainzSettings; self.discogsSettings = discogsSettings
+            self.listenBrainzSettings = listenBrainzSettings; self.discogsSettings = discogsSettings
             self.tests = tests; self.capabilities = capabilities; self.sonicAvailable = sonicAvailable
             self.share = share; self.shareAddress = shareAddress; self.history = history; self.now = now; self.calendar = calendar
         }
@@ -243,7 +242,6 @@ public struct ServicesModel: Equatable, Sendable {
             .navidrome: { switch input.navidromeCheck {
                 case .ok: .connected; case .rejected: .rejected("Password"); case .noAnswer: .noAnswer; case .unchecked: .unknown } }(),
             .slskd: viaLibrarian(testedState(input.tests[.slskd], configured: input.slskdSettings.map { $0.apiKeyConfigured && !$0.url.isEmpty }, noun: "Key")),
-            .lastfm: viaLibrarian(testedState(input.tests[.lastfm], configured: input.lastFMSettings?.apiKeyConfigured, noun: "Key")),
             .listenbrainz: viaLibrarian(testedState(input.tests[.listenbrainz], configured: listenBrainzConfigured(input), noun: "Token")),
             .discogs: viaLibrarian(testedState(input.tests[.discogs], configured: input.discogsSettings?.tokenConfigured, noun: "Token")),
             .musicbrainz: viaLibrarian(input.capabilities.map { c in
@@ -309,7 +307,6 @@ public struct ServicesModel: Equatable, Sendable {
         .librarian: Info(name: "Librarian", role: "Picks, downloads, insights", group: .core, powers: ["Home", "Discover", "Insights", "Downloads"], optional: false, noun: "Password"),
         .navidrome: Info(name: "Navidrome", role: "Your library and playback", group: .core, powers: ["Library", "Playback", "Playlists"], optional: false, noun: "Password"),
         .slskd: Info(name: "slskd", role: "Finds and downloads what you Get", group: .gettingMusic, powers: ["Get", "Downloads"], optional: false, noun: "Key"),
-        .lastfm: Info(name: "Last.fm", role: "Listening history for picks", group: .listeningHistory, powers: ["Picks", "Listener counts"], optional: false, noun: "Key"),
         .listenbrainz: Info(name: "ListenBrainz", role: "Listening history for taste", group: .listeningHistory, powers: ["Taste", "Popularity", "Lenses"], optional: false, noun: "Token"),
         .musicbrainz: Info(name: "MusicBrainz data", role: "Credits stored on the server", group: .knowledge, powers: ["Connections", "Paths", "Atlas", "Timeline"], optional: false, noun: ""),
         .sonic: Info(name: "Sonic analysis", role: "Navidrome’s analysis of each song", group: .knowledge, powers: ["Sonic paths", "Neighbours by ear"], optional: true, noun: ""),
@@ -347,7 +344,6 @@ public struct ServicesModel: Equatable, Sendable {
         case .navidrome: fields = [text("Address", input.navidromeSettings?.url), text("Username", input.navidromeSettings?.username),
                                    secret("Password", input.navidromeSettings?.passwordConfigured), usedBy]
         case .slskd: fields = [text("Address", input.slskdSettings?.url), secret("API key", input.slskdSettings?.apiKeyConfigured), usedBy]
-        case .lastfm: fields = [text("Username", input.lastFMSettings?.username), secret("API key", input.lastFMSettings?.apiKeyConfigured), usedBy]
         case .listenbrainz: fields = [text("Username", input.listenBrainzSettings?.username), secret("Token", input.listenBrainzSettings?.tokenConfigured), usedBy]
         case .discogs:
             let source: String? = input.discogsSettings.map { s in
@@ -473,7 +469,7 @@ public struct ServicesModel: Equatable, Sendable {
         var out = [Edge(from: "mac", to: "librarian", style: style(lib)),
                    Edge(from: "mac", to: "navidrome", style: style(nav)),
                    Edge(from: "librarian", to: "navidrome", style: libNav)]
-        for id in [ServiceID.slskd, .lastfm, .listenbrainz, .discogs, .musicbrainz] {
+        for id in [ServiceID.slskd, .listenbrainz, .discogs, .musicbrainz] {
             out.append(Edge(from: "librarian", to: id.rawValue, style: style(states[id]!)))
         }
         return out

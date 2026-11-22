@@ -41,21 +41,19 @@ extension AppState {
 
         async let navi = try? librarian.navidromeSettings()
         async let slskd = try? librarian.slskdSettings()
-        async let lastfm = try? librarian.lastFMSettings()
         async let lb = try? librarian.listenBrainzSettings()
         async let discogs = try? librarian.discogsSettings()
-        let (naviSettings, slskdSettings, lastFMSettings, lbSettings, discogsSettings) = (await navi, await slskd, await lastfm, await lb, await discogs)
-        input.navidromeSettings = naviSettings; input.slskdSettings = slskdSettings; input.lastFMSettings = lastFMSettings
+        let (naviSettings, slskdSettings, lbSettings, discogsSettings) = (await navi, await slskd, await lb, await discogs)
+        input.navidromeSettings = naviSettings; input.slskdSettings = slskdSettings
         input.listenBrainzSettings = lbSettings; input.discogsSettings = discogsSettings
 
         // A service is tested only when it is set up; the others are Not set up without asking.
         async let tSlskd = Self.test(configured: slskdSettings.map { $0.apiKeyConfigured && !$0.url.isEmpty }) { try await librarian.testSlskd() }
-        async let tLast = Self.test(configured: lastFMSettings?.apiKeyConfigured) { try await librarian.testLastFM() }
         async let tLB = Self.test(configured: lbSettings.map { !$0.username.isEmpty }) {
             let r = try await librarian.testListenBrainz(); return ServiceTestResult(ok: r.ok, status: r.status, message: r.message)
         }
         async let tDiscogs = Self.test(configured: discogsSettings?.tokenConfigured) { try await librarian.testDiscogs() }
-        for (id, result) in [(ServicesModel.ServiceID.slskd, await tSlskd), (.lastfm, await tLast), (.listenbrainz, await tLB), (.discogs, await tDiscogs)] {
+        for (id, result) in [(ServicesModel.ServiceID.slskd, await tSlskd), (.listenbrainz, await tLB), (.discogs, await tDiscogs)] {
             if let result { input.tests[id] = result }
         }
         services.finish(input)
@@ -122,7 +120,6 @@ extension AppState {
         let result: ServiceTestResult?
         switch id {
         case .slskd: result = try? await librarian.testSlskd()
-        case .lastfm: result = try? await librarian.testLastFM()
         case .discogs: result = try? await librarian.testDiscogs()
         case .listenbrainz: result = (try? await librarian.testListenBrainz()).map { ServiceTestResult(ok: $0.ok, status: $0.status, message: $0.message) }
         default: await refreshServices(); return
@@ -153,7 +150,6 @@ extension AppState {
         do {
             switch id {
             case .slskd: result = try await librarian.testSlskd()
-            case .lastfm: result = try await librarian.testLastFM()
             case .discogs: result = try await librarian.testDiscogs()
             case .navidrome: result = try await librarian.testNavidrome()
             case .listenbrainz:
@@ -176,7 +172,6 @@ extension AppState {
             case .slskd:
                 try await librarian.saveSlskd(url: d.address.trimmed, apiKey: d.secret, qualityPriority: services.inputs.slskdSettings?.qualityPriority ?? [],
                                               downloadsPath: d.downloadsPath.trimmed, musicLibraryPath: d.libraryPath.trimmed)
-            case .lastfm: try await librarian.saveLastFM(apiKey: d.secret, username: d.username.trimmed)
             case .listenbrainz:
                 listenBrainz.username = d.username; listenBrainz.token = d.secret
                 await connectListenBrainz()

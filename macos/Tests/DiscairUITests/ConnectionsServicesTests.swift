@@ -182,12 +182,12 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         let c = ServicesController(defaults: defaults())
         var i = ServicesModel.Inputs(); i.librarianReachable = true
         i.slskdSettings = SlskdSettings(url: "http://nas:5030", apiKeyConfigured: true, downloadsPath: "/downloads", musicLibraryPath: "/music")
-        i.lastFMSettings = LastFMSettings(apiKeyConfigured: true, username: "abc")
+        i.listenBrainzSettings = ListenBrainzSettings(username: "abc", tokenConfigured: true)
         c.finish(i)
         c.startEditing(.slskd)
         #expect(c.editing == .slskd && c.draft.address == "http://nas:5030" && c.draft.downloadsPath == "/downloads" && c.draft.libraryPath == "/music")
         #expect(c.draft.secret.isEmpty)                      // a secret is never held, so its field starts empty
-        c.startEditing(.lastfm)
+        c.startEditing(.listenbrainz)
         #expect(c.draft.username == "abc" && c.draft.address.isEmpty)
         c.stopEditing()
         #expect(c.editing == nil && c.draft == ServiceDraft())
@@ -195,7 +195,7 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
 
     @Test func theSheetHasTheFieldsOfEachService() {
         #expect(ServiceEditSpec.fields(.slskd).map(\.label) == ["Address", "API key", "Folder slskd downloads into", "Music library folder"])
-        #expect(ServiceEditSpec.fields(.lastfm).map(\.label) == ["Username", "API key"])
+        #expect(ServiceEditSpec.fields(.listenbrainz).map(\.label) == ["Username", "Token"])
         #expect(ServiceEditSpec.fields(.discogs).map(\.label) == ["Token"])
         #expect(ServiceEditSpec.fields(.slskd).filter(\.secure).map(\.key) == [.secret])
         #expect(ServiceEditSpec.canEdit(.navidrome) && !ServiceEditSpec.canEdit(.musicbrainz) && !ServiceEditSpec.canEdit(.sonic))
@@ -206,7 +206,7 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
 
     @Test func onlyWhatTheRoutesCanClearCanBeDisconnected() {
         #expect(ServiceEditSpec.canDisconnect(.discogs) && ServiceEditSpec.canDisconnect(.listenbrainz))
-        #expect(!ServiceEditSpec.canDisconnect(.slskd) && !ServiceEditSpec.canDisconnect(.lastfm) && !ServiceEditSpec.canDisconnect(.navidrome))
+        #expect(!ServiceEditSpec.canDisconnect(.slskd) && !ServiceEditSpec.canDisconnect(.navidrome))
         #expect(ServiceEditSpec.disconnectLabel(.listenbrainz, name: "ListenBrainz") == "Disconnect ListenBrainz")
         #expect(ServiceEditSpec.disconnectDetail(.listenbrainz, powers: ["Taste", "Popularity"]).hasPrefix("Taste, Popularity stop updating."))
     }

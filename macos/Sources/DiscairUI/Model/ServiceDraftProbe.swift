@@ -36,9 +36,6 @@ public struct ServiceDraftProbe: Sendable {
         case .slskd:
             if !changedAddress && !secretTyped { return .useSaved }
             return secretTyped ? .probe : .needsSecret("Type the API key to test a changed address. A saved key cannot be read back.")
-        case .lastfm:
-            if !secretTyped { return .useSaved }
-            return .probe
         case .listenbrainz:
             if !changedUser { return .useSaved }
             return .probe
@@ -55,7 +52,6 @@ public struct ServiceDraftProbe: Sendable {
         switch id {
         case .navidrome: return await navidrome(address: address, username: user, password: d.secret)
         case .slskd: return await slskd(address: address, apiKey: d.secret)
-        case .lastfm: return await lastFM(apiKey: d.secret.trimmingCharacters(in: .whitespacesAndNewlines))
         case .listenbrainz: return await listenBrainz(username: user)
         case .discogs: return await discogs(token: d.secret.trimmingCharacters(in: .whitespacesAndNewlines))
         default: return ServiceTestResult(ok: false, status: "not_configured", message: "This service has nothing to test here.")
@@ -82,14 +78,6 @@ public struct ServiceDraftProbe: Sendable {
         }
         var r = URLRequest(url: url); r.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
         return await run(r) { ServiceTestResult(ok: true, status: "connected") }
-    }
-
-    func lastFM(apiKey: String) async -> ServiceTestResult {
-        var c = URLComponents(string: "https://ws.audioscrobbler.com/2.0/")!
-        c.queryItems = [.init(name: "method", value: "chart.getTopArtists"), .init(name: "api_key", value: apiKey), .init(name: "format", value: "json"), .init(name: "limit", value: "1")]
-        var r = URLRequest(url: c.url!); r.setValue("Discair/0.1", forHTTPHeaderField: "User-Agent")
-        // Last.fm answers a bad key with a JSON `error`, often under a 403.
-        return await run(r, rejectOnError: true) { ServiceTestResult(ok: true, status: "connected") }
     }
 
     func listenBrainz(username: String) async -> ServiceTestResult {

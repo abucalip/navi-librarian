@@ -69,7 +69,7 @@ struct CupertinoPagesRenderTests {
         state.radioSettings.showForPreview(scrobbling: RadioScrobbling(enabled: true, configured: true), appURL: "http://100.64.0.1:8689")
         try render("settings-radio", width: 1000, height: 700, CupertinoRadioSettings(state: state)) { _ in }
         state.radioSettings.showForPreview(scrobbling: RadioScrobbling(enabled: false, configured: false), appURL: "", note: "The image is too large. Choose one up to 2 MB.")
-        try render("settings-radio-no-lastfm", width: 1000, height: 700, CupertinoRadioSettings(state: state)) { _ in }
+        try render("settings-radio-no-listenbrainz", width: 1000, height: 700, CupertinoRadioSettings(state: state)) { _ in }
     }
 
     /// The Home radio card on its own (E7), to put beside the mockup's `.hcard`.

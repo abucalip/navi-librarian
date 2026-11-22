@@ -24,7 +24,6 @@ public enum ServiceEditSpec {
         switch id {
         case .navidrome: "Your library and playback, as the Librarian reaches it."
         case .slskd: "Finds and downloads the albums and songs you Get."
-        case .lastfm: "Listening history the server reads for picks."
         case .listenbrainz: "Listening history the server reads for taste."
         case .discogs: "Edition details. Optional."
         default: ""
@@ -44,9 +43,6 @@ public enum ServiceEditSpec {
              .init(key: .secret, label: "API key", secure: true, help: "Saved on the server. Leave empty to keep the saved key."),
              .init(key: .downloadsPath, label: "Folder slskd downloads into", secure: false, help: nil),
              .init(key: .libraryPath, label: "Music library folder", secure: false, help: "As the server sees it, not as this Mac does.")]
-        case .lastfm:
-            [.init(key: .username, label: "Username", secure: false, help: nil),
-             .init(key: .secret, label: "API key", secure: true, help: "Saved on the server. Leave empty to keep the saved key.")]
         case .listenbrainz:
             [.init(key: .username, label: "Username", secure: false, help: nil),
              .init(key: .secret, label: "Token", secure: true, help: "Only for a private profile. Leave empty to keep the saved token.")]
@@ -195,7 +191,6 @@ public final class ServicesController {
         switch id {
         case .navidrome: d.address = inputs.navidromeSettings?.url ?? ""; d.username = inputs.navidromeSettings?.username ?? ""
         case .slskd: d.address = inputs.slskdSettings?.url ?? ""; d.downloadsPath = inputs.slskdSettings?.downloadsPath ?? ""; d.libraryPath = inputs.slskdSettings?.musicLibraryPath ?? ""
-        case .lastfm: d.username = inputs.lastFMSettings?.username ?? ""
         case .listenbrainz: d.username = inputs.listenBrainzSettings?.username ?? ""
         default: break
         }

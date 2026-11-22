@@ -171,7 +171,7 @@ public struct RadioNowAll: Decodable, Equatable, Sendable {
 /// `GET` and `PUT /api/radio/scrobbling`. An unreadable body reads as off and not set up, never as on.
 public struct RadioScrobbling: Decodable, Equatable, Sendable {
     public let enabled: Bool
-    /// False when Last.fm is not set up on the server; the switch is then disabled with an explanation.
+    /// False when ListenBrainz is not set up on the server; the switch is then disabled with an explanation.
     public let configured: Bool
 
     enum CodingKeys: String, CodingKey { case enabled, configured }

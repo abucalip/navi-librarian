@@ -125,10 +125,10 @@ import DiscairCore
         #expect(try await client(garbled).radioScrobbling() == RadioScrobbling(enabled: false, configured: false))
     }
 
-    @Test func scrobblingRefusedWhenLastFmIsNotSetUp() async throws {
-        let t = MockTransport { _, _ in (400, self.json(#"{"detail":"Last.fm is not set up on the server."}"#)) }
+    @Test func scrobblingRefusedWhenListenBrainzIsNotSetUp() async throws {
+        let t = MockTransport { _, _ in (400, self.json(#"{"detail":"ListenBrainz is not set up on the server."}"#)) }
         do { _ = try await client(t).setRadioScrobbling(true); Issue.record("expected a refusal") }
-        catch { #expect("\(error)".contains("Last.fm is not set up")) }
+        catch { #expect("\(error)".contains("ListenBrainz is not set up")) }
     }
 
     @Test func uploadSendsTheRawImageNotJSON() async throws {

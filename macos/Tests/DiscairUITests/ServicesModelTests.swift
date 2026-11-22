@@ -14,10 +14,9 @@ import DiscairLibrarian
         var i = M.Inputs(librarianReachable: true, librarianAddress: "100.92.14.7:8080", navidromeCheck: .ok,
                          navidromeSettings: NavidromeSettings(url: "http://192.168.1.87:4533", username: "the-owner", passwordConfigured: true),
                          slskdSettings: SlskdSettings(url: "http://nas:5030", apiKeyConfigured: true),
-                         lastFMSettings: LastFMSettings(apiKeyConfigured: true, username: "abc"),
                          listenBrainzSettings: ListenBrainzSettings(username: "abc", tokenConfigured: true),
                          discogsSettings: DiscogsSettings(tokenConfigured: true, source: "settings"),
-                         tests: [.slskd: ok, .lastfm: ok, .listenbrainz: ok, .discogs: ok],
+                         tests: [.slskd: ok, .listenbrainz: ok, .discogs: ok],
                          capabilities: ServerCapabilities(graphCoverage: "broad", sonicAvailable: true, listenBrainzConnected: true),
                          share: .mounted, shareAddress: "smb://nas/media", now: now, calendar: cal)
         tweak(&i)
@@ -40,7 +39,7 @@ import DiscairLibrarian
         let m = Self.healthy()
         #expect(m.rows(in: .core).map(\.id) == [.librarian, .navidrome])
         #expect(m.rows(in: .gettingMusic).map(\.id) == [.slskd])
-        #expect(m.rows(in: .listeningHistory).map(\.id) == [.lastfm, .listenbrainz])
+        #expect(m.rows(in: .listeningHistory).map(\.id) == [.listenbrainz])
         #expect(m.rows(in: .knowledge).map(\.id) == [.musicbrainz, .sonic, .discogs])
         #expect(m.rows(in: .onThisMac).map(\.id) == [.smb])
         #expect(m.row(.listenbrainz)?.powers == ["Taste", "Popularity", "Lenses"])
@@ -49,7 +48,7 @@ import DiscairLibrarian
 
     @Test func healthyDiagramIsAllSolid() {
         let m = Self.healthy()
-        #expect(m.edges.count == 8)
+        #expect(m.edges.count == 7)
         #expect(m.edges.allSatisfy { $0.style == .working })
     }
 
@@ -75,12 +74,12 @@ import DiscairLibrarian
         func style(_ to: String) -> M.EdgeStyle { m.edges.first { $0.from == "librarian" && $0.to == to }!.style }
         #expect(style("listenbrainz") == .failing)
         #expect(style("discogs") == .dim)
-        #expect(style("lastfm") == .working && style("slskd") == .working && style("musicbrainz") == .working)
+        #expect(style("slskd") == .working && style("musicbrainz") == .working)
         #expect(m.edges.first { $0.from == "librarian" && $0.to == "navidrome" }?.style == .working)
     }
 
     @Test func testStatusesMapToWords() {
-        func state(_ status: String) -> M.State? { Self.healthy { $0.tests[.lastfm] = ServiceTestResult(ok: false, status: status) }.row(.lastfm)?.state }
+        func state(_ status: String) -> M.State? { Self.healthy { $0.tests[.slskd] = ServiceTestResult(ok: false, status: status) }.row(.slskd)?.state }
         #expect(state("authentication_failed") == .rejected("Key"))
         #expect(state("connection_failed") == .noAnswer)
         #expect(state("not_configured") == .notSetUp)
@@ -89,11 +88,11 @@ import DiscairLibrarian
 
     @Test func twoFailuresAreCounted() {
         let m = Self.healthy {
-            $0.tests[.lastfm] = ServiceTestResult(ok: false, status: "connection_failed")
+            $0.tests[.listenbrainz] = ServiceTestResult(ok: false, status: "connection_failed")
             $0.tests[.slskd] = ServiceTestResult(ok: false, status: "connection_failed")
         }
         #expect(m.summary.title == "2 services need attention")
-        #expect(m.summary.detail.hasPrefix("slskd did not answer. Last.fm also needs attention."))
+        #expect(m.summary.detail.hasPrefix("slskd did not answer. ListenBrainz also needs attention."))
         #expect(m.summary.detail.contains("Playback and picks are not affected"))   // Get needs slskd
         #expect(m.toolbar.text == "2 needs attention")
     }
@@ -120,7 +119,7 @@ import DiscairLibrarian
         history.entries[.librarian] = .init(word: "No answer", since: Date(timeIntervalSince1970: 1_794_427_200 - 3720), lastGood: nil)   // 18:58
         return healthy {
             $0.librarianReachable = false; $0.tailscaleHint = true; $0.history = history
-            $0.slskdSettings = nil; $0.lastFMSettings = nil; $0.listenBrainzSettings = nil; $0.discogsSettings = nil
+            $0.slskdSettings = nil; $0.listenBrainzSettings = nil; $0.discogsSettings = nil
             $0.tests = [:]; $0.capabilities = nil; $0.sonicAvailable = true       // read from Navidrome directly
             tweak(&$0)
         }
@@ -128,7 +127,7 @@ import DiscairLibrarian
 
     @Test func whenTheLibrarianIsDownEverythingItReportsIsUnknownNotFailed() {
         let m = Self.down()
-        for id in [M.ServiceID.slskd, .lastfm, .listenbrainz, .discogs, .musicbrainz] {
+        for id in [M.ServiceID.slskd, .listenbrainz, .discogs, .musicbrainz] {
             #expect(m.row(id)?.state == .unknown, "\(id)")
             #expect(m.row(id)?.needsAttention == false)
         }
@@ -140,8 +139,8 @@ import DiscairLibrarian
 
     @Test func staleTestsAndCachedSettingsDoNotCountWhileTheLibrarianIsDown() {
         // Tests and capabilities from before the outage must not make a service look connected.
-        let m = Self.down { $0.tests = [.lastfm: Self.ok]; $0.lastFMSettings = LastFMSettings(apiKeyConfigured: true); $0.capabilities = ServerCapabilities(graphCoverage: "broad") }
-        #expect(m.row(.lastfm)?.state == .unknown)
+        let m = Self.down { $0.tests = [.slskd: Self.ok]; $0.slskdSettings = SlskdSettings(url: "http://nas:5030", apiKeyConfigured: true); $0.capabilities = ServerCapabilities(graphCoverage: "broad") }
+        #expect(m.row(.slskd)?.state == .unknown)
         #expect(m.row(.musicbrainz)?.state == .unknown)
     }
 
@@ -184,8 +183,8 @@ import DiscairLibrarian
     }
 
     @Test func aConfiguredServiceThatWasNotTestedIsUnknownNotConnected() {
-        let m = Self.healthy { $0.tests[.lastfm] = nil }
-        #expect(m.row(.lastfm)?.state == .unknown)
+        let m = Self.healthy { $0.tests[.slskd] = nil }
+        #expect(m.row(.slskd)?.state == .unknown)
         #expect(m.summary.title == "Some services are not checked yet")
     }
 
@@ -219,24 +218,24 @@ import DiscairLibrarian
     @Test func historyRecordsSinceAndLastGoodAndKeepsThemAcrossBuilds() {
         let t0 = Self.now, t1 = t0.addingTimeInterval(3600), t2 = t0.addingTimeInterval(7200)
         let first = Self.healthy { $0.now = t0 }
-        #expect(first.row(.lastfm)?.since == t0 && first.row(.lastfm)?.lastGood == t0)
+        #expect(first.row(.slskd)?.since == t0 && first.row(.slskd)?.lastGood == t0)
 
-        let failing = Self.healthy { $0.now = t1; $0.history = first.history; $0.tests[.lastfm] = ServiceTestResult(ok: false, status: "connection_failed") }
-        #expect(failing.row(.lastfm)?.since == t1)          // state changed
-        #expect(failing.row(.lastfm)?.lastGood == t0)       // last time it worked
+        let failing = Self.healthy { $0.now = t1; $0.history = first.history; $0.tests[.slskd] = ServiceTestResult(ok: false, status: "connection_failed") }
+        #expect(failing.row(.slskd)?.since == t1)          // state changed
+        #expect(failing.row(.slskd)?.lastGood == t0)       // last time it worked
 
-        let still = Self.healthy { $0.now = t2; $0.history = failing.history; $0.tests[.lastfm] = ServiceTestResult(ok: false, status: "connection_failed") }
-        #expect(still.row(.lastfm)?.since == t1)            // unchanged state keeps its since
-        #expect(still.row(.lastfm)?.lastGood == t0)
-        #expect(still.row(.lastfm)?.checked == t2)
+        let still = Self.healthy { $0.now = t2; $0.history = failing.history; $0.tests[.slskd] = ServiceTestResult(ok: false, status: "connection_failed") }
+        #expect(still.row(.slskd)?.since == t1)            // unchanged state keeps its since
+        #expect(still.row(.slskd)?.lastGood == t0)
+        #expect(still.row(.slskd)?.checked == t2)
     }
 
     @Test func anUnknownStateChangesNothingInTheHistory() {
         let first = Self.healthy()
         let later = Self.down { $0.now = Self.now.addingTimeInterval(600); $0.history = first.history }
-        #expect(later.row(.lastfm)?.state == .unknown)
-        #expect(later.row(.lastfm)?.lastGood == Self.now)    // the earlier good read is kept
-        #expect(later.row(.lastfm)?.since == Self.now)
+        #expect(later.row(.slskd)?.state == .unknown)
+        #expect(later.row(.slskd)?.lastGood == Self.now)    // the earlier good read is kept
+        #expect(later.row(.slskd)?.since == Self.now)
     }
 
     @Test func historyRoundTripsThroughJSON() throws {

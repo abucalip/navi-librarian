@@ -79,7 +79,7 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 3. **Miller columns** (genre, artist, album, track inspector): opt-in view.
 4. **Gap radar:** per-artist discography map with owned and missing albums and an inline Get.
 5. **Pipeline dock:** acquisition progress in a persistent tray while listening.
-6. **Listening history:** timeline and scrobble heatmap (Navidrome, Last.fm, ListenBrainz).
+6. **Listening history:** timeline and scrobble heatmap (Navidrome, ListenBrainz).
 7. **Smart playlists:** rule builder, plus Navidrome playlist read and write (needs API check, M1).
 8. **Queue workspace and Radio from this:** saved queues, drag reorder, similarity radio built on Librarian similarity (not internet radio).
 9. **Album spread:** liner notes, credits, MusicBrainz data, reviews, similar artists.
@@ -252,7 +252,7 @@ Status: **proposal, nothing built.** The owner asked for a radically different H
 | Id | Idea | What it is | Data |
 |---|---|---|---|
 | A | **Triage deck** | Home as inbox zero for recommendations. One large sleeve at a time, keyboard driven: → Get, ↓ Save, ← Not for me, Space plays a suggested track. The reason is shown in plain words ("because you have played X 212 times"); a counter shows picks left today. Replaces the Missing shelf. | `GET /api/dashboard-picks` (reason, suggested tracks), existing Get, Save and Not for me actions |
-| C | **Almanac** | "Today" in the collection: anniversaries of owned and missing albums ("Loveless turns 35 this week"), what was played on this day in earlier years, milestones ("4 plays from 100 on Third"), and an optional templated briefing line (no LLM). | Navidrome year, play count, last played; Last.fm or ListenBrainz for plays on a past date |
+| C | **Almanac** | "Today" in the collection: anniversaries of owned and missing albums ("Loveless turns 35 this week"), what was played on this day in earlier years, milestones ("4 plays from 100 on Third"), and an optional templated briefing line (no LLM). | Navidrome year, play count, last played; ListenBrainz for plays on a past date |
 | D | **Dust** | Albums never played since they were added, or untouched for years, gather visible dust that grows with time since last played; playing one wipes it. Headline count for the never-played pile. | Navidrome play count, last played, added date |
 | G | **Mailroom** | The acquisition pipeline as a scene: parcels in transit from the live acquisition stream, a "Heard on Radio, Get it" tape, and finished arrivals marked new and unplayed. | `GET /api/acquisitions/stream`, `GET /api/radio/plays` and its Get action |
 | J | **Pick up from phone** | A banner or card shows what the Android app was playing and resumes it on the Mac at the same position. | Subsonic `getPlayQueue` or `getNowPlaying` (see 13.3) |
@@ -269,7 +269,7 @@ Per the theme rule (each theme owns its screens), the data modules would be shar
 
 ### 13.3 Open items and caveats
 
-- **Navidrome keeps only the latest play of each song.** Anything about when the owner listens (Almanac's "on this day" in past years) needs Last.fm or ListenBrainz history; the Last.fm CSV in the owner's folder is not read by the app today.
+- **Navidrome keeps only the latest play of each song.** Anything about when the owner listens (Almanac's "on this day" in past years) needs ListenBrainz history.
 - **Pick up from phone** depends on the Android app saving its play queue to Navidrome (`savePlayQueue`). Not checked; needs a check before it is promised.
 - Dust thresholds and the anniversary window are untuned guesses. Anniversary dates need a release date; Navidrome holds a year, so day-level dates would come from MusicBrainz through Librarian (possible contract proposal).
 - Owner to choose a composition (or a mix), then a slice plan. Look is not owner-approved.

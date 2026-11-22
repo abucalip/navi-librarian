@@ -25,19 +25,6 @@ public struct NavidromeSettings: Decodable, Equatable, Sendable {
     }
 }
 
-/// `GET /api/settings/lastfm`.
-public struct LastFMSettings: Decodable, Equatable, Sendable {
-    public let apiKeyConfigured: Bool
-    public let username: String
-    enum CodingKeys: String, CodingKey { case apiKeyConfigured = "api_key_configured", username }
-    public init(apiKeyConfigured: Bool, username: String = "") { self.apiKeyConfigured = apiKeyConfigured; self.username = username }
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        apiKeyConfigured = (try? c.decode(Bool.self, forKey: .apiKeyConfigured)) ?? false
-        username = (try? c.decode(String.self, forKey: .username)) ?? ""
-    }
-}
-
 /// `GET /api/settings/slskd`.
 public struct SlskdSettings: Decodable, Equatable, Sendable {
     public let url: String
@@ -145,12 +132,10 @@ public struct ServerCapabilities: Decodable, Equatable, Sendable {
 
 extension LibrarianClient {
     public func navidromeSettings() async throws -> NavidromeSettings { try await read("api/settings/navidrome") }
-    public func lastFMSettings() async throws -> LastFMSettings { try await read("api/settings/lastfm") }
     public func slskdSettings() async throws -> SlskdSettings { try await read("api/settings/slskd") }
     public func discogsSettings() async throws -> DiscogsSettings { try await read("api/settings/discogs") }
 
     public func testNavidrome() async throws -> ServiceTestResult { try await probe("api/settings/navidrome/test") }
-    public func testLastFM() async throws -> ServiceTestResult { try await probe("api/settings/lastfm/test") }
     public func testSlskd() async throws -> ServiceTestResult { try await probe("api/settings/slskd/test") }
     public func testDiscogs() async throws -> ServiceTestResult { try await probe("api/settings/discogs/test") }
 
@@ -160,13 +145,6 @@ extension LibrarianClient {
     /// `PUT /api/settings/navidrome`. A blank password keeps the saved one. The server's own sentence comes back as the error.
     public func saveNavidrome(url: String, username: String, password: String = "") async throws {
         try await write("api/settings/navidrome", ["navidrome_url": url, "username": username, "password": password])
-    }
-
-    /// `PUT /api/settings/lastfm`. A blank key keeps the saved one; a `nil` username leaves it unchanged.
-    public func saveLastFM(apiKey: String = "", username: String? = nil) async throws {
-        var body: [String: Any] = ["api_key": apiKey]
-        if let username { body["username"] = username }
-        try await write("api/settings/lastfm", body)
     }
 
     /// `PUT /api/settings/slskd`. The server resets the quality order when it is missing, so the current order is required.

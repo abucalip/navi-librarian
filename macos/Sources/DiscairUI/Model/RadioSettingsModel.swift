@@ -44,15 +44,15 @@ public final class RadioSettingsModel {
 
     // MARK: What the tab says
 
-    /// The switch can be turned: Last.fm is set up on the server and no change is under way.
+    /// The switch can be turned: ListenBrainz is set up on the server and no change is under way.
     public var canSwitchScrobbling: Bool { scrobbling?.configured == true && !scrobblingBusy }
     public var scrobblingOn: Bool { scrobbling?.enabled ?? false }
     /// The line under the switch.
     public var scrobblingDetail: String {
         switch scrobbling {
         case nil: "Reading the server's setting…"
-        case .some(let s) where !s.configured: "Last.fm is not set up on the server"
-        case .some: "Songs heard for 30 seconds on a relayed station are sent to Last.fm by the server. Off sends nothing."
+        case .some(let s) where !s.configured: "ListenBrainz is not set up on the server"
+        case .some: "Songs heard for 30 seconds on a relayed station are sent to ListenBrainz by the server. Off sends nothing."
         }
     }
     /// "Not set" when the server has no address, so the row never shows an empty value.

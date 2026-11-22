@@ -49,7 +49,7 @@ enum ServiceIcon {
         case "librarian": "server.rack"
         case "navidrome": "music.note"
         case "slskd": "icloud.and.arrow.down"
-        case "lastfm", "listenbrainz", "sonic": "waveform"
+        case "listenbrainz", "sonic": "waveform"
         case "discogs": "opticaldisc"
         case "musicbrainz": "point.3.connected.trianglepath.dotted"
         case "smb": "folder"
@@ -362,11 +362,11 @@ struct ServicesDiagram: View {
     }
 
     private var accessibilitySummary: String {
-        let parts = ["This Mac", "Librarian", "Navidrome", "slskd", "Last.fm", "ListenBrainz", "Discogs", "MusicBrainz data"].map { name -> String in
+        let parts = ["This Mac", "Librarian", "Navidrome", "slskd", "ListenBrainz", "Discogs", "MusicBrainz data"].map { name -> String in
             let state = model.rows.first { $0.name == name }?.state
             return state.map { "\(name): \($0.word)" } ?? name
         }
-        return "How Discair is connected. This Mac talks to the Librarian and to Navidrome; the Librarian talks to Navidrome, slskd, Last.fm, ListenBrainz, Discogs and MusicBrainz data. " + parts.joined(separator: ". ") + "."
+        return "How Discair is connected. This Mac talks to the Librarian and to Navidrome; the Librarian talks to Navidrome, slskd, ListenBrainz, Discogs and MusicBrainz data. " + parts.joined(separator: ". ") + "."
     }
 
     private func layout(_ size: CGSize) -> [Node] {
@@ -387,7 +387,7 @@ struct ServicesDiagram: View {
             Node(id: "librarian", title: "Librarian", subtitle: sub(.librarian), state: row(.librarian)?.state, frame: CGRect(x: midX, y: 28, width: midW, height: midH)),
             Node(id: "navidrome", title: "Navidrome", subtitle: sub(.navidrome), state: row(.navidrome)?.state, frame: CGRect(x: midX, y: 148, width: midW, height: midH)),
         ]
-        for (i, id) in [ServicesModel.ServiceID.slskd, .lastfm, .listenbrainz, .discogs, .musicbrainz].enumerated() {
+        for (i, id) in [ServicesModel.ServiceID.slskd, .listenbrainz, .discogs, .musicbrainz].enumerated() {
             out.append(Node(id: id.rawValue, title: ServicesModel.name(for: id), subtitle: nil, state: row(id)?.state, frame: CGRect(x: rightX, y: CGFloat(i) * pitch, width: rightW, height: rightH)))
         }
         return out
@@ -454,7 +454,6 @@ struct ServiceEditSheet: View {
         switch id {
         case .navidrome: return i.navidromeSettings?.passwordConfigured == true
         case .slskd: return i.slskdSettings?.apiKeyConfigured == true
-        case .lastfm: return i.lastFMSettings?.apiKeyConfigured == true
         case .listenbrainz: return i.listenBrainzSettings?.tokenConfigured == true
         case .discogs: return i.discogsSettings?.tokenConfigured == true
         default: return false

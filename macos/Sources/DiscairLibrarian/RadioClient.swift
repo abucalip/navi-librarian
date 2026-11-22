@@ -91,7 +91,7 @@ extension LibrarianClient {
         return try decodePublic(RadioScrobbling.self, data, http)
     }
 
-    /// `PUT /api/radio/scrobbling`. The server refuses with a sentence when Last.fm is not set up; that sentence is thrown.
+    /// `PUT /api/radio/scrobbling`. The server refuses with a sentence when ListenBrainz is not set up; that sentence is thrown.
     public func setRadioScrobbling(_ on: Bool) async throws -> RadioScrobbling {
         let body = try JSONSerialization.data(withJSONObject: ["enabled": on])
         let (data, http) = try await authedSendPublic("PUT", "api/radio/scrobbling", body: body)

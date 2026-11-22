@@ -299,7 +299,7 @@ struct CupertinoHome: View {
         switch pickEmpty {
         case .needsHistory:
             Text("No picks yet.").cu(CU.Font.title1).foregroundStyle(CU.text)
-            emptyBody("Picks come from your listening history. Connect Last.fm or ListenBrainz in Services and the first list is built within a few minutes. Nothing is suggested from guesses.")
+            emptyBody("Picks come from your listening history. Connect ListenBrainz in Services and the first list is built within a few minutes. Nothing is suggested from guesses.")
             HStack(spacing: CU.Space.s) {
                 Button("Open Services") { state.screen = .settings }.buttonStyle(CapsuleButtonStyle(large: true))
                 Button("Browse New releases") { state.screen = .discover }.buttonStyle(CapsuleButtonStyle(large: true))
