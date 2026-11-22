@@ -30,11 +30,11 @@ class IndexPagesRulesTest {
         assertEquals("4:10", IndexPagesRules.clock(250))
     }
 
-    @Test fun theNumeralIsThePlayingSongOrElseTheSongCount() {
+    @Test fun theNumeralIsThePlayingSongOrElseTheTrackCount() {
         assertEquals(IndexPagesRules.Numeral("05", "/ 10", "Playing", true), IndexPagesRules.albumNumeral(4, 10))
-        assertEquals(IndexPagesRules.Numeral("10", null, "Songs", false), IndexPagesRules.albumNumeral(null, 10))
-        assertEquals(IndexPagesRules.Numeral("01", null, "Song", false), IndexPagesRules.albumNumeral(null, 1))
-        assertEquals(IndexPagesRules.Numeral("10", null, "Songs", false), IndexPagesRules.albumNumeral(12, 10))
+        assertEquals(IndexPagesRules.Numeral("10", null, "Tracks", false), IndexPagesRules.albumNumeral(null, 10))
+        assertEquals(IndexPagesRules.Numeral("01", null, "Track", false), IndexPagesRules.albumNumeral(null, 1))
+        assertEquals(IndexPagesRules.Numeral("10", null, "Tracks", false), IndexPagesRules.albumNumeral(12, 10))
         assertNull(IndexPagesRules.albumNumeral(null, 0))
     }
 
@@ -46,10 +46,10 @@ class IndexPagesRulesTest {
 
     @Test fun theAlbumDataListLeavesOutWhatIsUnknown() {
         assertEquals(
-            listOf(IndexDatum("Artist", "Khruangbin"), IndexDatum("Year", "2020"), IndexDatum("Length", "44:12"), IndexDatum("Format", "FLAC")),
-            IndexPagesRules.albumRows("Khruangbin", 2020, 2652, "FLAC", null),
+            listOf(IndexDatum("Artist", "Khruangbin"), IndexDatum("Year", "2020"), IndexDatum("Length", "44:12")),
+            IndexPagesRules.albumRows("Khruangbin", 2020, 2652, null),
         )
-        assertEquals(listOf(IndexDatum("Artist", "X"), IndexDatum("Genre", "Dream pop")), IndexPagesRules.albumRows("X", null, 0, " ", "Dream pop"))
+        assertEquals(listOf(IndexDatum("Artist", "X"), IndexDatum("Genre", "Dream pop")), IndexPagesRules.albumRows("X", null, 0, "Dream pop"))
         assertEquals(
             listOf(IndexDatum("Artist", "Cocteau Twins"), IndexDatum("Year", "1990"), IndexDatum("Genre", "Dream pop"), IndexDatum("Songs", "10")),
             IndexPagesRules.missingAlbumGrid("Cocteau Twins", 1990, "Dream pop", 10),
