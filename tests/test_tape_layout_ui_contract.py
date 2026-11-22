@@ -41,7 +41,7 @@ class TapeLayoutTests(unittest.TestCase):
             self.assertIn("brut: true", line, theme)
             self.assertIn("dark: false", line, theme)
         for line in entries.splitlines():
-            if not any(f"id: '{t}'" in line for t in TAPE_THEMES) and "layout: 'ledger'" not in line and "layout: 'crate'" not in line and "layout: 'zine'" not in line and "layout: 'pipeline'" not in line:
+            if not any(f"id: '{t}'" in line for t in TAPE_THEMES) and "layout: 'ledger'" not in line and "layout: 'crate'" not in line and "layout: 'zine'" not in line and "layout: 'pipeline'" not in line and "layout: 'listeningroom'" not in line:
                 self.assertNotIn("layout:", line)  # every earlier theme keeps today's pages
         self.assertIn("root.setAttribute('data-layout', theme.layout)", self.script)
         self.assertIn("root.removeAttribute('data-layout')", self.script)

@@ -256,6 +256,17 @@
   --zine-pink: #ff4d6d; --zine-teal: #2ec4b6; --zine-on-colour: #111111; --zine-cover: #2a3b5c;
 }
 
+/* Listening Room (layout "listeningroom": static/listening-room/tokens.css) */
+:root[data-theme="listeningroom"] {
+  color-scheme: dark;
+  --ink-rail: #0c0d10; --ink: #101114; --surface: #16181d; --surface-raised: #23262d; --surface-hover: #2a2d35;
+  --edge: #2a2d35; --edge-strong: #666c78;
+  --text: #f2f1ee; --text-muted: #c5c8ce; --text-subtle: #a7abb3;
+  --accent: #f5b544; --accent-text: #f5b544; --focus: #f5b544; --accent-hover: #ffd27f; --accent-dim: #3d2e14; --on-accent: #1a1300;
+  --chart-red: #ff8a7a; --chart-red-text: #ff8a7a; --ok: #7fd69a; --caution: #f5b544;
+  --shadow-menu: 0 8px 24px rgba(0,0,0,.45);
+}
+
 /* ---- Neobrut components: only the themes that set data-brut ---- */
 :root[data-brut] header { border-bottom: var(--bw) solid var(--edge); }
 :root[data-brut] nav { border-right: var(--bw) solid var(--edge); }
