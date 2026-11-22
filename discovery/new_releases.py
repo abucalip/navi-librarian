@@ -238,7 +238,7 @@ def build_new_release_response(
 
 
 def enrich_new_release_listeners(items, popularity_lookup, *, pause=None, limit=200):
-    """Attach Last.fm ``lastfm_listeners`` and ``lastfm_playcount`` to new-release items.
+    """Attach ``listeners`` and ``playcount`` (plus temporary ``lastfm_*`` aliases) to new-release items.
 
     ``popularity_lookup(artist, album)`` returns a dict with ``listeners`` and ``playcount``
     or None; an item with no result is left without the fields. The server passes a cache-only
@@ -257,7 +257,11 @@ def enrich_new_release_listeners(items, popularity_lookup, *, pause=None, limit=
         listeners = stats.get("listeners")
         playcount = stats.get("playcount")
         if listeners is not None:
-            item["lastfm_listeners"] = int(listeners)
+            val = int(listeners)
+            item["listeners"] = val
+            item["lastfm_listeners"] = val
         if playcount is not None:
-            item["lastfm_playcount"] = int(playcount)
+            val = int(playcount)
+            item["playcount"] = val
+            item["lastfm_playcount"] = val
     return items

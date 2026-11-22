@@ -17,6 +17,25 @@ def _pace(index: int, pause: Callable[[], Any] | None) -> None:
         pause()
 
 
+def _with_listener_aliases(album: dict[str, Any]) -> dict[str, Any]:
+    out = dict(album)
+    listeners = album.get("listeners")
+    if listeners is None:
+        listeners = album.get("lastfm_listeners")
+    if listeners is not None:
+        val = int(listeners)
+        out["listeners"] = val
+        out["lastfm_listeners"] = val
+    playcount = album.get("playcount")
+    if playcount is None:
+        playcount = album.get("lastfm_playcount")
+    if playcount is not None:
+        val = int(playcount)
+        out["playcount"] = val
+        out["lastfm_playcount"] = val
+    return out
+
+
 def collect_missing_album_candidates(
     anchors: Iterable[dict[str, Any]],
     owned_albums: set[tuple[str, str]],
@@ -36,7 +55,7 @@ def collect_missing_album_candidates(
             if key in owned_albums:
                 continue
             candidate = {
-                **album,
+                **_with_listener_aliases(album),
                 "discovery_type": "artist_deep_dive",
                 "deep_dive_kind": "missing_album",
                 "reason": "Missing album from an artist already well represented in your library",
@@ -80,13 +99,21 @@ def merge_resolved_pool_candidates(
             candidate_score = max(0.0, float(candidate_score or 0))
         except (TypeError, ValueError):
             candidate_score = 0.0
+        listeners = candidate.get("listeners")
+        if listeners is None:
+            listeners = candidate.get("lastfm_listeners")
+        playcount = candidate.get("playcount")
+        if playcount is None:
+            playcount = candidate.get("lastfm_playcount")
         enriched = {
             "artist": candidate_artist,
             "album": candidate_album,
             "mbid": candidate.get("mbid"),
             "year": candidate.get("year") or candidate.get("release_year") or candidate.get("first_release_year"),
-            "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
-            "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
+            "listeners": int(listeners or 0),
+            "playcount": int(playcount or 0),
+            "lastfm_listeners": int(listeners or 0),
+            "lastfm_playcount": int(playcount or 0),
             "discovery_type": "artist_deep_dive",
             "deep_dive_kind": "missing_album",
             "discovery_source": "resolved_candidate_pool_beyond_main_selection",
@@ -148,7 +175,7 @@ def collect_similar_artist_candidates(
             if key in owned_albums or music_key(album["artist"]) in owned_artist_keys:
                 continue
             candidate = {
-                **album,
+                **_with_listener_aliases(album),
                 "discovery_type": "similar_artist",
                 "deep_dive_kind": "similar_artist",
                 "reason": "A similar artist not currently represented in your library",

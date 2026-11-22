@@ -10,13 +10,13 @@ class ClassicsCandidateCollectionTests(unittest.TestCase):
         self.pause_calls = []
         self.albums = {
             "Artist A": [
-                {"artist": "Artist A", "album": "Shared", "lastfm_listeners": 10},
-                {"artist": "Artist A", "album": "Owned", "lastfm_listeners": 99},
-                {"artist": "Artist A", "album": "EP", "lastfm_listeners": 5},
+                {"artist": "Artist A", "album": "Shared", "listeners": 10, "playcount": 100},
+                {"artist": "Artist A", "album": "Owned", "listeners": 99},
+                {"artist": "Artist A", "album": "EP", "listeners": 5},
             ],
             "Artist B": [
-                {"artist": "Artist A", "album": "shared", "lastfm_listeners": 20},
-                {"artist": "Artist B", "album": "Unique", "lastfm_listeners": 7},
+                {"artist": "Artist A", "album": "shared", "lastfm_listeners": 20, "lastfm_playcount": 200},
+                {"artist": "Artist B", "album": "Unique", "listeners": 7},
             ],
         }
 
@@ -50,10 +50,13 @@ class ClassicsCandidateCollectionTests(unittest.TestCase):
     def test_duplicate_identity_keeps_highest_listener_record_and_metadata(self):
         result = self.collect()
         shared = result[("artist a", "shared")]
+        self.assertEqual(shared["listeners"], 20)
+        self.assertEqual(shared["playcount"], 200)
         self.assertEqual(shared["lastfm_listeners"], 20)
+        self.assertEqual(shared["lastfm_playcount"], 200)
         self.assertEqual(shared["artist"], "Artist A")
         self.assertEqual(shared["discovery_type"], "classic")
-        self.assertEqual(shared["discovery_source"], "Last.fm artist top albums")
+        self.assertEqual(shared["discovery_source"], "ListenBrainz artist top albums")
         self.assertEqual(shared["artist_library_album_count"], 5)
 
     def test_pause_callback_keeps_original_every_fifth_artist_cadence(self):

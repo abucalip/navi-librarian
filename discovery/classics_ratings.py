@@ -7,6 +7,13 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 
+def _listeners(item: dict[str, Any]) -> int:
+    value = item.get("listeners")
+    if value is None:
+        value = item.get("lastfm_listeners")
+    return int(value or 0)
+
+
 def enrich_critical_ratings(
     candidates: Iterable[dict[str, Any]],
     rating_lookup: Callable[..., dict[str, Any] | None],
@@ -20,7 +27,7 @@ def enrich_critical_ratings(
 
     shortlist = sorted(
         candidates,
-        key=lambda item: int(item.get("lastfm_listeners") or 0),
+        key=_listeners,
         reverse=True,
     )[:shortlist_limit]
     for index, candidate in enumerate(shortlist):

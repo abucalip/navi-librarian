@@ -92,6 +92,11 @@ def week_pool(
 def to_pick(album: Mapping[str, Any]) -> dict[str, Any]:
     """A lens album in the dashboard pick shape the clients already read."""
     tag = album.get("seed_tag")
+    listeners = album.get("album_listeners")
+    if listeners is None:
+        listeners = album.get("listeners")
+    if listeners is None:
+        listeners = album.get("lastfm_listeners")
     pick: dict[str, Any] = {
         "artist": str(album.get("artist") or ""),
         "album": str(album.get("album") or ""),
@@ -99,7 +104,8 @@ def to_pick(album: Mapping[str, Any]) -> dict[str, Any]:
         "genres": [str(t) for t in album.get("tags") or []][:4],
         "reason": album.get("bridge_label") or (f"From your current tastes: {tag}" if tag else "From your current tastes"),
         "release_group_mbid": album.get("release_group_mbid"),
-        "lastfm_listeners": album.get("album_listeners"),
+        "listeners": listeners,
+        "lastfm_listeners": listeners,
     }
     why = build_pick_why(album, list_name=LENS)
     if why is not None:
