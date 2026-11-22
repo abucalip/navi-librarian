@@ -91,16 +91,18 @@ struct CupertinoDownloads: View {
                 Text(j.title).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                 Text(j.isSong ? "\(j.artist) · Song on \(j.details?.albumName ?? j.album)" : j.artist)
                     .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                CUStageTracker(
-                    step: stageStep(j),
-                    progress: acq.fraction(j),
-                    failed: j.phase == .failed,
-                    failureReason: failure,
-                    showsNames: true,
-                    width: Self.stepperWidth,
-                    columnWidth: Self.stepperColumnWidth
-                )
-                    .padding(.top, CU.Space.xs)
+                if j.phase != .imported {
+                    CUStageTracker(
+                        step: stageStep(j),
+                        progress: acq.fraction(j),
+                        failed: j.phase == .failed,
+                        failureReason: failure,
+                        showsNames: true,
+                        width: Self.stepperWidth,
+                        columnWidth: Self.stepperColumnWidth
+                    )
+                        .padding(.top, CU.Space.xs)
+                }
                 stateLine(j, failure: failure)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

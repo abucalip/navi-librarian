@@ -273,6 +273,12 @@ enum CUChartMath {
         }
     }
 
+    /// Three connectors between the four stage dots; connector `i` (between dot `i` and `i + 1`) is filled once `step > i`.
+    static func stageConnectors(step: Int) -> [Bool] {
+        let s = min(max(step, 0), stageNames.count)
+        return (0..<(stageNames.count - 1)).map { $0 < s }
+    }
+
     /// The tracker in words: "Downloading, 64%", "In library", "Stopped at Downloading: source went offline".
     static func stageWords(step: Int, progress: Double?, failed: Bool, reason: String? = nil) -> String {
         let s = min(max(step, 0), stageNames.count)
@@ -1117,9 +1123,10 @@ private struct CUPieSlice: Shape {
     }
 }
 
-/// Four circles, one per stage: Found, Downloading, Importing, In library. A done stage is a full ink circle, the current one is
-/// accent and fills round to its percentage when the server gives one (a solid accent circle when it does not), a failed one is danger
-/// and its reason is written under it, and one still to come is an empty ring.
+/// Four circles, one per stage: Found, Downloading, Importing, In library, joined by 2 pt connectors filled up to `step`.
+/// A done stage is a full ink circle, the current one is accent and fills round to its percentage when the server gives one
+/// (a solid accent circle when it does not), a failed one is danger and its reason is written under it, and one still to come
+/// is an empty ring.
 struct CUStageTracker: View {
     let step: Int
     var progress: Double?
@@ -1129,22 +1136,40 @@ struct CUStageTracker: View {
     var width: CGFloat?
     var columnWidth: CGFloat?
 
+    static let connectorThickness: CGFloat = 2
+
     var body: some View {
         let segments = CUChartMath.stageSegments(step: step, progress: progress, failed: failed)
         let resolvedColumnWidth = columnWidth ?? (showsNames ? width.map { $0 / CGFloat(max(segments.count, 1)) } : nil)
+        let connectors = CUChartMath.stageConnectors(step: step)
         VStack(alignment: .leading, spacing: CU.Space.xs) {
-            HStack(alignment: .top, spacing: showsNames ? 0 : CU.Space.s) {
-                ForEach(Array(segments.enumerated()), id: \.offset) { i, s in
-                    VStack(spacing: 5) {
-                        segment(s)
-                        if showsNames {
+            if showsNames {
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(segments.enumerated()), id: \.offset) { i, s in
+                        VStack(spacing: 5) {
+                            HStack(spacing: 0) {
+                                connectorSegment(filled: i > 0 ? connectors[i - 1] : nil)
+                                segment(s)
+                                connectorSegment(filled: i < segments.count - 1 ? connectors[i] : nil)
+                            }
                             Text(CUChartMath.stageNames[i]).font(.system(size: 11, weight: i == step ? .semibold : .regular))
                                 .foregroundStyle(i == step ? (failed ? CU.danger : CU.text) : CU.textSecondary)
                                 .lineLimit(1).fixedSize()
                         }
+                        .frame(width: resolvedColumnWidth)
+                        .frame(maxWidth: resolvedColumnWidth == nil ? .infinity : nil)
                     }
-                    .frame(width: resolvedColumnWidth)
-                    .frame(maxWidth: resolvedColumnWidth == nil && showsNames ? .infinity : nil)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 0) {
+                    ForEach(Array(segments.enumerated()), id: \.offset) { i, s in
+                        if i > 0 {
+                            Rectangle()
+                                .fill(connectors[i - 1] ? CU.text : CU.trackerTrack)
+                                .frame(width: CU.Space.s, height: Self.connectorThickness)
+                        }
+                        segment(s)
+                    }
                 }
             }
             if failed, let failureReason {
@@ -1157,6 +1182,18 @@ struct CUStageTracker: View {
     }
 
     private static let diameter: CGFloat = 20
+
+    @ViewBuilder private func connectorSegment(filled: Bool?) -> some View {
+        Group {
+            if let filled {
+                Rectangle().fill(filled ? CU.text : CU.trackerTrack)
+            } else {
+                Color.clear
+            }
+        }
+        .frame(height: Self.connectorThickness)
+        .frame(maxWidth: .infinity)
+    }
 
     @ViewBuilder private func segment(_ s: CUStageSegment) -> some View {
         let d = Self.diameter
