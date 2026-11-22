@@ -62,6 +62,11 @@ public final class StationLogoStore {
 
     static func key(_ station: String, _ size: RadioLogoSize) -> String { "radio-logo|\(station)|\(size.rawValue)" }
 
+    /// Synchronously returns an already-cached logo if present in memory.
+    func cached(station: String, size: RadioLogoSize) -> NSImage? {
+        cache.object(forKey: Self.key(station, size) as NSString)
+    }
+
     /// The logo, or nil while it cannot be had. One request per station and size; a second ask joins the first.
     public func logo(station: String, size: RadioLogoSize) async -> NSImage? {
         let key = Self.key(station, size)
@@ -119,7 +124,8 @@ extension EnvironmentValues {
 }
 
 /// A station's logo at a fixed size. Until it arrives the square is a plain neutral fill: the server's generated tile is
-/// the only placeholder logo there is.
+/// the only placeholder logo there is. Non-square logos are aspect-fitted with 3 pt padding on the neutral ground so wide
+/// logos are not cropped (D5.8).
 struct StationLogo: View {
     let station: RadioStation
     var size: CGFloat = 34
@@ -127,11 +133,31 @@ struct StationLogo: View {
     @Environment(\.stationLogos) private var store
     @State private var image: NSImage?
 
+    static let nonSquarePadding: CGFloat = 3
+
+    static func isSquare(_ imageSize: NSSize) -> Bool {
+        guard imageSize.width > 0, imageSize.height > 0 else { return true }
+        return abs(imageSize.width - imageSize.height) <= 1
+    }
+
+    static func logoPadding(for imageSize: NSSize) -> CGFloat {
+        isSquare(imageSize) ? 0 : nonSquarePadding
+    }
+
     var body: some View {
-        RoundedRectangle(cornerRadius: size * radiusFraction, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: size * radiusFraction, style: .continuous)
+        let shown = image ?? store?.cached(station: station.id, size: size > 64 ? .large : .small)
+        shape
             .fill(CU.bgFill)
-            .overlay { if let image { Image(nsImage: image).resizable().scaledToFill() } }
-            .clipShape(RoundedRectangle(cornerRadius: size * radiusFraction, style: .continuous))
+            .overlay {
+                if let shown {
+                    Image(nsImage: shown)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(Self.logoPadding(for: shown.size))
+                }
+            }
+            .clipShape(shape)
             .frame(width: size, height: size)
             .task(id: "\(station.id)@\(size > 64 ? 512 : 128)|\(store?.generation ?? 0)") {
                 guard let store else { image = nil; return }

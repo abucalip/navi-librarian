@@ -5,6 +5,12 @@ import SwiftUI
 /// tracker, the state in words and a filter (All, Active, Needs you, Arrived). A failed row carries the only primary, Try again.
 /// The state is always icon plus words, never colour alone. Dismiss only hides the row.
 struct CupertinoDownloads: View {
+    static let stepperColumnWidth: CGFloat = 70
+    static let stepperWidth: CGFloat = stepperColumnWidth * CGFloat(CUChartMath.stageNames.count)
+    static let actionWidth: CGFloat = 128
+    /// Maximum width of the Downloads list card and its aligned "Clear ... imported" action (D5.3).
+    static let maxListWidth: CGFloat = 1040
+
     let state: AppState
     @State private var filter: Filter = .all
 
@@ -39,7 +45,12 @@ struct CupertinoDownloads: View {
                 }
                 .padding(.top, CU.Space.xs)
                 if acq.importedCount > 0 {
-                    HStack { Spacer(minLength: 0); Button("Clear \(acq.importedCount) imported") { acq.dismissImported() }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
+                    HStack {
+                        Spacer(minLength: 0)
+                        Button("Clear \(acq.importedCount) imported") { acq.dismissImported() }
+                            .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+                    }
+                    .frame(maxWidth: Self.maxListWidth)
                 }
                 if jobs.isEmpty {
                     Text(state.session == nil || state.library.isLive ? "Nothing is downloading. Albums you Get appear here." : "Downloads are available in the running app.")
@@ -53,8 +64,7 @@ struct CupertinoDownloads: View {
                             row(job)
                         }
                     }
-                    // Circles need less room than bars did: the list takes half the page, never less than a row needs.
-                    .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in max(width / 2, 520) }
+                    .frame(maxWidth: Self.maxListWidth, alignment: .leading)
                 }
             }
             .padding(.horizontal, CU.Space.xl)
@@ -87,8 +97,18 @@ struct CupertinoDownloads: View {
                 Text(j.title).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                 Text(j.isSong ? "\(j.artist) · Song on \(j.details?.albumName ?? j.album)" : j.artist)
                     .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                CUStageTracker(step: stageStep(j), progress: acq.fraction(j), failed: j.phase == .failed, failureReason: failure, showsNames: true)
-                    .padding(.top, CU.Space.xs)
+                if j.phase != .imported {
+                    CUStageTracker(
+                        step: stageStep(j),
+                        progress: acq.fraction(j),
+                        failed: j.phase == .failed,
+                        failureReason: failure,
+                        showsNames: true,
+                        width: Self.stepperWidth,
+                        columnWidth: Self.stepperColumnWidth
+                    )
+                        .padding(.top, CU.Space.xs)
+                }
                 stateLine(j, failure: failure)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -120,6 +140,7 @@ struct CupertinoDownloads: View {
                 Button("Dismiss") { acq.dismiss(j) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
             }
         }
+        .frame(width: Self.actionWidth, alignment: .trailing)
     }
 
     /// The row's cover: the release's artwork is looked up by the same title and artist the library uses.
