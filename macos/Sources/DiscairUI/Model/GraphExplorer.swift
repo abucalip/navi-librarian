@@ -196,13 +196,53 @@ public enum GraphWording {
         "fuzzy_unconfirmed": "Name match, not confirmed", "unresolved": "Not matched",
     ]
 
+    static let evidenceClasses: [String: String] = [
+        "source_explicit": "Stated", "library_tag": "Library tag", "user_confirmed": "Confirmed",
+        "derived": "Derived", "inferred": "Inferred",
+    ]
+    static let sources: [String: String] = [
+        "discogs": "Discogs", "wikidata": "Wikidata", "listenbrainz": "ListenBrainz",
+        "lastfm": "Last.fm", "last_fm": "Last.fm", "navidrome": "Navidrome",
+    ]
+
     public static func relation(_ code: String) -> String { relations[code] ?? capitalised(code) }
     public static func matchQuality(_ code: String) -> String { matchQualities[code] ?? capitalised(code) }
 
+    /// Plain display name for a provenance source code (D8.1).
+    public static func sourceName(_ code: String) -> String {
+        let key = code.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else { return "" }
+        if key.hasPrefix("musicbrainz") { return "MusicBrainz" }
+        return sources[key] ?? capitalised(code)
+    }
+
+    /// Plain display words for an evidence class code (D8.1).
+    public static func evidenceClass(_ code: String, explicitLabel: String = "Stated") -> String {
+        let key = code.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else { return "" }
+        if key == "source_explicit" { return explicitLabel }
+        return evidenceClasses[key] ?? capitalised(code)
+    }
+
     /// "Source: MusicBrainz · exact match": the source code in words and the match quality in lower case.
     public static func sourceLine(source: String, matchQuality code: String) -> String {
-        let name = source.lowercased().hasPrefix("musicbrainz") ? "MusicBrainz" : capitalised(source)
-        return "Source: \(name) · \(matchQuality(code).prefix(1).lowercased() + matchQuality(code).dropFirst())"
+        "Source: \(sourceName(source)) · \(lowercasedFirst(matchQuality(code)))"
+    }
+
+    /// "MusicBrainz · stated place · exact match": one shared display map for Atlas, Timeline and Graph provenance (D8.1).
+    public static func provenanceLine(source: String, evidenceClass: String, matchQuality: String, explicitLabel: String = "stated") -> String {
+        let parts = [
+            sourceName(source),
+            lowercasedFirst(Self.evidenceClass(evidenceClass, explicitLabel: explicitLabel)),
+            lowercasedFirst(Self.matchQuality(matchQuality)),
+        ].filter { !$0.isEmpty }
+        return parts.joined(separator: " · ")
+    }
+
+    private static func lowercasedFirst(_ s: String) -> String {
+        guard let first = s.first else { return "" }
+        if s.dropFirst().first?.isUppercase == true { return s }
+        return first.lowercased() + s.dropFirst()
     }
 
     /// The inspector's name for a kind of entity: "Person", "Album", "Label".
@@ -400,11 +440,12 @@ public final class GraphExplorerModel {
         return nextCursor != nil ? "\(n) \(word) so far" : "\(n) \(word)"
     }
 
-    /// The truncated-walk sentence, with the server's limits named (docs/plans/redesign.md section 5.2).
+    /// The truncated-walk notice in plain user-facing wording (D8.3).
     public var truncatedNotice: (lead: String, message: String)? {
         guard truncated != nil else { return nil }
-        return ("Showing the first \(nodes.count) connections.",
-                "The server stops a walk at 200 rows or 2 seconds. Turn on Credits only, lower the reach, or use List to page through the rest.")
+        let word = nodes.count == 1 ? "connection" : "connections"
+        return ("Showing the first \(nodes.count) \(word).",
+                "Turn on Credits only, lower the reach, or use List to see them all.")
     }
 
     /// Owned albums that sit next to a node in the walk (its parent or its children), for "Also on, in your library".

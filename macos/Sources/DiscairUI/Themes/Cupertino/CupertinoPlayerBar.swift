@@ -181,20 +181,34 @@ struct CupertinoPlayerBar: View {
         .buttonStyle(.plain).font(CU.Icon.row())
     }
 
+    /// D8.4: the title block may take up to 40% of the bar width before truncating, leaving the centre fact centred in the
+    /// space between the title block and the controls.
+    static let titleBlockMinWidth: CGFloat = 150
+    static let titleBlockMaxWidthFraction: CGFloat = 0.40
+
+    static func titleBlockMaxWidth(forBarWidth width: CGFloat) -> CGFloat {
+        max(titleBlockMinWidth, floor(width * titleBlockMaxWidthFraction))
+    }
+
     private var barRow: some View {
-        HStack(spacing: 16) {
-            nowPlayingButton
-            middle
-            if let q = p.current?.qualityLabel {
-                CUQualityBadge(text: q, surface: tinted ? .onMedia : .standard)
-                    .accessibilityLabel("Quality \(q)")
+        GeometryReader { g in
+            let titleMax = Self.titleBlockMaxWidth(forBarWidth: g.size.width)
+            HStack(spacing: 16) {
+                nowPlayingButton(maxWidth: titleMax)
+                middle
+                if let q = p.current?.qualityLabel {
+                    CUQualityBadge(text: q, surface: tinted ? .onMedia : .standard)
+                        .accessibilityLabel("Quality \(q)")
+                }
+                if p.current != nil { lineSwitches }
+                transport
+                PlaybackClock(player: p) { Text("\(PlayerModel.clock($0)) / \(PlayerModel.clock(p.duration))").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(secondary) }
+                    .padding(.leading, 8)
             }
-            if p.current != nil { lineSwitches }
-            transport
-            PlaybackClock(player: p) { Text("\(PlayerModel.clock($0)) / \(PlayerModel.clock(p.duration))").font(CU.Font.callout.weighted(.regular)).monospacedDigit().foregroundStyle(secondary) }
-                .padding(.leading, 8)
+            .padding(.horizontal, 16)
+            .frame(width: g.size.width, height: g.size.height)
         }
-        .padding(.horizontal, 16).frame(height: 68)
+        .frame(height: 68)
         .background {
             ZStack {
                 plate
@@ -208,9 +222,9 @@ struct CupertinoPlayerBar: View {
         .clipShape(shape)
     }
 
-    private var nowPlayingButton: some View {
-        Group {
-            if let c = p.current {
+    @ViewBuilder private func nowPlayingButton(maxWidth: CGFloat) -> some View {
+        if let c = p.current {
+            CappedWidthLayout(minWidth: Self.titleBlockMinWidth, maxWidth: maxWidth) {
                 HStack(spacing: 16) {
                     PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: p.isPlaying, side: 50, cornerRadius: 8, flipsAndOpensBooklet: false,
                                    fallback: { state.screen = .nowPlaying }) {
@@ -226,7 +240,7 @@ struct CupertinoPlayerBar: View {
                                 Button { state.openCurrentArtist() } label: { Text(c.artist).lineLimit(1) }
                                     .buttonStyle(.plain).accessibilityLabel("Open artist \(c.artist)")
                                 if !c.album.isEmpty {
-                                    Text(" — ")
+                                    Text(" — ").fixedSize()
                                     Button { state.openCurrentAlbum() } label: { Text(c.album).lineLimit(1) }
                                         .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
                                 }
@@ -235,14 +249,15 @@ struct CupertinoPlayerBar: View {
                         }
                         if case .failed(let m) = p.phase { CUErrorLine(message: m, onDark: tint != nil).lineLimit(1) }
                     }
-                    .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
+                    .font(CU.Font.callout.weighted(.regular))
                 }
-            } else {
-                Text("Nothing playing").font(CU.Font.callout.weighted(.regular)).foregroundStyle(secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
+            .layoutPriority(1)
+        } else {
+            Text("Nothing playing").font(CU.Font.callout.weighted(.regular)).foregroundStyle(secondary)
+                .frame(minWidth: Self.titleBlockMinWidth, maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
         }
-        .frame(minWidth: 150, idealWidth: 270, maxWidth: p.current == nil ? .infinity : 290, alignment: .leading)
-        .layoutPriority(1)
     }
 
     // MARK: The line in the middle
@@ -486,5 +501,25 @@ private struct BarProgress: View {
                 Rectangle().fill(fill).frame(width: g.size.width * player.fraction)
             }
         }
+    }
+}
+
+/// Places a single child at its natural width, capped at `maxWidth` (and at least `minWidth`) so short titles hug their
+/// text while long titles grow up to 40% of the player bar before truncating (D8.4).
+struct CappedWidthLayout: Layout {
+    let minWidth: CGFloat
+    let maxWidth: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        let cap = min(proposal.width ?? maxWidth, maxWidth)
+        let natural = child.sizeThatFits(ProposedViewSize(width: cap, height: proposal.height))
+        return CGSize(width: min(max(natural.width, min(minWidth, cap)), cap), height: natural.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let child = subviews.first else { return }
+        child.place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading,
+                    proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
     }
 }

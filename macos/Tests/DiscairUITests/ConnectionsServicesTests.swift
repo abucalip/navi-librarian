@@ -62,11 +62,12 @@ private func client(_ body: Data, status: Int = 200) throws -> LibrarianClient {
         #expect(loaded(more: true, truncated: "rows").footerCount == "16 of 16+ connections")
     }
 
-    @Test func truncatedNoticeNamesTheServerLimits() throws {
+    @Test func truncatedNoticeUsesPlainWording() throws {
         #expect(loaded().truncatedNotice == nil)
         let n = try #require(loaded(truncated: "time").truncatedNotice)
         #expect(n.lead == "Showing the first 16 connections.")
-        #expect(n.message.contains("200 rows or 2 seconds") && n.message.contains("Credits only") && n.message.contains("List"))
+        #expect(n.message == "Turn on Credits only, lower the reach, or use List to see them all.")
+        #expect(!n.message.contains("200 rows") && !n.message.contains("2 seconds"))
     }
 
     @Test func alsoOnListsOwnedAlbumsNextToANode() {

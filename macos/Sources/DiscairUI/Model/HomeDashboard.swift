@@ -424,7 +424,7 @@ public struct HomeDashboard: Equatable, Sendable {
     static func stage(of job: Acquisition) -> ArrivalStage {
         switch job.status {
         case "downloading", "monitoring", "slskd_error", "monitor_error", "monitor_recovery_failed", "source_switch_failed", "recovery_unavailable": .downloading
-        case "download_complete_waiting_for_folder", "importing": .importing
+        case "download_complete_waiting_for_folder", "importing", "destination_exists", "download_complete_move_failed": .importing
         case "imported": .inLibrary
         default: .found
         }

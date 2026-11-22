@@ -187,7 +187,10 @@ struct AtlasInspector: View {
                             }
                         }
                     }
-                    if let c = r.credits.first { Text("\(c.source) · \(c.evidenceClass) · \(c.matchQuality)").font(.system(size: 10)).foregroundStyle(style.muted) }
+                    if let c = r.credits.first {
+                        Text(GraphWording.provenanceLine(source: c.source, evidenceClass: c.evidenceClass, matchQuality: c.matchQuality, explicitLabel: "stated place"))
+                            .font(.system(size: 10)).foregroundStyle(style.muted)
+                    }
                     if let album = r.albums.first(where: \.owned), let item = GraphNodeFace.ownedAlbum(album.album.name, library: state.library) {
                         Button("Open album") { state.open(album: item) }.buttonStyle(CapsuleButtonStyle(primary: true, small: true))
                     }
