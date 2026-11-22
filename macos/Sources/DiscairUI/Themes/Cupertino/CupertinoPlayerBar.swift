@@ -9,6 +9,7 @@ struct CupertinoPlayerBar: View {
     let state: AppState
     static let height: CGFloat = 92
     @State private var tint: ArtworkTint?
+    @State private var titleBlockWidth: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var p: PlayerModel { state.player }
@@ -209,10 +210,14 @@ struct CupertinoPlayerBar: View {
             .frame(width: g.size.width, height: g.size.height)
         }
         .frame(height: 68)
+        .onPreferenceChange(TitleBlockWidthKey.self) { titleBlockWidth = $0 }
         .background {
             ZStack {
                 plate
-                if tint != nil { BarWaveform(player: p, shape: shape) }
+                if tint != nil {
+                    BarWaveform(player: p, shape: shape,
+                                quietLeadingWidth: p.current == nil || titleBlockWidth <= 0 ? 0 : 16 + titleBlockWidth)
+                }
             }
         }
         .overlay(alignment: .bottomLeading) {
@@ -252,6 +257,7 @@ struct CupertinoPlayerBar: View {
                     .font(CU.Font.callout.weighted(.regular))
                 }
             }
+            .background(GeometryReader { Color.clear.preference(key: TitleBlockWidthKey.self, value: $0.size.width) })
             .layoutPriority(1)
         } else {
             Text("Nothing playing").font(CU.Font.callout.weighted(.regular)).foregroundStyle(secondary)
@@ -359,6 +365,18 @@ struct QuoteMark: Shape {
 struct PlayerBarGraph: View {
     let peaks: [Float]
     let fraction: Double
+    var quietLeadingWidth: CGFloat = 0
+
+    static let quietOpacityScale: Double = 0.25
+    static let fadeWidth: CGFloat = 24
+
+    /// Static opacity multiplier so the waveform stays quiet behind the leading cover and title/artist/album text block.
+    static func opacityScale(atX x: CGFloat, quietLeadingWidth: CGFloat) -> Double {
+        guard quietLeadingWidth > 0 else { return 1 }
+        if x <= quietLeadingWidth { return quietOpacityScale }
+        if x >= quietLeadingWidth + fadeWidth { return 1 }
+        return quietOpacityScale + (1 - quietOpacityScale) * Double((x - quietLeadingWidth) / fadeWidth)
+    }
 
     var body: some View {
         Canvas { ctx, size in
@@ -371,8 +389,10 @@ struct PlayerBarGraph: View {
                 let value = CGFloat(peaks[lo..<min(hi, peaks.count)].max() ?? 0)
                 let h = max(1.5, value * top)
                 let played = Double(i) / Double(count) <= fraction
-                ctx.fill(Path(roundedRect: CGRect(x: CGFloat(i) * step, y: floorY - h, width: width, height: h), cornerRadius: 4),
-                         with: .color(CU.onMedia.opacity(played ? 0.22 : 0.11)))
+                let x = CGFloat(i) * step
+                let scale = Self.opacityScale(atX: x, quietLeadingWidth: quietLeadingWidth)
+                ctx.fill(Path(roundedRect: CGRect(x: x, y: floorY - h, width: width, height: h), cornerRadius: 4),
+                         with: .color(CU.onMedia.opacity((played ? 0.22 : 0.11) * scale)))
             }
         }
         .allowsHitTesting(false).accessibilityHidden(true)
@@ -480,12 +500,20 @@ private struct MarqueeStrip<Strip: View>: NSViewRepresentable {
 
 /// The two readers of the 4 Hz position in the bar, each in its own view so a tick rebuilds only them and not the whole bar
 /// (the cover, the disc lookup and the text around it).
+private struct TitleBlockWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 private struct BarWaveform: View {
     let player: PlayerModel
     let shape: RoundedRectangle
+    var quietLeadingWidth: CGFloat = 0
 
     var body: some View {
-        if let peaks = player.waveform, !peaks.isEmpty { PlayerBarGraph(peaks: peaks, fraction: player.fraction).clipShape(shape) }
+        if let peaks = player.waveform, !peaks.isEmpty {
+            PlayerBarGraph(peaks: peaks, fraction: player.fraction, quietLeadingWidth: quietLeadingWidth).clipShape(shape)
+        }
     }
 }
 

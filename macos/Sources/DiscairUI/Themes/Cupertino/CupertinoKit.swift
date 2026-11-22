@@ -394,7 +394,7 @@ struct CUSwitchRow: View {
 
 /// Filled format/quality badge shared across the player bar, track table, album header and library song table (D4.5).
 /// Uses a filled rounded rectangle in every context (never outlined): neutral on standard grounds, inverted on an accent
-/// playing row (D2.8), and translucent white on dark media/tinted grounds.
+/// playing row (D2.8), and a dark translucent fill on media/tinted grounds so white text keeps contrast over light covers.
 struct CUQualityBadge: View {
     enum Surface: Equatable {
         case standard
@@ -405,6 +405,7 @@ struct CUQualityBadge: View {
     static let cornerRadius: CGFloat = 4
     static let horizontalPadding: CGFloat = CU.Space.s
     static let verticalPadding: CGFloat = 2
+    static let onMediaBackgroundOpacity: Double = 0.82
 
     let text: String
     var surface: Surface = .standard
@@ -432,7 +433,7 @@ struct CUQualityBadge: View {
         switch surface {
         case .standard: inPanel ? CU.bgFillOnPanel : CU.bgFill
         case .playing: CU.onAccent
-        case .onMedia: CU.onMedia.opacity(0.22)
+        case .onMedia: CU.shadowInk.opacity(Self.onMediaBackgroundOpacity)
         }
     }
 }
