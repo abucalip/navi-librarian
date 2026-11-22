@@ -59,12 +59,11 @@ object IndexPagesRules {
         else -> Numeral("%02d".format(songs), null, if (songs == 1) "Track" else "Tracks", accent = false)
     }
 
-    /** The owned album's data list: Artist, Year, Length, Format (index.css `.dl`), then Genre. A line whose data is unknown is left out. */
-    fun albumRows(artist: String, year: Int?, seconds: Int, quality: String?, genre: String?): List<IndexDatum> = buildList {
+    /** The owned album's single-row key/value grid: Artist, Year, Length, Genre (Format sits beside the cover). A cell whose data is unknown is left out. */
+    fun albumRows(artist: String, year: Int?, seconds: Int, genre: String?): List<IndexDatum> = buildList {
         if (artist.isNotBlank()) add(IndexDatum("Artist", artist))
         if (year != null) add(IndexDatum("Year", year.toString()))
         length(seconds)?.let { add(IndexDatum("Length", it)) }
-        if (!quality.isNullOrBlank()) add(IndexDatum("Format", quality))
         if (!genre.isNullOrBlank()) add(IndexDatum("Genre", genre))
     }
 

@@ -46,10 +46,10 @@ class IndexPagesRulesTest {
 
     @Test fun theAlbumDataListLeavesOutWhatIsUnknown() {
         assertEquals(
-            listOf(IndexDatum("Artist", "Khruangbin"), IndexDatum("Year", "2020"), IndexDatum("Length", "44:12"), IndexDatum("Format", "FLAC")),
-            IndexPagesRules.albumRows("Khruangbin", 2020, 2652, "FLAC", null),
+            listOf(IndexDatum("Artist", "Khruangbin"), IndexDatum("Year", "2020"), IndexDatum("Length", "44:12")),
+            IndexPagesRules.albumRows("Khruangbin", 2020, 2652, null),
         )
-        assertEquals(listOf(IndexDatum("Artist", "X"), IndexDatum("Genre", "Dream pop")), IndexPagesRules.albumRows("X", null, 0, " ", "Dream pop"))
+        assertEquals(listOf(IndexDatum("Artist", "X"), IndexDatum("Genre", "Dream pop")), IndexPagesRules.albumRows("X", null, 0, "Dream pop"))
         assertEquals(
             listOf(IndexDatum("Artist", "Cocteau Twins"), IndexDatum("Year", "1990"), IndexDatum("Genre", "Dream pop"), IndexDatum("Songs", "10")),
             IndexPagesRules.missingAlbumGrid("Cocteau Twins", 1990, "Dream pop", 10),

@@ -118,7 +118,7 @@ internal fun IndexAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyL
             }
             item {
                 IndexKeyValueGrid(
-                    IndexPagesRules.albumRows(d.artist, d.year, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.info?.quality, genre).map {
+                    IndexPagesRules.albumRows(d.artist, d.year, d.tracks.sumOf { it.durationSeconds ?: 0 }, genre).map {
                         when (it.key) { "Artist" -> it.copy(onClick = openArtist); "Genre" -> it.copy(onClick = openGenre); else -> it }
                     },
                     Modifier.indexArrive(1).padding(start = Gutter, end = Gutter, top = 14.dp),
@@ -212,13 +212,14 @@ internal fun IndexAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyL
     }
 }
 
-/** The owned album's head: the 200dp cover (it flips to the back when the index has one; the edition stack picks a cover), and beside it the numeral in the upper corner. */
+/** The owned album's head: the 200dp cover (it flips to the back when the index has one; the edition stack picks a cover), with the numeral in the upper corner and the format in the lower corner. */
 @Composable
 private fun OwnedHead(d: CoverStackAlbumData, albumId: String?) {
     val p = LocalPalette.current
     val playingNow = LocalPlayingNow.current
     val playing = d.tracks.indices.firstOrNull { i -> val t = d.tracks[i]; t.owned && playingNow?.matches(albumId, t.title, t.number, t.disc ?: 1) == true }
     val numeral = IndexPagesRules.albumNumeral(playing, d.tracks.size)
+    val quality = d.info?.quality?.takeIf { it.isNotBlank() }
     val cover = IndexPagesRules.ALBUM_COVER_DP.dp
     Row(Modifier.fillMaxWidth().indexArrive(0).padding(start = Gutter, end = Gutter, top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(cover)) {
@@ -229,12 +230,18 @@ private fun OwnedHead(d: CoverStackAlbumData, albumId: String?) {
                 }
             }
         }
-        if (numeral != null) Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(numeral.big, style = IndexType.index(), color = if (numeral.accent) p.accent else p.text, maxLines = 1)
-                if (numeral.small != null) IndexLabel(numeral.small, Modifier.padding(start = 4.dp, bottom = 4.dp))
+        Column(Modifier.weight(1f).heightIn(min = cover), verticalArrangement = Arrangement.SpaceBetween) {
+            if (numeral != null) Column(Modifier.semantics(mergeDescendants = true) {}) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(numeral.big, style = IndexType.index(), color = if (numeral.accent) p.accent else p.text, maxLines = 1)
+                    if (numeral.small != null) IndexLabel(numeral.small, Modifier.padding(start = 4.dp, bottom = 4.dp))
+                }
+                IndexLabel(numeral.word, Modifier.padding(top = 2.dp), color = if (numeral.accent) p.accent else p.textMuted)
+            } else Box(Modifier)
+            if (quality != null) Column(Modifier.semantics(mergeDescendants = true) {}) {
+                IndexLabel("Format")
+                Text(quality, style = IndexType.dataValue(), color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            IndexLabel(numeral.word, Modifier.padding(top = 2.dp), color = if (numeral.accent) p.accent else p.textMuted)
         }
     }
 }
