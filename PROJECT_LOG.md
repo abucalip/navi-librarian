@@ -1,3 +1,23 @@
+## 2026-11-22 — macOS design details D5.1–D5.9, columns in lists (PR #1215 merged)
+
+- **Merged:** PR [#1215](https://github.com/abucalip/navi-librarian/pull/1215), squash commit `10e9e228cd5f22c36591d8d7927cc453b3df1f11`, from exact PR head `9a807380df6ad655fcc48f5aa9aff15f55685227`; branch `macos/d5-columns-in-lists`, based on `main` at `8fd63365` (D4.7–D4.8 docs closeout).
+- **Changes:**
+  - **D5.1:** fixed `CUStageTracker` column (`70` pt), stepper (`280` pt) and trailing action stack (`128` pt) widths in `CupertinoCharts.swift` and `CupertinoDownloads.swift`.
+  - **D5.2:** added static 2 pt connectors (`CUChartMath.stageConnectors(step:)`, filled up to the current step) to `CUStageTracker` and hid the stepper on `.imported` rows so completed items keep only `"✓ In your library"`.
+  - **D5.3:** replaced the `.containerRelativeFrame` half-width cap in `CupertinoDownloads.swift` with `maxListWidth = 1040` pt on both the `CUPanel` card and the `"Clear … imported"` action bar.
+  - **D5.4:** reserved `playingSlotWidth` (`18` pt) and `actionSlotWidth` (`24` pt) slots on every queue row in `CupertinoQueue.swift` and aligned the Queue tab header count trailing edge with `headerCountTrailingInset` (`40` pt).
+  - **D5.5:** exposed `CupertinoToolbar.height = 44` (`CupertinoTheme.swift`) and aligned `CupertinoQueueInspector`'s top band (`headerTop = CU.Shell.toolbarTop`) to the toolbar's centre line.
+  - **D5.6:** aligned Timeline year and undated rail labels to `.firstTextBaseline` (`TimelineView.rowAlignment` in `TimelineView.swift`).
+  - **D5.7:** extracted full-height glass `TimelineInspector` and `AtlasInspector` (`TimelineView.swift`, `AtlasView.swift`) into `CupertinoWindow`'s trailing slot (`trailingPanelWidth(for:)` in `CupertinoTheme.swift`) so the toolbar stops at the panel edge, with titles aligned to `CupertinoToolbar.centreY`.
+  - **D5.8:** updated shared `StationLogo` (`StationLogoStore.swift`) to use `.scaledToFit()` with 3 pt padding on `CU.bgFill` for non-square logos (0 pt for square logos), and added synchronous `StationLogoStore.cached(station:size:)`.
+  - **D5.9:** removed `minHeight: 120` from `OnAirPanel`'s empty state in `CupertinoStations.swift` and moved `"Add station"` into the Radio header toolbar row beside `Stations | Heard` on the Stations pane.
+- **Tests run:** `select-tests.sh` selected `DiscairUITests` (`bundle=false`); `swift test --disable-sandbox --filter 'D51DownloadsStepperColumnsTests|D52DownloadsStepperConnectorsTests|D53DownloadsCardWidthTests|D54QueueDurationColumnTests|D55QueueHeaderAlignmentTests|D56TimelineYearBaselineTests|D57TrailingInspectorHeightTests|D58RadioStationLogoTests|D59RadioOnAirAddStationTests|CupertinoChartsTests|TimelineTests|AtlasTests|StationLogoStoreTests|QueueWorkspaceTests|D4PageTitleEdgeTests|D4SidebarHighlightSearchHintTests'` — 89 tests in 22 suites passed (22.239 s) on exact head `9a807380`. No full suite.
+- **CI on head `9a807380`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Not verified:** owner visual acceptance in a live window; no CPU measurement (no continuous or looping SwiftUI motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks D5.1–D5.9 in a live window; Slice D6 (Now Playing) can start.
+
+---
+
 ## 2026-11-22 — macOS design details D4.7–D4.8, sidebar sub-item highlight edge and search shortcut hint (PR #1214 merged)
 
 - **Merged:** PR [#1214](https://github.com/abucalip/navi-librarian/pull/1214), squash commit `bb701cfaca4b2b6e6ab0d96fc618d35e791aad45`, from exact PR head `36dc8ae4646e4b4e09a44dd88cb7c9af8aa666e3`; branch `macos/d4-7-sidebar-highlight-search-hint`, based on `main` at `27eb07f6` (D4.4–D4.6 docs closeout).
