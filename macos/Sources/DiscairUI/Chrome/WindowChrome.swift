@@ -134,8 +134,9 @@ struct ReorderRow<Content: View>: View {
 /// The theme's own traffic lights (close, minimise, zoom). Like the system ones, the symbols (x, minus, arrows) show
 /// while the pointer is over the group. Labelled for VoiceOver.
 struct TrafficLights: View {
+    nonisolated static let defaultSize: CGFloat = 12
     var colors: [Color] = [Color(red: 1, green: 0.37, blue: 0.34), Color(red: 1, green: 0.74, blue: 0.18), Color(red: 0.16, green: 0.78, blue: 0.25)]
-    var size: CGFloat = 12
+    var size: CGFloat = defaultSize
     /// Show the symbols without hovering (screenshot tests).
     var showSymbols = false
     @State private var hovering = false

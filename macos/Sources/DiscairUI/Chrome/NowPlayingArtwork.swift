@@ -52,6 +52,13 @@ struct DiscView: View {
 /// Cupertino: the disc sits behind the sleeve and slides out to its right once it has loaded (a plain appearance under Reduce Motion).
 /// Added as a background so the sleeve's own layout and shadow are unchanged.
 struct DiscSleeve: ViewModifier {
+    static let diameterFraction: CGFloat = 0.9
+    static let slideFraction: CGFloat = 0.36
+    /// How far the slid-out disc extends past the cover's trailing edge for a square cover of `coverWidth`.
+    static func overhang(for coverWidth: CGFloat) -> CGFloat {
+        coverWidth * (slideFraction + diameterFraction / 2 - 0.5)
+    }
+
     let picture: ArtworkPicture?
     let spinning: Bool
     @State private var out = false
@@ -61,9 +68,9 @@ struct DiscSleeve: ViewModifier {
         content.background(alignment: .center) {
             GeometryReader { g in
                 if let picture {
-                    DiscView(picture: picture, diameter: g.size.width * 0.9, spinning: spinning)
+                    DiscView(picture: picture, diameter: g.size.width * Self.diameterFraction, spinning: spinning)
                         .frame(width: g.size.width, height: g.size.height)
-                        .offset(x: out ? g.size.width * 0.36 : 0)
+                        .offset(x: out ? g.size.width * Self.slideFraction : 0)
                         .task(id: picture.imageID) {
                             out = false
                             try? await Task.sleep(for: .milliseconds(400))
