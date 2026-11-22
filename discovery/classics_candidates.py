@@ -7,28 +7,17 @@ from typing import Any
 
 
 def _listeners(item: dict[str, Any]) -> int:
-    value = item.get("listeners")
-    if value is None:
-        value = item.get("lastfm_listeners")
-    return int(value or 0)
+    return int(item.get("listeners") or 0)
 
 
 def _with_listener_aliases(album: dict[str, Any]) -> dict[str, Any]:
     out = dict(album)
     listeners = album.get("listeners")
-    if listeners is None:
-        listeners = album.get("lastfm_listeners")
     if listeners is not None:
-        val = int(listeners)
-        out["listeners"] = val
-        out["lastfm_listeners"] = val
+        out["listeners"] = int(listeners)
     playcount = album.get("playcount")
-    if playcount is None:
-        playcount = album.get("lastfm_playcount")
     if playcount is not None:
-        val = int(playcount)
-        out["playcount"] = val
-        out["lastfm_playcount"] = val
+        out["playcount"] = int(playcount)
     return out
 
 

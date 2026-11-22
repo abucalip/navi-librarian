@@ -228,7 +228,7 @@ def summarize_score_and_shortlist(output: Mapping[str, Any], count: int) -> dict
         if _identity(row) in rank_by_id
     ]
     component_names = (
-        "discovery_score", "recent_profile_bonus", "lastfm_popularity_bonus",
+        "discovery_score", "recent_profile_bonus", "popularity_bonus",
         "recent_artist_play_count",
     )
     components = {
@@ -248,10 +248,7 @@ def summarize_score_and_shortlist(output: Mapping[str, Any], count: int) -> dict
     ) if rows else 0.0
     components["popularity_bonus_above_neutral_share"] = round(
         sum(
-            float(
-                (row.get("popularity_bonus") if row.get("popularity_bonus") is not None else row.get("lastfm_popularity_bonus", 1.0))
-                or 1.0
-            ) > 1.0
+            float(row.get("popularity_bonus", 1.0) or 1.0) > 1.0
             for row in rows
         ) / len(rows), 6
     ) if rows else 0.0

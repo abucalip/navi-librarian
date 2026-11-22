@@ -243,7 +243,7 @@ class RankedRowContractTests(unittest.TestCase):
 
     def test_score_and_popularity_hide_numerals_when_values_are_missing(self):
         self.assertIn("complete('discovery_score')", self.js)
-        self.assertIn("complete('listeners', 'lastfm_listeners')", self.js)
+        self.assertIn("complete('listeners')", self.js)
 
     def test_sort_basis_is_named_in_the_count_line(self):
         self.assertIn("· ${basis.label}`", self.js)

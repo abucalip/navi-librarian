@@ -1109,9 +1109,9 @@ function addAlbumYear(title, year, block) {
 
 // "12.3K listens" from the playcount, else "12.3K listeners"; nothing when neither is known.
 function listenCountLabel(item) {
-  const plays = Number(item && (item.playcount ?? item.lastfm_playcount));
+  const plays = Number(item && item.playcount);
   if (Number.isFinite(plays) && plays > 0) return compactCount(plays) + ' listens';
-  const listeners = Number(item && (item.listeners ?? item.lastfm_listeners ?? item.album_listeners));
+  const listeners = Number(item && (item.listeners ?? item.album_listeners));
   if (Number.isFinite(listeners) && listeners > 0) return compactCount(listeners) + ' listeners';
   return '';
 }
@@ -2104,7 +2104,7 @@ function shelfItemFromDiscovery(item) {
     name: item.album || item.title || '', artist: item.artist || item.album_artist || '',
     year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
     release_group_mbid: item.release_group_mbid || null, owned: item.owned === true,
-    listeners: item.listeners ?? item.lastfm_listeners ?? null, playcount: item.playcount ?? item.lastfm_playcount ?? null,
+    listeners: item.listeners ?? null, playcount: item.playcount ?? null,
   };
 }
 
@@ -2240,7 +2240,7 @@ function applyRecommendationFilters() {
     Number.isFinite(Number(value)) ? Number(value) : null;
 
   if (sort === 'popularity') {
-    const itemListeners = item => numeric(item.listeners) ?? numeric(item.lastfm_listeners);
+    const itemListeners = item => numeric(item.listeners);
     filtered.sort((a, b) =>
       (itemListeners(b) ?? -1) -
       (itemListeners(a) ?? -1));
@@ -2329,7 +2329,7 @@ function rankingBasis(sort, items) {
       : {label: 'Sorted by discovery score; some albums have no score', numbered: false};
   }
   if (sort === 'popularity') {
-    return complete('listeners', 'lastfm_listeners')
+    return complete('listeners')
       ? {label: 'Ranked by ListenBrainz artist listeners', numbered: true}
       : {label: 'Sorted by ListenBrainz artist listeners; some albums have no count', numbered: false};
   }
@@ -2864,7 +2864,7 @@ function addRecommendationMeta(meta, item) {
   if (item.diversity_style) {
     addTextElement(meta, 'p', 'row-meta-line', 'Style: ' + item.diversity_style.replaceAll('_', ' '));
   }
-  const listeners = item.listeners ?? item.lastfm_listeners;
+  const listeners = item.listeners;
   if (listeners !== null && listeners !== undefined && Number.isFinite(Number(listeners))) {
     addTextElement(meta, 'p', 'row-meta-line', 'ListenBrainz artist listeners: ' + Number(listeners).toLocaleString());
   }

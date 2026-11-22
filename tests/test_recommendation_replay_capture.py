@@ -88,10 +88,10 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             "recent_profile_family": "jazz",
             "recent_profile_families": ["jazz"],
             "recent_profile_bonus": 1.25,
-            "lastfm_listeners": 1234,
-            "lastfm_playcount": 5678,
-            "lastfm_tags": ["jazz"],
-            "lastfm_popularity_bonus": 1.1,
+            "listeners": 1234,
+            "playcount": 5678,
+            "popularity_tags": ["jazz"],
+            "popularity_bonus": 1.1,
             "listening_families": ["jazz"],
             "provider_specific_field": "preserve me",
         })
@@ -103,8 +103,8 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         for key in (
             "discovery_score", "discovery_category", "diversity_style",
             "recent_profile_family", "recent_profile_families",
-            "recent_profile_bonus", "lastfm_listeners", "lastfm_playcount",
-            "lastfm_tags", "lastfm_popularity_bonus", "listening_families",
+            "recent_profile_bonus", "listeners", "playcount",
+            "popularity_tags", "popularity_bonus", "listening_families",
         ):
             self.assertNotIn(key, frozen_candidate)
 
@@ -114,8 +114,8 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         for key in (
             "discovery_score", "discovery_category", "diversity_style",
             "recent_profile_family", "recent_profile_families",
-            "recent_profile_bonus", "lastfm_listeners", "lastfm_playcount",
-            "lastfm_tags", "lastfm_popularity_bonus", "listening_families",
+            "recent_profile_bonus", "listeners", "playcount",
+            "popularity_tags", "popularity_bonus", "listening_families",
         ):
             self.assertNotIn(key, thawed_candidate)
 

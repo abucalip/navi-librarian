@@ -87,7 +87,7 @@ def score_classic_candidates(candidates: Iterable[dict[str, Any]], jitter: Calla
     for item in output:
         rating=item.get("musicbrainz_rating"); votes=int(item.get("musicbrainz_rating_votes") or 0)
         critical=(float(rating)/5.0) if rating is not None and votes else 0.0
-        listeners=max(0,int(item.get("listeners") if item.get("listeners") is not None else (item.get("lastfm_listeners") or 0))); plays=max(0,int(item.get("playcount") if item.get("playcount") is not None else (item.get("lastfm_playcount") or 0)))
+        listeners=max(0,int(item.get("listeners") or 0)); plays=max(0,int(item.get("playcount") or 0))
         item["critical_recognition_available"]=bool(rating is not None and votes)
         credit=0.9 if not (rating is not None and votes) else 0.0
         item["discovery_score"]=round(critical*1.6-math.log10(listeners+1)*0.55-math.log10(plays+1)*0.10+credit,4)
@@ -326,10 +326,6 @@ def apply_familiarity_exploration_bonus(
     )
     return candidate["discovery_score"]
 
-# Candidates (by discovery_score) that receive a popularity lookup per run.
-from discovery.popularity import apply_popularity_bonus
-
-apply_lastfm_popularity_bonus = apply_popularity_bonus
 
 def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) -> str:
     """Style slot for diversification and display: the candidate's primary family.
@@ -353,8 +349,8 @@ def rank_and_diversify_deep_dive_candidates(
 
     output = list(candidates)
     for item in output:
-        raw_listeners = item.get("listeners") if item.get("listeners") is not None else item.get("lastfm_listeners")
-        raw_playcount = item.get("playcount") if item.get("playcount") is not None else item.get("lastfm_playcount")
+        raw_listeners = item.get("listeners")
+        raw_playcount = item.get("playcount")
         popularity = math.log10(max(0, int(raw_listeners or 0)) + 1)
         playcount = math.log10(max(0, int(raw_playcount or 0)) + 1)
         candidate_score = float(item.get("candidate_pool_score", 0) or 0)
@@ -370,7 +366,7 @@ def rank_and_diversify_deep_dive_candidates(
             4,
         )
     for item in output:
-        raw_listeners = item.get("listeners") if item.get("listeners") is not None else item.get("lastfm_listeners")
+        raw_listeners = item.get("listeners")
         listeners = max(0, int(raw_listeners or 0))
         magnitude = math.log10(listeners + 1)
         item["exploration_score"] = round(

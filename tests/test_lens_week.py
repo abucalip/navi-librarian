@@ -67,20 +67,17 @@ class PoolTests(unittest.TestCase):
             1, lambda v: None,
         )
         self.assertEqual(out["items"][0]["listeners"], 5400)
-        self.assertEqual(out["items"][0]["lastfm_listeners"], 5400)
+        self.assertNotIn("lastfm_listeners", out["items"][0])
         self.assertEqual(out["items"][0]["why"]["kind"], "lens")
         self.assertEqual(out["items"][0]["why"]["sentence"], "Close to the ambient you play lately")
 
-    def test_pick_falls_back_to_listeners_and_lastfm_listeners(self):
+    def test_pick_reads_listeners(self):
         out = lens_week.build_week_picks(
-            [
-                {"artist": "A", "album": "1", "listeners": 1200},
-                {"artist": "B", "album": "2", "lastfm_listeners": 800},
-            ],
-            2, lambda v: None,
+            [{"artist": "A", "album": "1", "listeners": 1200}],
+            1, lambda v: None,
         )
-        self.assertEqual((out["items"][0]["listeners"], out["items"][0]["lastfm_listeners"]), (1200, 1200))
-        self.assertEqual((out["items"][1]["listeners"], out["items"][1]["lastfm_listeners"]), (800, 800))
+        self.assertEqual(out["items"][0]["listeners"], 1200)
+        self.assertNotIn("lastfm_listeners", out["items"][0])
 
 
 class WeekPicksServiceTests(unittest.TestCase):

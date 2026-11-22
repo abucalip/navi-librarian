@@ -42,10 +42,6 @@ _RANKING_DERIVED_CANDIDATE_FIELDS = frozenset({
     "playcount",
     "popularity_tags",
     "popularity_bonus",
-    "lastfm_listeners",
-    "lastfm_playcount",
-    "lastfm_tags",
-    "lastfm_popularity_bonus",
     "listening_families",
 })
 

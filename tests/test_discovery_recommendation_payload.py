@@ -18,10 +18,10 @@ def candidate(**overrides):
         "score": 0.75,
         "discovery_source": "listenbrainz",
         "discovery_score": 0.12345678,
-        "lastfm_listeners": 123,
-        "lastfm_playcount": 456,
-        "lastfm_tags": ["soul"],
-        "lastfm_popularity_bonus": 1.12345,
+        "listeners": 123,
+        "playcount": 456,
+        "popularity_tags": ["soul"],
+        "popularity_bonus": 1.12345,
         "tracks": ["one", "two", "three", "four"],
     }
     value.update(overrides)
@@ -36,7 +36,7 @@ class PersonalRecommendationPayloadTests(unittest.TestCase):
         self.assertEqual(result["recent_artist_listens"], 7)
         self.assertEqual(result["recent_profile_bonus"], 1.235)
         self.assertEqual(result["discovery_score"], 0.123457)
-        self.assertEqual(result["lastfm_popularity_bonus"], 1.123)
+        self.assertEqual(result["popularity_bonus"], 1.123)
         self.assertEqual(result["suggested_tracks"], ["one", "two", "three"])
         self.assertEqual(result["listenbrainz_score"], 0.75)
         self.assertNotIn("ownership_check", result)
@@ -53,8 +53,8 @@ class PersonalRecommendationPayloadTests(unittest.TestCase):
         row = candidate()
         for key in (
             "diversity_style", "recent_profile_family", "recent_profile_families",
-            "recent_profile_bonus", "discovery_source", "lastfm_listeners",
-            "lastfm_playcount", "lastfm_tags", "lastfm_popularity_bonus",
+            "recent_profile_bonus", "discovery_source", "listeners",
+            "playcount", "popularity_tags", "popularity_bonus",
         ):
             row.pop(key, None)
         result = build_personal_recommendation_payload(row, 0)
@@ -63,10 +63,10 @@ class PersonalRecommendationPayloadTests(unittest.TestCase):
         self.assertEqual(result["recent_profile_families"], [])
         self.assertEqual(result["recent_profile_bonus"], 1.0)
         self.assertEqual(result["discovery_source"], "listenbrainz")
-        self.assertEqual(result["lastfm_tags"], [])
-        self.assertEqual(result["lastfm_popularity_bonus"], 1.0)
-        self.assertIsNone(result["lastfm_listeners"])
-        self.assertIsNone(result["lastfm_playcount"])
+        self.assertEqual(result["popularity_tags"], [])
+        self.assertEqual(result["popularity_bonus"], 1.0)
+        self.assertIsNone(result["listeners"])
+        self.assertIsNone(result["playcount"])
 
     def test_category_reason_and_low_confidence_suffix(self):
         cases = {
@@ -90,11 +90,11 @@ class PersonalRecommendationPayloadTests(unittest.TestCase):
         genres = ["jazz", "soul"]
         families = ["jazz", "rnb-soul"]
         tags = ["neo-soul"]
-        row = candidate(genres=genres, genre_families=families, lastfm_tags=tags)
+        row = candidate(genres=genres, genre_families=families, popularity_tags=tags)
         result = build_personal_recommendation_payload(row, 3)
         self.assertIs(result["genres"], genres)
         self.assertIs(result["genre_families"], families)
-        self.assertIs(result["lastfm_tags"], tags)
+        self.assertIs(result["popularity_tags"], tags)
 
 
 if __name__ == "__main__":

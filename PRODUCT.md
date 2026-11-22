@@ -17,8 +17,8 @@ Discair is an acquisition-aware discovery tool. The web UI is not a player. The 
 
 ## Operating Context
 - FastAPI app serving a single-page shell: `app/templates/index.html`, `static/app.css`, `static/app.js`. No framework, no build system.
-- Pages today: Dashboard ("Ten from the collection"), Discover music (recommendations), New releases, Personal Discoveries, Add to your collection (classics), Artist Deep Dives (grouped by genre, one album per artist), Acquisition status, Settings (Navidrome, slskd, Last.fm, ListenBrainz, quality tiers). An album detail modal shows tracklist and platform links.
-- External services: Navidrome, slskd, Last.fm, ListenBrainz, MusicBrainz. Artwork is the dominant content.
+- Pages today: Dashboard ("Ten from the collection"), Discover music (recommendations), New releases, Personal Discoveries, Add to your collection (classics), Artist Deep Dives (grouped by genre, one album per artist), Acquisition status, Settings (Navidrome, slskd, ListenBrainz, quality tiers). An album detail modal shows tracklist and platform links.
+- External services: Navidrome, slskd, ListenBrainz, MusicBrainz, Discogs, Deezer. Artwork is the dominant content.
 - The Get/request flow, Dismiss, and import are enforced server-side; the browser never duplicates that logic or reports success before the server confirms.
 - Testing uses an isolated local helper with sandbox music paths and slskd disabled (`docs/LOCAL_UI_TESTING.md`).
 

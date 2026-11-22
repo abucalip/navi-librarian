@@ -321,9 +321,9 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         )
 
         candidate = result["debug_all_candidates"][0]
-        self.assertEqual(candidate["lastfm_listeners"], 1_000_000)
-        self.assertEqual(candidate["lastfm_playcount"], 5_000_000)
-        self.assertEqual(candidate["lastfm_popularity_bonus"], 1.118)
+        self.assertEqual(candidate["listeners"], 1_000_000)
+        self.assertEqual(candidate["playcount"], 5_000_000)
+        self.assertEqual(candidate["popularity_bonus"], 1.118)
         self.assertGreater(candidate["discovery_score"], 10.0)
         self.assertLess(candidate["discovery_score"], 10 * 1.25 * 1.12)
 

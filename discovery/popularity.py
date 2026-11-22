@@ -61,10 +61,6 @@ def apply_popularity_bonus(
         candidate["listeners"] = listeners
         candidate["playcount"] = playcount
         candidate["popularity_tags"] = tags
-        # Temporary aliases until FirstFM F5.2
-        candidate["lastfm_listeners"] = listeners
-        candidate["lastfm_playcount"] = playcount
-        candidate["lastfm_tags"] = tags
 
         if tags:
             candidate["listening_families"] = sorted(
@@ -100,7 +96,6 @@ def apply_popularity_bonus(
         playcount_signal = min(1.0, math.log10(playcount + 1) / 7.0)
         bonus = 1.0 + 0.08 * listener_signal + 0.04 * playcount_signal
         candidate["popularity_bonus"] = bonus
-        candidate["lastfm_popularity_bonus"] = bonus
         candidate["discovery_score"] *= bonus
     return checked
 
@@ -164,24 +159,17 @@ def run_personal_popularity_pass(
 
 
 def candidate_popularity_fields(candidate: Mapping[str, Any]) -> dict[str, Any]:
-    """Extract provider-neutral popularity fields with temporary ``lastfm_*`` aliases."""
+    """Extract provider-neutral popularity fields."""
     listeners = candidate.get("listeners")
-    if listeners is None:
-        listeners = candidate.get("lastfm_listeners")
     playcount = candidate.get("playcount")
-    if playcount is None:
-        playcount = candidate.get("lastfm_playcount")
     raw_bonus = candidate.get("popularity_bonus")
     if raw_bonus is None:
-        raw_bonus = candidate.get("lastfm_popularity_bonus", 1.0)
+        raw_bonus = 1.0
     bonus = round(raw_bonus, 3)
     return {
         "listeners": listeners,
         "playcount": playcount,
         "popularity_bonus": bonus,
-        "lastfm_listeners": listeners,
-        "lastfm_playcount": playcount,
-        "lastfm_popularity_bonus": bonus,
     }
 
 

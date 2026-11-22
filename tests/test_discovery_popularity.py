@@ -30,35 +30,25 @@ class DiscoveryPopularityTests(unittest.TestCase):
         self.assertEqual(candidate["listeners"], 1000)
         self.assertEqual(candidate["playcount"], 5000)
         self.assertEqual(candidate["popularity_tags"], ["jazz"])
-        self.assertEqual(candidate["lastfm_listeners"], 1000)
-        self.assertEqual(candidate["lastfm_playcount"], 5000)
-        self.assertEqual(candidate["lastfm_tags"], ["jazz"])
         self.assertGreater(candidate["popularity_bonus"], 1.0)
-        self.assertEqual(candidate["popularity_bonus"], candidate["lastfm_popularity_bonus"])
+        self.assertNotIn("lastfm_listeners", candidate)
+        self.assertNotIn("lastfm_playcount", candidate)
+        self.assertNotIn("lastfm_tags", candidate)
+        self.assertNotIn("lastfm_popularity_bonus", candidate)
 
-    def test_candidate_popularity_fields_reads_neutral_or_legacy(self):
+    def test_candidate_popularity_fields_reads_neutral_fields(self):
         neutral = candidate_popularity_fields({
             "listeners": 42,
             "playcount": 99,
             "popularity_bonus": 1.0556,
         })
-        self.assertEqual(neutral["listeners"], 42)
-        self.assertEqual(neutral["lastfm_listeners"], 42)
-        self.assertEqual(neutral["playcount"], 99)
-        self.assertEqual(neutral["lastfm_playcount"], 99)
-        self.assertEqual(neutral["popularity_bonus"], 1.056)
-        self.assertEqual(neutral["lastfm_popularity_bonus"], 1.056)
-
-        legacy = candidate_popularity_fields({
-            "lastfm_listeners": 7,
-            "lastfm_playcount": 14,
-            "lastfm_popularity_bonus": 1.02,
+        self.assertEqual(neutral, {
+            "listeners": 42,
+            "playcount": 99,
+            "popularity_bonus": 1.056,
         })
-        self.assertEqual(legacy["listeners"], 7)
-        self.assertEqual(legacy["playcount"], 14)
-        self.assertEqual(legacy["popularity_bonus"], 1.02)
 
-    def test_recommendation_payload_emits_neutral_and_legacy_aliases(self):
+    def test_recommendation_payload_emits_neutral_fields_only(self):
         payload = build_personal_recommendation_payload(
             {
                 "artist": "Artist A",
@@ -78,13 +68,13 @@ class DiscoveryPopularityTests(unittest.TestCase):
             recent_artist_listens=2,
         )
         self.assertEqual(payload["listeners"], 500)
-        self.assertEqual(payload["lastfm_listeners"], 500)
         self.assertEqual(payload["playcount"], 2000)
-        self.assertEqual(payload["lastfm_playcount"], 2000)
         self.assertEqual(payload["popularity_tags"], ["jazz"])
-        self.assertEqual(payload["lastfm_tags"], ["jazz"])
         self.assertEqual(payload["popularity_bonus"], 1.046)
-        self.assertEqual(payload["lastfm_popularity_bonus"], 1.046)
+        self.assertNotIn("lastfm_listeners", payload)
+        self.assertNotIn("lastfm_playcount", payload)
+        self.assertNotIn("lastfm_tags", payload)
+        self.assertNotIn("lastfm_popularity_bonus", payload)
 
     def test_run_personal_popularity_pass_uses_supplied_callback(self):
         albums = {

@@ -46,9 +46,7 @@ data class DiscoveryItem(
     val album: String = "",
     val year: Int? = null,
     val listeners: Long? = null,
-    @SerialName("lastfm_listeners") val legacyListeners: Long? = null,
     val playcount: Long? = null,
-    @SerialName("lastfm_playcount") val legacyPlaycount: Long? = null,
     @SerialName("first_release_date") val firstReleaseDate: String? = null,
     @SerialName("album_listeners") val albumListeners: Long? = null,
     @SerialName("seed_tag") val seedTag: String? = null,
@@ -68,8 +66,8 @@ data class DiscoveryItem(
     @SerialName("artist_library_album_count") val libraryAlbumCount: Int? = null,
 ) {
     val artistName get() = artist.ifBlank { albumArtist }
-    val effectiveListeners get() = listeners ?: legacyListeners
-    val effectivePlaycount get() = playcount ?: legacyPlaycount
+    val effectiveListeners get() = listeners
+    val effectivePlaycount get() = playcount
 }
 
 /**
