@@ -1,3 +1,18 @@
+## 2026-11-22 — macOS design details D8.1–D8.4, user-facing copy and player bar title width (PR #1218 merged)
+
+- **Merged:** PR [#1218](https://github.com/abucalip/navi-librarian/pull/1218), squash commit `b2a434bb6abd8ece27d31a2277d07e6fa3f9d639`, from exact PR head `8bf8ede5cbb2e2afaa2aed490453021142894a85`; branch `macos/d8-user-facing-copy`, based on `main` at `409665c4` (D7.1–D7.4 docs closeout).
+- **Changes:**
+  - **D8.1:** added `GraphWording.sourceName(_:)`, `GraphWording.evidenceClass(_:explicitLabel:)` and `GraphWording.provenanceLine(source:evidenceClass:matchQuality:explicitLabel:)` (`GraphExplorer.swift`) as one shared display map and adopted it in `AtlasInspector` (`AtlasView.swift`, `"MusicBrainz · stated place · exact match"`), `TimelineInspector` (`TimelineView.swift`) and `GraphExplorerView` (`GraphExplorerView.swift`).
+  - **D8.2:** mapped `destination_exists` in `AcquisitionModel.statusText(_:)` (`AcquisitionModel.swift`) to `"Already in your library folder; nothing was copied"` (along with plain-English strings for other known server statuses and a sentence-case fallback), kept `Dismiss` as the only action for `destination_exists`, and placed `destination_exists` / `download_complete_move_failed` on `.importing` in `HomeDashboard.stage(of:)` (`HomeDashboard.swift`).
+  - **D8.3:** replaced developer wording in `GraphExplorerModel.truncatedNotice` (`GraphExplorer.swift`) with `"Showing the first N connections."` + `"Turn on Credits only, lower the reach, or use List to see them all."`, keeping the `Switch to List` button in `CupertinoConnections.swift`.
+  - **D8.4:** replaced the fixed 290 pt title-block cap in `CupertinoPlayerBar` (`CupertinoPlayerBar.swift`) with `CappedWidthLayout` and `titleBlockMaxWidth(forBarWidth:)` (up to 40% of the bar width before truncating, hugging shorter titles), keeping the centre fact/lyric centred in the space left between the title block and the controls.
+- **Tests run:** `select-tests.sh` selected `DiscairUITests` (`bundle=false`); `swift test --package-path navi-librarian/macos --disable-sandbox --filter 'D8UserFacingCopyTests|ConnectionsScreenModelTests|AcquisitionModelTests|PlayerBarRefinementTests|D7GraphMapLabelsTests'` — 60 tests in 5 suites passed (6.260 s) on exact head `8bf8ede5`. Day and Night offscreen renders of Atlas Inspector, Downloads (`destination_exists`), Connections (truncated notice) and Player Bar (`"Aretha Franklin — The Electrifying Aretha Franklin"`) were inspected. No full suite.
+- **CI on head `8bf8ede5`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Not verified:** owner visual acceptance in a live window; no CPU measurement (no continuous or looping SwiftUI motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks D3, D5, D6, D7 and D8 in a live macOS window to close out the macOS design details polish pass.
+
+---
+
 ## 2026-11-22 — macOS design details D7.1–D7.4, graph and map labels (PR #1217 merged)
 
 - **Merged:** PR [#1217](https://github.com/abucalip/navi-librarian/pull/1217), squash commit `96ade9f3c9ecbd5f0f7f78898de7cadb9ff84c71`, from exact PR head `70a278c1deeaa7fc0a78486e31f0e72d185c73d2`; branch `macos/d7-graph-map-labels`, based on `main` at `19bb6a05` (D6.1–D6.4 merged in PR #1216).
