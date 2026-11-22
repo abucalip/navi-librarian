@@ -314,6 +314,8 @@ struct CupertinoSidebar: View {
     static let groupGap: CGFloat = CU.Space.m
     /// Shared sidebar group-header font (D4.6): the small bold grey label used by both Discover and Playlists.
     static let groupHeaderFont: SwiftUI.Font = CU.Font.eyebrow.font
+    /// Leading indent of the icon and label for Discover sub-items (D4.7); the row highlight keeps the top-level leading edge.
+    static let subItemIndent: CGFloat = CU.Space.m
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -337,7 +339,7 @@ struct CupertinoSidebar: View {
                     .accessibilityLabel("Discover").accessibilityValue(state.discoverOpen ? "expanded" : "collapsed")
                     .accessibilityHint("Shows or hides the discovery pages")
                     if state.discoverOpen {
-                        ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen).padding(.leading, 16) }
+                        ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen, indent: Self.subItemIndent) }
                     }
                     row("wand.and.stars", "Smart Playlists", .smartPlaylists)
                         .padding(.top, Self.groupGap)
@@ -368,7 +370,7 @@ struct CupertinoSidebar: View {
         .padding(CU.Shell.inset)
     }
 
-    private func row(_ icon: String, _ label: String, _ screen: Screen) -> some View {
+    private func row(_ icon: String, _ label: String, _ screen: Screen, indent: CGFloat = 0) -> some View {
         let on = label == selected
         // Mockup: 32 high, radius 12, 8 horizontal padding. Icons are secondary text; only the selected row takes the accent,
         // as an accent-tint ground, accent-strong text and an accent icon.
@@ -384,7 +386,7 @@ struct CupertinoSidebar: View {
             }
             .font(CU.Font.body.weighted(.regular))
             .foregroundStyle(on ? CU.accentStrong : CU.text)
-            .padding(.horizontal, CU.Space.s).frame(height: 32)
+            .padding(.leading, CU.Space.s + indent).padding(.trailing, CU.Space.s).frame(height: 32)
             .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
         }
@@ -401,10 +403,12 @@ struct CupertinoToolbar: View {
             Spacer(minLength: 0)
             CupertinoStatusButton(state: state)
             Button { state.palette.open() } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: CU.Space.s) {
                     Image(systemName: "magnifyingglass")
-                    Text("Search  ⌘K")
+                    Text("Search")
                     Spacer(minLength: 0)
+                    Text("⌘K")
+                        .foregroundStyle(CU.textTertiary)
                 }
                 .foregroundStyle(CU.textSecondary).padding(.horizontal, CU.Space.m).frame(width: 210, height: 36)
                 .contentShape(Capsule())
