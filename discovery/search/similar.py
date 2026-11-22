@@ -24,9 +24,11 @@ from discovery.search.query import artwork_url
 SIMILAR_LIMIT = 20
 LASTFM = "lastfm"
 LISTENBRAINZ = "listenbrainz"
+DEEZER = "deezer"
 REASONS = {
     LASTFM: "Last.fm similar artist",
     LISTENBRAINZ: "ListenBrainz similar artist",
+    DEEZER: "Deezer similar artist",
 }
 # Shared tags add TAG_WEIGHT times the Jaccard overlap of the two tag sets (0 to 1).
 TAG_WEIGHT = 0.5
@@ -75,7 +77,7 @@ def fuse_similar(
         candidate = _artist(str(record["name"]), record.get("mbid"))
         if same_entity(candidate, seed):
             continue
-        if source == LISTENBRAINZ:
+        if source in (LISTENBRAINZ, DEEZER):
             # Position within this source's own list; the seed was already removed upstream.
             position = positions.get(source, 0)
             positions[source] = position + 1

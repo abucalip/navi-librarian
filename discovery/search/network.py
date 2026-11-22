@@ -22,17 +22,16 @@ from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
 from discovery.search.normalize import normalize_key
 from discovery.search.genre_page import GenreNetwork
-from discovery.search.providers import DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, genre_candidate
+from discovery.search.providers import DeezerSearch, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, genre_candidate
 from discovery.search.runner import ExternalSearch, FetchRegistry, Part
 from integrations.listenbrainz.client import request_headers
-from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation
+from settings.service import discogs_generation, discogs_token_and_source
 
 # Artist and album pages stream their sections, so a slow source delays only its own section; they
 # wait longer than a search does (MusicBrainz answers about one request a second).
 PAGE_DEADLINE_SECONDS = 8.0
 MBID_TTL_SECONDS = 30 * 24 * 60 * 60  # The MusicBrainz genre list changes rarely (section 6, entity lookups).
 MUSICBRAINZ_GENERATION = 0  # MusicBrainz has no credential (section 5.2).
-LASTFM_API_KEY = "lastfm_api_key"
 
 REGISTRY = FetchRegistry()
 # MusicBrainz asks for an average of one request per second per IP; Last.fm allows about five per second.
@@ -65,13 +64,12 @@ def _schedule_purge(delete_except: Callable[[str, str], int], source: str, gener
     threading.Thread(target=run, daemon=True).start()
 
 
-def _source_capabilities(api_key: str, discogs_token: str = "") -> dict[str, dict[str, Any]]:
-    lastfm = availability(True) if api_key else availability(False, "source_disabled")
+def _source_capabilities(discogs_token: str = "") -> dict[str, dict[str, Any]]:
     discogs = availability(True) if discogs_token else availability(False, "source_disabled")
     return {
         "navidrome": availability(True),
         "musicbrainz": availability(True),
-        "lastfm": lastfm,
+        "lastfm": availability(False, "source_disabled"),
         "listenbrainz": availability(False, NOT_IN_BUILD),
         "discogs": discogs,
     }
@@ -89,19 +87,14 @@ def external_search(
     clock: Callable[[], float] = time.monotonic,
 ) -> ExternalSearch:
     """Build the network side of one search from the saved settings."""
-    settings = settings_read()
-    api_key = str(settings.get(LASTFM_API_KEY) or "").strip()
-    lastfm_gen = lastfm_generation(settings_read)
     discogs_token, _ = discogs_token_and_source(settings_read, os.environ)
     discogs_gen = discogs_generation(settings_read)
     if delete_except is not None:
-        _schedule_purge(delete_except, "lastfm", lastfm_gen)
         _schedule_purge(delete_except, "discogs", discogs_gen)
         _schedule_purge(delete_except, "musicbrainz", MUSICBRAINZ_GENERATION)
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, pause=time.sleep)
-    lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=api_key) if api_key else None
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
 
     def musicbrainz_genres(query: str, remaining, cancelled) -> list[dict[str, Any]]:
@@ -149,15 +142,6 @@ def external_search(
                     q, remaining=remaining, cancelled=cancelled
                 ),
             ))
-            if lastfm is not None:
-                parts.append(Part(
-                    source="lastfm",
-                    kind=kind,
-                    key=provider_cache_key("lastfm", lastfm_gen, query, kind),
-                    fetch=lambda remaining, cancelled, q=query, m=method: getattr(lastfm, m)(
-                        q, remaining=remaining, cancelled=cancelled
-                    ),
-                ))
             if discogs is not None:
                 parts.append(Part(
                     source="discogs",
@@ -171,7 +155,7 @@ def external_search(
 
     return ExternalSearch(
         parts_for=parts_for,
-        sources=_source_capabilities(api_key, discogs_token),
+        sources=_source_capabilities(discogs_token),
         registry=registry or REGISTRY,
         cache_read=cache_read,
         cache_write=cache_write,
@@ -212,12 +196,14 @@ def artist_network(
     musicbrainz = MusicBrainzSearch(get=get, pause=time.sleep)
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=lastfm_api_key) if lastfm_api_key else None
     listenbrainz = ListenBrainzRadio(get=get, limiter=rate_limiter, headers=request_headers())
+    deezer = DeezerSearch(get=get, cache_read=cache_read, cache_write=cache_write)
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
     sources = {
         "navidrome": availability(True),
         "musicbrainz": availability(True),
         "lastfm": availability(True) if lastfm is not None else availability(False, "source_disabled"),
         "listenbrainz": availability(True),
+        "deezer": availability(True),
         "discogs": availability(True) if discogs is not None else availability(False, "source_disabled"),
     }
     return ArtistNetwork(
@@ -234,6 +220,7 @@ def artist_network(
         lastfm=lastfm,
         lastfm_generation=lastfm_gen,
         listenbrainz=listenbrainz,
+        deezer=deezer,
         discogs=discogs,
         discogs_generation=discogs_gen,
         sources=sources,

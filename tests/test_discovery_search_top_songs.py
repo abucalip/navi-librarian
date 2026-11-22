@@ -5,7 +5,7 @@ import unittest
 
 from discovery.search.artist_sections import ArtistNetwork
 from discovery.search.index import build_owned_data
-from discovery.search.providers import LastFmSearch, ListenBrainzRadio, ProviderError, SourceLimiter
+from discovery.search.providers import DeezerSearch, ListenBrainzRadio, ProviderError, SourceLimiter
 from discovery.search.top_songs import TOP_SONGS_LIMIT, top_songs
 
 
@@ -31,7 +31,7 @@ class FakeListenBrainz:
         return list(self.records)
 
 
-class FakeLastFm:
+class FakeDeezer:
     def __init__(self, records=(), fail=False):
         self.records, self.fail, self.calls = list(records), fail, 0
 
@@ -46,11 +46,11 @@ def song(name, count, album=None):
     return {"name": name, "listen_count": count, "recording_mbid": None, "album": album}
 
 
-def make_network(listenbrainz=None, lastfm=None, store=None):
+def make_network(listenbrainz=None, deezer=None, store=None):
     store = store or Store()
     return ArtistNetwork(
         musicbrainz=None, popularity=lambda mbids, can_cache: {}, bio=lambda name: None,
-        cache_read=store.read, cache_write=store.write, listenbrainz=listenbrainz, lastfm=lastfm,
+        cache_read=store.read, cache_write=store.write, listenbrainz=listenbrainz, deezer=deezer,
     )
 
 
@@ -93,23 +93,23 @@ class TopSongsTests(unittest.TestCase):
         self.assertEqual([i["name"] for i in items].count("Creep"), 1)
         self.assertEqual(items[0]["listen_count"], 9)
 
-    def test_lastfm_answers_when_listenbrainz_is_empty_or_has_no_mbid_and_scales_never_mix(self):
-        lb, lf = FakeListenBrainz([]), FakeLastFm([song("Creep", 70)])
-        section = run(make_network(listenbrainz=lb, lastfm=lf))
-        self.assertEqual([i["source"] for i in section["items"]], ["lastfm"])
-        no_mbid = run(make_network(listenbrainz=FakeListenBrainz([song("A", 1)]), lastfm=FakeLastFm([song("B", 2)])), mbid=None)
-        self.assertEqual([(i["name"], i["source"]) for i in no_mbid["items"]], [("B", "lastfm")])
+    def test_deezer_answers_when_listenbrainz_is_empty_or_has_no_mbid_and_scales_never_mix(self):
+        lb, dz = FakeListenBrainz([]), FakeDeezer([song("Creep", None, "Pablo Honey")])
+        section = run(make_network(listenbrainz=lb, deezer=dz))
+        self.assertEqual([i["source"] for i in section["items"]], ["deezer"])
+        no_mbid = run(make_network(listenbrainz=FakeListenBrainz([song("A", 1)]), deezer=FakeDeezer([song("B", None)])), mbid=None)
+        self.assertEqual([(i["name"], i["source"]) for i in no_mbid["items"]], [("B", "deezer")])
 
     def test_listenbrainz_failure_falls_back_and_total_failure_raises(self):
-        section = run(make_network(listenbrainz=FakeListenBrainz(fail=True), lastfm=FakeLastFm([song("Creep", 1)])))
-        self.assertEqual(section["items"][0]["source"], "lastfm")
+        section = run(make_network(listenbrainz=FakeListenBrainz(fail=True), deezer=FakeDeezer([song("Creep", None)])))
+        self.assertEqual(section["items"][0]["source"], "deezer")
         with self.assertRaises(ProviderError):
-            run(make_network(listenbrainz=FakeListenBrainz(fail=True), lastfm=FakeLastFm(fail=True)))
+            run(make_network(listenbrainz=FakeListenBrainz(fail=True), deezer=FakeDeezer(fail=True)))
         with self.assertRaises(ProviderError):
             run(make_network(listenbrainz=FakeListenBrainz(fail=True)))
 
     def test_both_sources_empty_is_a_valid_empty_result(self):
-        section = run(make_network(listenbrainz=FakeListenBrainz([]), lastfm=FakeLastFm([])))
+        section = run(make_network(listenbrainz=FakeListenBrainz([]), deezer=FakeDeezer([])))
         self.assertEqual((section["available"], section["complete"], section["items"]), (True, True, []))
 
     def test_no_usable_source_reports_source_disabled(self):
@@ -157,12 +157,37 @@ class ProviderParsingTests(unittest.TestCase):
         self.assertEqual(items[0], {"name": "Karma Police", "listen_count": 5, "recording_mbid": "r1", "album": "OK Computer"})
         self.assertIsNone(items[1]["listen_count"])
 
-    def test_lastfm_top_tracks_parse(self):
-        get = lambda url, **kwargs: Response({"toptracks": {"track": [
-            {"name": "Creep", "playcount": "12", "mbid": ""}, {"name": ""}, {"name": "Lucky", "playcount": "x"}]}})
-        client = LastFmSearch(get=get, limiter=SourceLimiter({"lastfm": 100.0}), api_key="k")
+    def test_deezer_top_tracks_parse_and_cache(self):
+        from integrations.deezer.artist import DeezerPacer
+
+        store = Store()
+        calls = []
+
+        def get(url, **kwargs):
+            calls.append(url)
+            if "/search/artist" in url:
+                return Response({"data": [{"id": 399, "name": "Radiohead", "nb_fan": 1000}]})
+            return Response({"data": [
+                {"id": 1, "title": "Creep", "rank": 900000, "duration": 238, "album": {"title": "Pablo Honey"}},
+                {"id": 2, "title": "Karma Police", "rank": 800000, "duration": 264},
+            ]})
+
+        client = DeezerSearch(
+            get=get,
+            cache_read=store.read,
+            cache_write=store.write,
+            pacer=DeezerPacer(0.0),
+        )
         items = client.top_tracks("Radiohead", remaining=lambda: 5.0, cancelled=threading.Event())
-        self.assertEqual([(i["name"], i["listen_count"]) for i in items], [("Creep", 12), ("Lucky", None)])
+        self.assertEqual(items, [
+            {"name": "Creep", "listen_count": None, "recording_mbid": None, "album": "Pablo Honey"},
+            {"name": "Karma Police", "listen_count": None, "recording_mbid": None, "album": None},
+        ])
+        self.assertEqual(len(calls), 2)
+        # Second call hits cache with zero HTTP requests.
+        again = client.top_tracks("Radiohead", remaining=lambda: 5.0, cancelled=threading.Event())
+        self.assertEqual(again, items)
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == "__main__":

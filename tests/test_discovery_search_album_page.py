@@ -304,7 +304,8 @@ class TracklistRaceTests(unittest.TestCase):
 
 class SimilarTests(unittest.TestCase):
     def test_similar_albums_take_one_album_per_similar_artist(self):
-        network = make_network(lastfm=FakeLastFm([track(1, "x")]), deezer_tracks=lambda a, b: [track(1, "x")])
+        fake = FakeLastFm([track(1, "x")])
+        network = make_network(lastfm=fake, deezer=fake, deezer_tracks=lambda a, b: [track(1, "x")])
         sections = run(network)
         self.assertEqual([i["name"] for i in sections["similar_artists"]["items"]], ["Portishead"])
         albums = sections["similar_albums"]["items"]
