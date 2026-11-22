@@ -38,6 +38,11 @@ struct CupertinoAlbumsGrid: View {
 struct CupertinoQueueInspector: View {
     let state: AppState
     static let width: CGFloat = 380
+    static let rowHorizontalPadding: CGFloat = 8
+    static let rowSpacing: CGFloat = 8
+    static let playingSlotWidth: CGFloat = 18
+    static let actionSlotWidth: CGFloat = 24
+    static let headerCountTrailingInset: CGFloat = rowHorizontalPadding + rowSpacing + actionSlotWidth
     private enum Tab { case queue, saved }
     @State private var tab = Tab.queue
     @State private var saving = false
@@ -48,7 +53,12 @@ struct CupertinoQueueInspector: View {
             HStack {
                 segmented
                 Spacer()
-                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min").foregroundStyle(CU.textSecondary).font(CU.Font.body.weighted(.regular)).lineLimit(1).minimumScaleFactor(0.8)
+                Text(tab == .saved ? "\(state.savedQueues.queues.count) saved" : live ? liveSummary : "8 songs · 52 min")
+                    .foregroundStyle(CU.textSecondary)
+                    .font(CU.Font.body.weighted(.regular))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.trailing, tab == .queue ? Self.headerCountTrailingInset : Self.rowHorizontalPadding)
             }
             .padding(.bottom, 16)
 
@@ -197,25 +207,29 @@ struct CupertinoQueueInspector: View {
     }
 
     private func songRow<T: View>(_ q: QueueItem, time: String, playing: Bool, grab: ReorderGrab? = nil, onDouble: (() -> Void)? = nil, @ViewBuilder trailing: () -> T = { EmptyView() }) -> some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 8) {
-            CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
-                .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(q.title).fontWeight(.semibold).lineLimit(1)
-                Text(q.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
-            }
-            Spacer(minLength: 4)
+        HStack(spacing: Self.rowSpacing) {
+            HStack(spacing: Self.rowSpacing) {
+                CoverView(album: AlbumItem(id: -1, title: q.album, artist: q.artist, year: 0, genre: "", format: "", owned: true, hue: 200, coverArt: q.coverArt))
+                    .frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
+                ZStack {
+                    if playing { PlayingBars(active: state.player.isPlaying, color: CU.textSecondary, pointSize: CU.Font.callout.size) }
+                }
+                .frame(width: Self.playingSlotWidth, alignment: .center)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(q.title).fontWeight(.semibold).lineLimit(1)
+                    Text(q.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
+                }
+                Spacer(minLength: 4)
             }
             .modifier(grab ?? ReorderGrab())
-            HStack(spacing: 4) {
-                if playing { PlayingBars(active: state.player.isPlaying, color: CU.textSecondary, pointSize: CU.Font.callout.size) }
-                Text(time).monospacedDigit()
-            }
-            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
-            trailing()
+            Text(time)
+                .monospacedDigit()
+                .font(CU.Font.callout.weighted(.regular))
+                .foregroundStyle(CU.textSecondary)
+            ZStack { trailing() }
+                .frame(width: Self.actionSlotWidth, alignment: .center)
         }
-        .padding(.horizontal, 8).padding(.vertical, 8)
+        .padding(.horizontal, Self.rowHorizontalPadding).padding(.vertical, 8)
         .background(playing ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { onDouble?() }
@@ -242,20 +256,31 @@ struct CupertinoQueueInspector: View {
 
     private func row(_ i: Int, _ q: (title: String, album: Int, time: String)) -> some View {
         let a = Fixtures.albums[q.album]
-        return HStack(spacing: 8) {
+        return HStack(spacing: Self.rowSpacing) {
             CoverView(album: a).frame(width: 40).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            ZStack {
+                if i == 0 {
+                    Image(systemName: "waveform")
+                        .font(.system(size: CU.Font.callout.size))
+                        .foregroundStyle(CU.textSecondary)
+                        .accessibilityLabel("Playing")
+                }
+            }
+            .frame(width: Self.playingSlotWidth, alignment: .center)
             VStack(alignment: .leading, spacing: 0) {
                 Text(q.title).fontWeight(.semibold).lineLimit(1)
                 Text(a.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 4)
-            HStack(spacing: 4) {
-                if i == 0 { Image(systemName: "waveform").accessibilityLabel("Playing") }
-                Text(q.time).monospacedDigit()
-            }
-            .font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+            Text(q.time)
+                .monospacedDigit()
+                .font(CU.Font.callout.weighted(.regular))
+                .foregroundStyle(CU.textSecondary)
+            Color.clear
+                .frame(width: Self.actionSlotWidth, height: 1)
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 8).padding(.vertical, 8)
+        .padding(.horizontal, Self.rowHorizontalPadding).padding(.vertical, 8)
         .background(i == 0 ? CU.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .combine)
     }
