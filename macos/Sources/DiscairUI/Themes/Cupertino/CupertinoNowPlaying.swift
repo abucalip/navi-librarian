@@ -7,6 +7,24 @@ import SwiftUI
 /// glass chips (the real settings). Mockup: `R.cupertino.now`. Dark over the artwork; chips use clear glass over
 /// media with a dimming layer (HIG, Materials).
 struct CupertinoNowPlaying: View {
+    static let coverLeading: CGFloat = 90
+    static let coverWidth: CGFloat = 420
+    static let contentTop: CGFloat = 90
+    static let trailingMargin: CGFloat = 60
+    static let chipHeight: CGFloat = 32
+    static let albumLineLimit = 2
+    /// Minimum clear space between the slid-out vinyl disc's right edge and the lyrics column (D6.3).
+    static let discClearance: CGFloat = CU.Space.xl
+    /// Horizontal gap from the cover column's trailing edge to the lyrics column's leading edge.
+    static let columnGap: CGFloat = DiscSleeve.overhang(for: coverWidth).rounded(.up) + discClearance
+    /// Leading x-coordinate of the lyrics column and status chips.
+    static let lyricsLeading: CGFloat = coverLeading + coverWidth + columnGap
+    /// Default height before the left column's measured height arrives.
+    static let defaultColumnHeight: CGFloat = 640
+    static let plainLyricsTopPadding: CGFloat = 0
+    static let timedLyricsVerticalPadding: CGFloat = 120
+    static let plainLyricsNoteSpacing: CGFloat = CU.Space.m
+
     let state: AppState
     private let lyrics = [
         "A slow tide under the floorboards", "the lamp keeps counting what we left", "one long note, then the room agrees",
@@ -16,6 +34,8 @@ struct CupertinoNowPlaying: View {
     @Environment(\.artwork) private var artwork
     /// The playing album's images (disc and slideshow); nil until found, and when the album has none.
     @State private var albumArt: ArtworkIndex?
+    /// Measured height of the left column so the lyrics and status chips align with the volume slider row (D6.4).
+    @State private var leftColumnHeight: CGFloat = 0
 
     private var slides: [ArtworkPicture] { albumArt?.slideshowImages ?? [] }
     private var slideshowOn: Bool { state.barOptions.showSlideshow && !slides.isEmpty }
@@ -51,39 +71,77 @@ struct CupertinoNowPlaying: View {
                 if !live { chip("text.quote", "Lyrics") }
                 Button { state.queueOpen = true; state.screen = .albums } label: { chip("list.bullet", "Up Next") }.buttonStyle(.plain)
             }
-            .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, 16).padding(.top, 16)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(height: Self.chipHeight)
+            .padding(.trailing, CU.Space.m)
+            .padding(.top, NowPlayingCloseControls.barTop)
 
-            (live ? AnyView(livePlayer(a)) : AnyView(player(a))).frame(width: 420).padding(.leading, 90).padding(.top, 90)
+            HStack(alignment: .top, spacing: Self.columnGap) {
+                (live ? AnyView(livePlayer(a)) : AnyView(player(a)))
+                    .frame(width: Self.coverWidth)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { leftColumnHeight = $0 }
 
-            (live ? AnyView(noLyrics) : AnyView(lyricColumn))
-                .frame(height: 560).padding(.leading, 640).padding(.trailing, 60).padding(.top, 90)
-
-            HStack(spacing: 8) {
-                if live {
-                    Button { state.screen = .equalizer } label: { chip("slider.horizontal.3", "EQ · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") }
-                        .buttonStyle(.plain)
-                    chip(nil, state.player.crossfadeSeconds == 0 ? "Crossfade off" : "Crossfade \(state.player.crossfadeSeconds) s")
-                    chip(nil, state.player.qualityCap.map { "Up to \($0) kbps" } ?? "Original quality")
-                    if let sfx = state.player.current?.suffix, !sfx.isEmpty { chip(nil, sfx.uppercased(), strong: true) }
-                } else {
-                    chip("slider.horizontal.3", "EQ · Custom")
-                    chip(nil, "Crossfade 6 s")
-                    chip(nil, "Original quality")
-                    chip(nil, "FLAC 16/44", strong: true)
+                VStack(alignment: .leading, spacing: CU.Space.m) {
+                    (live ? AnyView(noLyrics) : AnyView(lyricColumn))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    statusChips
                 }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(height: leftColumnHeight > 0 ? leftColumnHeight : Self.defaultColumnHeight, alignment: .topLeading)
             }
-            .padding(.leading, 640).frame(maxHeight: .infinity, alignment: .bottom).padding(.bottom, 34)
+            .padding(.leading, Self.coverLeading)
+            .padding(.trailing, Self.trailingMargin)
+            .padding(.top, Self.contentTop)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(alignment: .topLeading) { backdrop(a) }   // a background never changes the layout size
         .foregroundStyle(CU.onMedia)
         .background(WindowConfigurator())
-        .background(TwoFingerSwipeDown(maxX: 620) { state.closeNowPlaying() })
+        .background(TwoFingerSwipeDown(maxX: Self.coverLeading + Self.coverWidth + DiscSleeve.overhang(for: Self.coverWidth).rounded(.up)) { state.closeNowPlaying() })
         .task(id: "\(state.player.current?.artist ?? "")|\(state.player.current?.album ?? "")|\(artwork?.generation ?? 0)") {
             albumArt = nil
             guard live, let c = state.player.current, let artwork else { return }
             albumArt = await artwork.nowPlayingIndex(artist: c.artist, album: c.album)
         }
+    }
+
+    private var statusChips: some View {
+        HStack(spacing: 8) {
+            if live {
+                Button { state.screen = .equalizer } label: { chip("slider.horizontal.3", "EQ · \(state.player.eq.enabled ? state.player.eq.presetLabel : "Off")") }
+                    .buttonStyle(.plain)
+                chip(nil, state.player.crossfadeSeconds == 0 ? "Crossfade off" : "Crossfade \(state.player.crossfadeSeconds) s")
+                chip(nil, state.player.qualityCap.map { "Up to \($0) kbps" } ?? "Original quality")
+            } else {
+                chip("slider.horizontal.3", "EQ · Custom")
+                chip(nil, "Crossfade 6 s")
+                chip(nil, "Original quality")
+            }
+        }
+        .frame(height: Self.chipHeight)
+    }
+
+    /// Top and bottom fade mask for timed lyrics; bottom-only fade for plain lyrics so the note and first line start at the cover's top (D6.4).
+    static func lyricsFadeMask(timed: Bool) -> LinearGradient {
+        if timed {
+            return LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: CU.shadowInk, location: 0.12),
+                    .init(color: CU.shadowInk, location: 0.8),
+                    .init(color: .clear, location: 1),
+                ],
+                startPoint: .top, endPoint: .bottom
+            )
+        }
+        return LinearGradient(
+            stops: [
+                .init(color: CU.shadowInk, location: 0),
+                .init(color: CU.shadowInk, location: 0.85),
+                .init(color: .clear, location: 1),
+            ],
+            startPoint: .top, endPoint: .bottom
+        )
     }
 
     /// Soft radial colour fields from the cover's hues; the real cover, blurred, is laid over them once it loads.
@@ -111,8 +169,17 @@ struct CupertinoNowPlaying: View {
             FlipCover(rgid: nil, cornerRadius: 16, albumID: a.owned ? a.remoteID : nil, index: albumArt, caption: true) { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) }
                 .overlay(alignment: .bottomTrailing) { NowPlayingBookletBadge(title: a.title, index: albumArt) }
                 .shadow(color: CU.shadowInk.opacity(0.5), radius: 35, y: 30)
-            Text("After the Flood").font(CU.Font.title1.weighted(.bold)).padding(.top, 24)
-            Text("Talk Talk — Laughing Stock").font(CU.Font.title2.weighted(.regular)).opacity(0.7)
+            HStack(alignment: .firstTextBaseline, spacing: CU.Space.s) {
+                Text("After the Flood").font(CU.Font.title1.weighted(.bold)).lineLimit(2)
+                CUQualityBadge(text: "FLAC 16/44", surface: .onMedia)
+                    .accessibilityLabel("Quality FLAC 16/44")
+            }
+            .padding(.top, 24)
+            VStack(alignment: .leading, spacing: CU.Space.xs) {
+                Text("Talk Talk").lineLimit(1).truncationMode(.tail)
+                Text("Laughing Stock").lineLimit(Self.albumLineLimit).truncationMode(.tail)
+            }
+            .font(CU.Font.title2.weighted(.regular)).opacity(0.7).padding(.top, CU.Space.xs)
             HStack(spacing: 8) {
                 Text("3:12")
                 Capsule().fill(CU.onMedia.opacity(0.3)).frame(height: 5)
@@ -148,21 +215,31 @@ struct CupertinoNowPlaying: View {
                 Text(m).font(CU.Font.title2.weighted(.semibold)).opacity(0.8)
                 Button("Try again") { lyr.retry() }.buttonStyle(CapsuleButtonStyle(small: true, translucent: true))
             case .timed, .plain:
-                if lyr.isSavedCopy { Text("Saved copy").font(CU.Font.callout.weighted(.semibold)).opacity(0.7) }
-                if lyr.state == .plain { Text("These lyrics are not timed.").font(CU.Font.body.weighted(.regular)).opacity(0.7) }
+                let isPlain = lyr.state == .plain
+                if !isPlain && lyr.isSavedCopy { Text("Saved copy").font(CU.Font.callout.weighted(.semibold)).opacity(0.7) }
                 ScrollViewReader { proxy in
                     ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 24) {
-                            ForEach(Array(lyr.lines.enumerated()), id: \.offset) { i, line in
-                                Text(line.text.isEmpty ? " " : line.text).font((lyr.state == .timed ? CU.Font.largeTitle : CU.Font.title1).weighted(.bold)).tracking(-0.7).lineSpacing(2)
-                                    .foregroundStyle(CU.onMedia.opacity(lyr.state == .plain || i == idx || idx == nil ? 1 : 0.38))
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .id(i)
-                                    .accessibilityAddTraits(i == idx ? .isSelected : [])
-                                    .accessibilityHint(i == idx ? "Current line" : "")
+                        VStack(alignment: .leading, spacing: Self.plainLyricsNoteSpacing) {
+                            if isPlain {
+                                VStack(alignment: .leading, spacing: CU.Space.xs) {
+                                    if lyr.isSavedCopy { Text("Saved copy").font(CU.Font.callout.weighted(.semibold)).opacity(0.7) }
+                                    Text("These lyrics are not timed.").font(CU.Font.body.weighted(.regular)).opacity(0.7)
+                                }
+                            }
+                            VStack(alignment: .leading, spacing: 24) {
+                                ForEach(Array(lyr.lines.enumerated()), id: \.offset) { i, line in
+                                    Text(line.text.isEmpty ? " " : line.text).font((isPlain ? CU.Font.title1 : CU.Font.largeTitle).weighted(.bold)).tracking(-0.7).lineSpacing(2)
+                                        .foregroundStyle(CU.onMedia.opacity(isPlain || i == idx || idx == nil ? 1 : 0.38))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .id(i)
+                                        .accessibilityAddTraits(i == idx ? .isSelected : [])
+                                        .accessibilityHint(i == idx ? "Current line" : "")
+                                }
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 120)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, isPlain ? Self.plainLyricsTopPadding : Self.timedLyricsVerticalPadding)
+                        .padding(.bottom, Self.timedLyricsVerticalPadding)
                     }
                     .onScrollPhaseChange { _, new in if new == .interacting { following = false } }   // reading by hand stops following
                     .onChange(of: idx) { _, new in
@@ -179,8 +256,7 @@ struct CupertinoNowPlaying: View {
                         }
                     }
                 }
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: CU.shadowInk, location: 0.12),
-                                             .init(color: CU.shadowInk, location: 0.8), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                .mask(Self.lyricsFadeMask(timed: !isPlain))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -199,18 +275,37 @@ struct CupertinoNowPlaying: View {
             CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .shadow(color: CU.shadowInk.opacity(0.5), radius: 35, y: 30)
                 .discSleeve(albumArt?.discImage(disc: p.current?.disc), spinning: p.isPlaying)
-            Text(p.current?.title ?? "Nothing playing").font(CU.Font.title1.weighted(.bold)).lineLimit(2).padding(.top, 24)
+            HStack(alignment: .firstTextBaseline, spacing: CU.Space.s) {
+                Text(p.current?.title ?? "Nothing playing").font(CU.Font.title1.weighted(.bold)).lineLimit(2)
+                if let q = p.current?.qualityLabel {
+                    CUQualityBadge(text: q, surface: .onMedia)
+                        .accessibilityLabel("Quality \(q)")
+                }
+            }
+            .padding(.top, 24)
             if let c = p.current {
-                HStack(spacing: 0) {
-                    Button { state.openCurrentArtist() } label: { Text(c.artist).underline(false) }
-                        .buttonStyle(.plain).accessibilityLabel("Open artist \(c.artist)")
+                VStack(alignment: .leading, spacing: CU.Space.xs) {
+                    Button { state.openCurrentArtist() } label: {
+                        Text(c.artist)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open artist \(c.artist)")
                     if !c.album.isEmpty {
-                        Text(" — ")
-                        Button { state.openCurrentAlbum() } label: { Text(c.album) }
-                            .buttonStyle(.plain).accessibilityLabel("Open album \(c.album)")
+                        Button { state.openCurrentAlbum() } label: {
+                            Text(c.album)
+                                .lineLimit(Self.albumLineLimit)
+                                .truncationMode(.tail)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open album \(c.album)")
                     }
                 }
-                .font(CU.Font.title2.weighted(.regular)).opacity(0.7).lineLimit(2)
+                .font(CU.Font.title2.weighted(.regular))
+                .opacity(0.7)
+                .padding(.top, CU.Space.xs)
             }
             if case .failed(let m) = p.phase { Text(m).font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.onMedia).padding(.top, 4) }
             if let n = p.notice { Text(n).font(CU.Font.callout.weighted(.regular)).opacity(0.8).padding(.top, 4) }
@@ -236,7 +331,8 @@ struct CupertinoNowPlaying: View {
                 DragBar(value: Double(p.volume), label: "Volume") { p.volume = Float($0) }
                 Image(systemName: "speaker.wave.3.fill").font(CU.Icon.small()).accessibilityHidden(true)
             }
-            .opacity(0.85).padding(.top, 16)
+            .frame(height: Self.chipHeight)
+            .opacity(0.85).padding(.top, CU.Space.s)
         }
     }
 
@@ -261,15 +357,14 @@ struct CupertinoNowPlaying: View {
         .accessibilityLabel("Lyrics. Current line: \(lyrics[2])")
     }
 
-    private func chip(_ symbol: String?, _ text: String, strong: Bool = false) -> some View {
+    private func chip(_ symbol: String?, _ text: String) -> some View {
         HStack(spacing: 8) {
             if let symbol { Image(systemName: symbol) }
             Text(text)
         }
-        .font(CU.Font.body.weighted(.semibold)).lineLimit(1).fixedSize().padding(.horizontal, 16).frame(height: 32)
+        .font(CU.Font.body.weighted(.semibold)).lineLimit(1).fixedSize().padding(.horizontal, 16).frame(height: Self.chipHeight)
         .background(CU.shadowInk.opacity(0.3), in: Capsule())          // dimming layer under clear glass
         .glassEffect(.clear, in: Capsule())
-        .overlay { if strong { Capsule().fill(CU.onMedia.opacity(0.18)) } }
     }
 }
 
@@ -277,16 +372,26 @@ struct CupertinoNowPlaying: View {
 /// The traffic lights and the chevron that returns to where Now Playing was opened from.
 struct NowPlayingCloseControls: View {
     let state: AppState
+    /// Height of the top chrome row (matches the top-right chips so traffic lights, chevron and chips share one centre line, D6.1).
+    static let barHeight: CGFloat = CupertinoNowPlaying.chipHeight
+    /// Top inset of the top chrome row so its centre sits on `CU.Shell.trafficLightsCentreY` (34 pt).
+    static let barTop: CGFloat = CU.Shell.trafficLightsCentreY - barHeight / 2
+    /// Gap between the traffic lights group and the close chevron.
+    static let chevronSpacing: CGFloat = CU.Space.m
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: Self.chevronSpacing) {
             TrafficLights()
             Button { state.closeNowPlaying() } label: {
                 Image(systemName: "chevron.down").font(CU.Icon.row(.semibold))
             }
-            .buttonStyle(.plain).accessibilityLabel("Close Now Playing").help("Back to \(AppState.title(of: state.nowPlayingReturn))").padding(.leading, 16)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close Now Playing")
+            .help("Back to \(AppState.title(of: state.nowPlayingReturn))")
         }
-        .padding(16)
+        .frame(height: Self.barHeight)
+        .padding(.leading, CU.Shell.trafficLightsLeading)
+        .padding(.top, Self.barTop)
     }
 }
 

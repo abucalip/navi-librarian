@@ -147,6 +147,12 @@ enum CU {
         static let contentTop: CGFloat = 66
         static let toolbarLeading: CGFloat = 238
         static let toolbarTop: CGFloat = 12
+        /// Leading and top insets of `TrafficLights` inside `CupertinoSidebar` (10 outer + 10 inner + 8 spacing = 28 pt),
+        /// shared with Now Playing so window buttons do not jump between screens (D6.1).
+        static let trafficLightsLeading: CGFloat = inset * 2 + CU.Space.s
+        static let trafficLightsTop: CGFloat = inset * 2 + CU.Space.s
+        /// Vertical centre line of the traffic lights (28 + 12 / 2 = 34 pt, matching `CupertinoToolbar.centreY`).
+        static let trafficLightsCentreY: CGFloat = trafficLightsTop + TrafficLights.defaultSize / 2
         /// 20 (sidebar) minus 8 (row padding), section 4.3.
         static let rowRadius: CGFloat = 12
         /// Room under the last row of every page: the player bar sits below the content, so this is the page's own bottom
