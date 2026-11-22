@@ -1,4 +1,3 @@
-import hashlib
 import os
 import sqlite3
 import tempfile
@@ -12,15 +11,13 @@ from fastapi.testclient import TestClient
 
 from app.api import radio
 from app.api.dependencies import get_librarian
-from integrations.radio import now as radio_now
 from integrations.radio import scrobble
 from integrations.radio.listening import ListenTracker
-from integrations.radio.now import NowHolder
 from integrations.radio.store import RadioStore
 
-CREDS = scrobble.Credentials(api_key="key", shared_secret="secret", session_key="sess")
-NO_CREDS = scrobble.Credentials(api_key="", shared_secret="", session_key="")
-LASTFM_ENV = ("LASTFM_API_KEY", "LASTFM_SHARED_SECRET", "LASTFM_SESSION_KEY")
+CREDS = scrobble.Credentials(token="lb-token")
+NO_CREDS = scrobble.Credentials(token="")
+LISTENBRAINZ_ENV = ("LISTENBRAINZ_TOKEN",)
 
 
 class Clock:
@@ -32,15 +29,16 @@ class Clock:
 
 
 class OkPost:
-    """Stands in for httpx.post: records each call and answers like Last.fm."""
+    """Stands in for httpx.post: records each call and answers like ListenBrainz."""
 
-    def __init__(self, payload=None):
+    def __init__(self, payload=None, status_code=200):
         self.calls = []
-        self.payload = payload if payload is not None else {"scrobbles": {"@attr": {"accepted": 1}}}
+        self.payload = payload if payload is not None else {"status": "ok"}
+        self.status_code = status_code
 
-    def __call__(self, url, data=None, **kwargs):
-        self.calls.append(dict(data))
-        return mock.Mock(json=mock.Mock(return_value=self.payload))
+    def __call__(self, url, json=None, headers=None, **kwargs):
+        self.calls.append({"url": url, "json": json, "headers": dict(headers or {})})
+        return mock.Mock(status_code=self.status_code, json=mock.Mock(return_value=self.payload))
 
 
 class StoreCase(unittest.TestCase):
@@ -54,16 +52,6 @@ class StoreCase(unittest.TestCase):
         self.dir.cleanup()
 
 
-class SignTests(unittest.TestCase):
-    def test_signature_is_md5_of_sorted_name_value_pairs_and_secret(self):
-        params = {"method": "track.love", "api_key": "key", "sk": "sess", "artist": "A", "track": "T",
-                  "format": "json"}
-        # name, value pairs in name order (format is not signed), then the secret
-        parts = ["api_key", "key", "artist", "A", "method", "track.love", "sk", "sess", "track", "T"]
-        expected = hashlib.md5(("".join(parts) + "secret").encode("utf-8")).hexdigest()
-        self.assertEqual(scrobble.sign(params, "secret"), expected)
-
-
 class SubmitTests(StoreCase):
     def test_off_by_default_so_nothing_is_sent(self):
         post = OkPost()
@@ -71,17 +59,27 @@ class SubmitTests(StoreCase):
         self.assertEqual(scrobble.submit(self.store, self.play, creds=CREDS, post=post), "off")
         self.assertEqual(post.calls, [])
 
-    def test_sends_one_scrobble_with_the_listen_start_time_and_never_twice(self):
+    def test_sends_one_listen_with_start_time_and_never_twice(self):
         scrobble.set_enabled(self.store, CREDS, True)
+        self.store.set_album(self.play, "The Dark Side of the Moon", 1973)
         post = OkPost()
         self.assertEqual(scrobble.submit(self.store, self.play, creds=CREDS, post=post), "sent")
         self.assertEqual(scrobble.submit(self.store, self.play, creds=CREDS, post=post), "done")
         self.assertEqual(len(post.calls), 1)
         sent = post.calls[0]
-        self.assertEqual((sent["method"], sent["artist"], sent["track"], sent["timestamp"]),
-                         ("track.scrobble", "Pink Floyd", "Time", 1960))
-        self.assertNotIn("secret", sent.values())
-        self.assertIn("api_sig", sent)
+        self.assertEqual(sent["url"], scrobble.LISTENBRAINZ_SUBMIT_URL)
+        self.assertEqual(sent["headers"]["Authorization"], "Token lb-token")
+        self.assertEqual(sent["json"], {
+            "listen_type": "single",
+            "payload": [{
+                "listened_at": 1960,
+                "track_metadata": {
+                    "artist_name": "Pink Floyd",
+                    "track_name": "Time",
+                    "release_name": "The Dark Side of the Moon",
+                },
+            }],
+        })
 
     def test_not_configured_or_unnamed_or_unknown_plays_send_nothing(self):
         scrobble.set_enabled(self.store, CREDS, True)
@@ -95,7 +93,7 @@ class SubmitTests(StoreCase):
     def test_a_failed_request_is_not_retried(self):
         scrobble.set_enabled(self.store, CREDS, True)
 
-        def broken(url, data=None, **kwargs):
+        def broken(url, json=None, **kwargs):
             raise httpx.ConnectError("refused")
 
         with self.assertRaises(scrobble.ScrobbleFailed):
@@ -104,17 +102,19 @@ class SubmitTests(StoreCase):
         self.assertEqual(scrobble.submit(self.store, self.play, creds=CREDS, post=post), "done")
         self.assertEqual(post.calls, [])
 
-    def test_last_fm_error_answer_is_a_failure_and_ignored_scrobble_is_reported(self):
+    def test_listenbrainz_error_answer_or_http_error_is_a_failure(self):
         scrobble.set_enabled(self.store, CREDS, True)
         with self.assertRaises(scrobble.ScrobbleFailed):
-            scrobble.submit(self.store, self.play, creds=CREDS, post=OkPost({"error": 9, "message": "bad"}))
+            scrobble.submit(self.store, self.play, creds=CREDS, post=OkPost({"error": "Invalid token"}, status_code=401))
         other = self.store.record_play("s1", "Rock FM", "A - B", "A", "B", 40)
-        ignored = OkPost({"scrobbles": {"@attr": {"accepted": 0, "ignored": 1}}})
-        self.assertEqual(scrobble.submit(self.store, other, creds=CREDS, post=ignored), "ignored")
+        with self.assertRaises(scrobble.ScrobbleFailed):
+            scrobble.submit(self.store, other, creds=CREDS, post=OkPost({"error": "bad payload"}))
 
     def test_switch_on_needs_credentials_and_switch_off_always_works(self):
-        with self.assertRaises(scrobble.ScrobbleError):
+        with self.assertRaises(scrobble.ScrobbleError) as ctx:
             scrobble.set_enabled(self.store, NO_CREDS, True)
+        self.assertIn("ListenBrainz", str(ctx.exception))
+        self.assertIn("LISTENBRAINZ_TOKEN", str(ctx.exception))
         self.assertFalse(scrobble.enabled(self.store))
         scrobble.set_enabled(self.store, CREDS, True)
         scrobble.set_enabled(self.store, NO_CREDS, False)
@@ -122,22 +122,50 @@ class SubmitTests(StoreCase):
 
 
 class LoveTests(StoreCase):
-    def test_love_sends_track_love_and_marks_the_play(self):
-        post = OkPost({})
-        scrobble.love(self.store, self.play, creds=CREDS, post=post)
-        self.assertEqual([(c["method"], c["artist"], c["track"]) for c in post.calls],
-                         [("track.love", "Pink Floyd", "Time")])
+    def test_love_sends_recording_feedback_and_marks_the_play(self):
+        post = OkPost({"status": "ok"})
+        sent = scrobble.love(
+            self.store,
+            self.play,
+            creds=CREDS,
+            post=post,
+            lookup_mbid=lambda artist, title: "mbid-time-123",
+        )
+        self.assertTrue(sent)
+        self.assertEqual(len(post.calls), 1)
+        self.assertEqual(post.calls[0]["url"], scrobble.LISTENBRAINZ_FEEDBACK_URL)
+        self.assertEqual(post.calls[0]["headers"]["Authorization"], "Token lb-token")
+        self.assertEqual(post.calls[0]["json"], {"recording_mbid": "mbid-time-123", "score": 1})
+        self.assertEqual(self.store.get_play(self.play)["loved"], 1)
+
+    def test_love_falls_back_to_local_store_when_mbid_cannot_be_resolved(self):
+        post = OkPost({"status": "ok"})
+        sent = scrobble.love(self.store, self.play, creds=CREDS, post=post, lookup_mbid=lambda artist, title: None)
+        self.assertFalse(sent)
+        self.assertEqual(post.calls, [])
+        self.assertEqual(self.store.get_play(self.play)["loved"], 1)
+
+    def test_love_falls_back_to_local_store_when_mbid_lookup_errors(self):
+        post = OkPost({"status": "ok"})
+
+        def broken_lookup(artist, title):
+            raise OSError("rate limited")
+
+        sent = scrobble.love(self.store, self.play, creds=CREDS, post=post, lookup_mbid=broken_lookup)
+        self.assertFalse(sent)
+        self.assertEqual(post.calls, [])
         self.assertEqual(self.store.get_play(self.play)["loved"], 1)
 
     def test_love_refuses_without_artist_credentials_or_play(self):
         untitled = self.store.record_play("s1", "Rock FM", "Station jingle", None, "Station jingle", 40)
         post = OkPost({})
         with self.assertRaises(scrobble.ScrobbleError):
-            scrobble.love(self.store, untitled, creds=CREDS, post=post)
-        with self.assertRaises(scrobble.ScrobbleError):
-            scrobble.love(self.store, self.play, creds=NO_CREDS, post=post)
+            scrobble.love(self.store, untitled, creds=CREDS, post=post, lookup_mbid=lambda a, t: "mbid-1")
+        with self.assertRaises(scrobble.ScrobbleError) as ctx:
+            scrobble.love(self.store, self.play, creds=NO_CREDS, post=post, lookup_mbid=lambda a, t: "mbid-1")
+        self.assertIn("ListenBrainz", str(ctx.exception))
         with self.assertRaises(LookupError):
-            scrobble.love(self.store, 999, creds=CREDS, post=post)
+            scrobble.love(self.store, 999, creds=CREDS, post=post, lookup_mbid=lambda a, t: "mbid-1")
         self.assertEqual(post.calls, [])
         self.assertEqual(self.store.get_play(self.play)["loved"], 0)
 
@@ -205,7 +233,7 @@ class ScrobbleRouteTests(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         radio._STORES.clear()
-        self.env = mock.patch.dict(os.environ, {name: "" for name in LASTFM_ENV})
+        self.env = mock.patch.dict(os.environ, {name: "" for name in LISTENBRAINZ_ENV})
         self.env.start()
         self.librarian = mock.Mock(DATA_DIR=Path(self.dir.name))
         app = FastAPI()
@@ -220,28 +248,36 @@ class ScrobbleRouteTests(unittest.TestCase):
         self.dir.cleanup()
 
     def configure(self):
-        return mock.patch.dict(os.environ, {"LASTFM_API_KEY": "key", "LASTFM_SHARED_SECRET": "secret",
-                                            "LASTFM_SESSION_KEY": "sess"})
+        return mock.patch.dict(os.environ, {"LISTENBRAINZ_TOKEN": "lb-secret-token"})
 
-    def test_switch_defaults_off_and_reports_whether_last_fm_is_set_up(self):
+    def test_switch_defaults_off_and_reports_whether_listenbrainz_is_set_up(self):
         self.assertEqual(self.client.get("/api/radio/scrobbling").json(), {"enabled": False, "configured": False})
-        self.assertEqual(self.client.put("/api/radio/scrobbling", json={"enabled": True}).status_code, 400)
+        unconfigured = self.client.put("/api/radio/scrobbling", json={"enabled": True})
+        self.assertEqual(unconfigured.status_code, 400)
+        self.assertIn("ListenBrainz", unconfigured.json()["detail"])
         self.assertEqual(self.client.put("/api/radio/scrobbling", json={"enabled": "yes"}).status_code, 400)
         with self.configure():
             saved = self.client.put("/api/radio/scrobbling", json={"enabled": True})
             self.assertEqual(saved.json(), {"enabled": True, "configured": True})
             self.assertEqual(self.client.get("/api/radio/scrobbling").json(), {"enabled": True, "configured": True})
-        self.assertNotIn("secret", self.client.get("/api/radio/scrobbling").text)
+        self.assertNotIn("lb-secret-token", self.client.get("/api/radio/scrobbling").text)
 
     def test_love_route_refuses_unknown_plays_and_unconfigured_setups(self):
         self.assertEqual(self.client.post("/api/radio/plays/999/love").status_code, 404)
-        self.assertEqual(self.client.post(f"/api/radio/plays/{self.play}/love").status_code, 400)
-        fake = OkPost({})
-        with self.configure(), mock.patch.object(scrobble.httpx, "post", fake):
+        unconfigured = self.client.post(f"/api/radio/plays/{self.play}/love")
+        self.assertEqual(unconfigured.status_code, 400)
+        self.assertIn("ListenBrainz", unconfigured.json()["detail"])
+        fake = OkPost({"status": "ok"})
+        with self.configure(), \
+                mock.patch.object(scrobble, "lookup_recording_mbid", return_value="mbid-ab-1"), \
+                mock.patch.object(scrobble.httpx, "post", fake):
             response = self.client.post(f"/api/radio/plays/{self.play}/love")
             self.assertEqual(response.json(), {"ok": True, "loved": True})
-            self.assertEqual([c["method"] for c in fake.calls], ["track.love"])
-        with self.configure(), mock.patch.object(scrobble.httpx, "post", side_effect=httpx.ConnectError("x")):
+            self.assertEqual(fake.calls[0]["url"], scrobble.LISTENBRAINZ_FEEDBACK_URL)
+            self.assertEqual(fake.calls[0]["json"], {"recording_mbid": "mbid-ab-1", "score": 1})
+        with self.configure(), \
+                mock.patch.object(scrobble, "lookup_recording_mbid", return_value="mbid-ab-1"), \
+                mock.patch.object(scrobble.httpx, "post", side_effect=httpx.ConnectError("x")):
             self.assertEqual(self.client.post(f"/api/radio/plays/{self.play}/love").status_code, 502)
 
     def test_a_logged_song_is_scrobbled_on_a_background_thread(self):

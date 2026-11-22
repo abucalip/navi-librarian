@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from integrations.musicbrainz.recording_album import lookup_recording_album
+from integrations.musicbrainz.recording_album import lookup_recording_album, lookup_recording_mbid
 from integrations.radio import stations
 from integrations.radio.store import RadioStore
 
@@ -116,6 +116,18 @@ class RecordingAlbumTests(unittest.TestCase):
     def test_no_exact_match_gives_none(self):
         other = [{"title": "Time", "artist-credit": [{"name": "Someone Else"}], "releases": [{"title": "X"}]}]
         self.assertIsNone(lookup_recording_album("Pink Floyd", "Time", fetch=lambda q, n: other))
+
+    def test_lookup_recording_mbid_prefers_official_studio_album(self):
+        recordings = [
+            {"id": "rec-comp", "title": "Time", "artist-credit": [{"name": "Pink Floyd"}],
+             "releases": [{"title": "Echoes", "status": "Official",
+                           "release-group": {"primary-type": "Album", "secondary-types": ["Compilation"]}}]},
+            {"id": "rec-studio", "title": "Time", "artist-credit": [{"name": "Pink Floyd"}],
+             "releases": [{"title": "The Dark Side of the Moon", "date": "1973-03-01", "status": "Official",
+                           "release-group": {"primary-type": "Album"}}]},
+        ]
+        self.assertEqual(lookup_recording_mbid("Pink Floyd", "Time", fetch=lambda q, n: recordings), "rec-studio")
+        self.assertIsNone(lookup_recording_mbid("Pink Floyd", "Time", fetch=lambda q, n: []))
 
 
 if __name__ == "__main__":

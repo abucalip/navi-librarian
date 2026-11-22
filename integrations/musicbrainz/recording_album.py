@@ -41,13 +41,9 @@ def _rank(release):
     return (0 if plain else 1, 0 if official else 1, _year(release) or 9999)
 
 
-def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings, lane=None):
-    """``{"album": str, "year": int | None}`` for the best exact match, else None.
-
-    The request takes a MusicBrainz slot from the shared gate; no slot within the wait raises
-    ``OSError`` like any failed lookup."""
+def _matching_recordings(artist: str, title: str, fetch=_fetch_recordings, lane=None):
+    """Return MusicBrainz recordings whose title and artist credit exactly match after normalisation."""
     query = f'recording:"{_escape(title)}" AND artist:"{_escape(artist)}"'
-    candidates = []
     lane = lane or musicbrainz_lane(RECORDING_MAX_WAIT)
     if not lane.acquire():
         raise OSError("MusicBrainz is rate limited")
@@ -57,14 +53,42 @@ def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings, lan
         if exc.code in (429, 503):
             lane.penalize(None)
         raise
+    matches = []
     for recording in recordings:
         if _norm(recording.get("title")) != _norm(title):
             continue
         credit = "".join(c.get("name", "") + c.get("joinphrase", "") for c in recording.get("artist-credit") or [])
         if _norm(credit) != _norm(artist):
             continue
+        matches.append(recording)
+    return matches
+
+
+def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings, lane=None):
+    """``{"album": str, "year": int | None}`` for the best exact match, else None.
+
+    The request takes a MusicBrainz slot from the shared gate; no slot within the wait raises
+    ``OSError`` like any failed lookup."""
+    candidates = []
+    for recording in _matching_recordings(artist, title, fetch=fetch, lane=lane):
         candidates.extend(r for r in recording.get("releases") or [] if r.get("title"))
     if not candidates:
         return None
     best = min(candidates, key=_rank)
     return {"album": best["title"], "year": _year(best)}
+
+
+def lookup_recording_mbid(artist: str, title: str, fetch=_fetch_recordings, lane=None) -> str | None:
+    """Return the MusicBrainz recording MBID for the best exact match, else None."""
+    best_mbid: str | None = None
+    best_rank = None
+    for recording in _matching_recordings(artist, title, fetch=fetch, lane=lane):
+        mbid = str(recording.get("id") or "").strip()
+        if not mbid:
+            continue
+        releases = [r for r in recording.get("releases") or [] if r.get("title")]
+        rank = min((_rank(r) for r in releases), default=(2, 2, 9999))
+        if best_mbid is None or rank < best_rank:
+            best_mbid = mbid
+            best_rank = rank
+    return best_mbid
