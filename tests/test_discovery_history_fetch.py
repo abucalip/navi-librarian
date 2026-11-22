@@ -2,10 +2,11 @@
 
 No network: the window readers and the HTTP getter are fakes.
 """
-import functools
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
-from discovery import history_fetch
+from discovery import history_fetch, lens_service
 
 DAY = 86400
 NOW = 1_800_000_000  # a fixed "now" in 2027; the windows below are relative to it
@@ -50,28 +51,28 @@ class FetchWalkTests(unittest.TestCase):
         listens = [_listen(NOW - i * 400 * DAY) for i in range(1, 6)]
         calls = []
         result = history_fetch.fetch_lens_history(
-            [_reader("listenbrainz", listens, calls), _reader("lastfm", listens, calls)],
+            [_reader("listenbrainz", listens, calls), _reader("backup", listens, calls)],
             now=NOW, min_usable=100, step_days=365, max_days=5 * 365,
         )
         sources = [name for name, _start, _end in calls]
-        self.assertEqual(sources[:4], ["listenbrainz", "lastfm", "listenbrainz", "lastfm"])
+        self.assertEqual(sources[:4], ["listenbrainz", "backup", "listenbrainz", "backup"])
         self.assertEqual(result["stopped"], "floor_reached")
 
     def test_a_failing_source_is_answered_by_the_other_for_that_window(self):
         listens = [_listen(NOW - 10)]
         calls = []
         result = history_fetch.fetch_lens_history(
-            [_reader("listenbrainz", listens, calls, fail=True), _reader("lastfm", listens, calls)],
+            [_reader("listenbrainz", listens, calls, fail=True), _reader("backup", listens, calls)],
             now=NOW, min_usable=1, step_days=365, max_days=365,
         )
-        self.assertEqual([call[0] for call in calls], ["listenbrainz", "lastfm"])
-        self.assertEqual(result["windows"][0], {"source": "lastfm", "count": 1, "truncated": False})
+        self.assertEqual([call[0] for call in calls], ["listenbrainz", "backup"])
+        self.assertEqual(result["windows"][0], {"source": "backup", "count": 1, "truncated": False})
         self.assertEqual(result["unanswered"], 0)
 
     def test_a_window_no_source_answers_is_counted_and_the_walk_goes_on(self):
         calls = []
         result = history_fetch.fetch_lens_history(
-            [_reader("listenbrainz", [], calls, fail=True), _reader("lastfm", [], calls, fail=True)],
+            [_reader("listenbrainz", [], calls, fail=True), _reader("backup", [], calls, fail=True)],
             now=NOW, min_usable=1, step_days=365, max_days=2 * 365,
         )
         self.assertEqual(result["unanswered"], 2)
@@ -90,7 +91,7 @@ class FetchWalkTests(unittest.TestCase):
         listen = _listen(NOW - 5, artist="Same", track="Song")
         calls = []
         result = history_fetch.fetch_lens_history(
-            [_reader("listenbrainz", [listen], calls), _reader("lastfm", [dict(listen)], calls)],
+            [_reader("listenbrainz", [listen], calls), _reader("backup", [dict(listen)], calls)],
             now=NOW, min_usable=100, step_days=365, max_days=2 * 365,
         )
         self.assertEqual(len(result["listens"]), 1)
@@ -153,89 +154,23 @@ class ListenBrainzWindowTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
 
 
-class LastFmErrorTests(unittest.TestCase):
-    def test_an_api_error_in_a_200_reply_raises_instead_of_reading_as_empty(self):
-        def get(url, params, **_kwargs):
-            return _Response({"error": 6, "message": "User not found"})
+class LensServiceHistoryTests(unittest.TestCase):
+    def test_fetch_history_uses_only_listenbrainz(self):
+        librarian = SimpleNamespace(_listenbrainz_username=lambda: "lb-user")
+        seen_sources = []
 
-        with self.assertRaises(history_fetch.LastFmResponseError):
-            history_fetch.lastfm_window("nobody", "key", 0, 10, get=get, pause=lambda _s: None)
+        def fake_fetch(sources, *, now):
+            seen_sources.extend(name for name, _reader in sources)
+            return {"listens": [_listen(NOW - 1)], "windows": [{"source": "listenbrainz", "count": 1}],
+                    "unanswered": 0, "stopped": "enough_listens"}
 
-    def test_a_reply_without_a_recenttracks_object_raises(self):
-        def get(url, params, **_kwargs):
-            return _Response({"unexpected": True})
-
-        with self.assertRaises(history_fetch.LastFmResponseError):
-            history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None)
-
-    def test_a_single_track_returned_as_an_object_is_read(self):
-        def get(url, params, **_kwargs):
-            return _Response({"recenttracks": {"@attr": {"totalPages": "1"}, "track": {
-                "name": "Only", "artist": {"#text": "Band"}, "date": {"uts": "5"}}}})
-
-        listens = history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None)
-        self.assertEqual([item["listened_at"] for item in listens], [5])
-
-    def test_a_valid_empty_window_is_not_an_error(self):
-        def get(url, params, **_kwargs):
-            return _Response({"recenttracks": {"@attr": {"totalPages": "1"}, "track": []}})
-
-        self.assertEqual(history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None), [])
-
-    def test_a_last_fm_error_window_is_answered_by_listenbrainz(self):
-        def lastfm_get(url, params, **_kwargs):
-            return _Response({"error": 10, "message": "Invalid API key"})
-
-        listens = [_listen(NOW - 10)]
-        calls = []
-        result = history_fetch.fetch_lens_history(
-            [
-                ("lastfm", functools.partial(history_fetch.lastfm_window, "user", "bad-key",
-                                             get=lastfm_get, pause=lambda _s: None)),
-                _reader("listenbrainz", listens, calls),
-            ],
-            now=NOW, min_usable=1, step_days=365, max_days=365,
-        )
-        self.assertEqual(result["windows"][0], {"source": "listenbrainz", "count": 1, "truncated": False})
-        self.assertEqual(len(result["listens"]), 1)
-        self.assertEqual(result["unanswered"], 0)
-
-
-class LastFmWindowTests(unittest.TestCase):
-    def test_converts_scrobbles_to_the_listenbrainz_shape_and_skips_now_playing(self):
-        payload = {"recenttracks": {
-            "@attr": {"totalPages": "1"},
-            "track": [
-                {"name": "Song", "artist": {"#text": "Band", "mbid": "mbid-1"}, "album": {"#text": "Record"},
-                 "date": {"uts": "1200"}},
-                {"name": "Now", "artist": {"#text": "Band"}, "album": {"#text": ""}},  # no date: now playing
-            ],
-        }}
-        seen = []
-
-        def get(url, params, **_kwargs):
-            seen.append(dict(params))
-            return _Response(payload)
-
-        listens = history_fetch.lastfm_window("user", "key", 1000, 1500, get=get, pause=lambda _s: None)
-        self.assertEqual(seen[0]["from"], 1001)
-        self.assertEqual(seen[0]["to"], 1500)
+        with mock.patch.object(history_fetch, "fetch_lens_history", side_effect=fake_fetch):
+            listens = lens_service._fetch_history(librarian)
+        self.assertEqual(seen_sources, ["listenbrainz"])
         self.assertEqual(len(listens), 1)
-        self.assertEqual(listens[0]["listened_at"], 1200)
-        self.assertEqual(listens[0]["track_metadata"]["artist_name"], "Band")
-        self.assertEqual(listens[0]["track_metadata"]["additional_info"]["artist_mbids"], ["mbid-1"])
-
-    def test_follows_every_page_the_api_reports(self):
-        pages = {
-            1: {"recenttracks": {"@attr": {"totalPages": "2"}, "track": [{"name": "a", "artist": {"#text": "x"}, "date": {"uts": "2"}}]}},
-            2: {"recenttracks": {"@attr": {"totalPages": "2"}, "track": [{"name": "b", "artist": {"#text": "x"}, "date": {"uts": "1"}}]}},
-        }
-
-        def get(url, params, **_kwargs):
-            return _Response(pages[params["page"]])
-
-        listens = history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None)
-        self.assertEqual([item["track_metadata"]["track_name"] for item in listens], ["a", "b"])
+        self.assertFalse(hasattr(history_fetch, "lastfm_window"))
+        self.assertFalse(hasattr(history_fetch, "LastFmResponseError"))
+        self.assertFalse(hasattr(lens_service, "_lastfm_username"))
 
 
 if __name__ == "__main__":

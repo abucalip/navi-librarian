@@ -122,17 +122,8 @@ def feedback_summary(librarian: Any) -> dict[str, Any]:
     return {"disabled": False, "lenses": lenses}
 
 
-def _lastfm_username(settings_read: Callable[[], Mapping[str, Any]]) -> str:
-    """The Last.fm account to read scrobbles from: the setting, else the LASTFM_USERNAME variable."""
-    return str(settings_read().get("lastfm_username") or os.environ.get("LASTFM_USERNAME") or "").strip()
-
-
-def _fetch_history(librarian: Any, settings_read: Callable[[], Mapping[str, Any]], lastfm_api_key: str) -> list[dict[str, Any]]:
-    """Listening history for the lens lists, split between ListenBrainz and Last.fm.
-
-    Both services hold the same listens, so windows alternate between them (see
-    discovery.history_fetch). Last.fm is used only when both its key and account are configured.
-    """
+def _fetch_history(librarian: Any) -> list[dict[str, Any]]:
+    """Listening history for the lens lists, read from ListenBrainz."""
     import httpx
     from integrations.listenbrainz.client import request_headers as listenbrainz_headers
 
@@ -140,11 +131,6 @@ def _fetch_history(librarian: Any, settings_read: Callable[[], Mapping[str, Any]
         history_fetch.listenbrainz_window, librarian._listenbrainz_username(),
         get=httpx.get, headers=listenbrainz_headers(),
     ))]
-    lastfm_user = _lastfm_username(settings_read)
-    if lastfm_api_key and lastfm_user:
-        sources.append(("lastfm", functools.partial(
-            history_fetch.lastfm_window, lastfm_user, lastfm_api_key, get=httpx.get,
-        )))
     result = history_fetch.fetch_lens_history(sources, now=time.time())
     # Aggregate counts only: no listen, artist or album is logged.
     logger.info(
@@ -181,7 +167,7 @@ def build(librarian: Any) -> dict[str, Any]:
         http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep, http_post=httpx.post,
         feedback_rows=librarian._discovery_feedback_rows,
     )
-    listens = _fetch_history(librarian, settings_read, str(settings_read().get("lastfm_api_key") or ""))
+    listens = _fetch_history(librarian)
     discogs_token, _ = settings_service.discogs_token_and_source(settings_read, os.environ)
     gathered = gather_lens_pools(
         listens, day=day, providers=providers,
