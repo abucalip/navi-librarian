@@ -16,7 +16,6 @@ def load_quality_helpers(db_path, music_dir):
         "navidrome_url": "http://localhost:4533",
         "navidrome_user": "",
         "navidrome_password": "",
-        "lastfm_api_key": "",
         "listenbrainz_username": "",
         "music_library_path": str(music_dir),
         "slskd_url": "http://localhost:5030",

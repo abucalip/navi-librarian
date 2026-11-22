@@ -26,7 +26,7 @@ class CountersTests(unittest.TestCase):
         self.assertEqual(rm.provider_for_url("https://api.deezer.com/search"), "deezer")
         self.assertEqual(rm.provider_for_url("https://example.test/x"), "other")
         self.assertEqual(rm.provider_for_url("not a url"), "other")
-        self.assertEqual(rm.provider_for_url("https://ws.audioscrobbler.com/2.0/?api_key=SECRET"), "lastfm")
+        self.assertEqual(rm.provider_for_url("https://ws.audioscrobbler.com/2.0/?api_key=SECRET"), "other")
 
     def test_request_label_names_configured_hosts_and_unknown_labels_fall_back(self):
         def handler(request):
@@ -96,11 +96,11 @@ class CountersTests(unittest.TestCase):
 
         async def run():
             async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
-                await c.get("https://last.fm/z")
+                await c.get("https://api.listenbrainz.org/1/user/x/listens")
         asyncio.run(run())
         snap = rm.snapshot()["requests"]
         self.assertEqual(snap["deezer"]["count"], 2)
-        self.assertEqual(snap["lastfm"]["count"], 1)
+        self.assertEqual(snap["listenbrainz"]["count"], 1)
         self.assertNotIn("SECRET", json.dumps(snap))
 
     def test_install_counts_urllib_callers(self):

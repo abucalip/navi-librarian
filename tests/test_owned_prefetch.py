@@ -65,7 +65,7 @@ class BudgetTextTests(unittest.TestCase):
 class RecommendedCapsTests(unittest.TestCase):
     """The full cap string in ``docs/DEPLOYMENT.md`` (owner-approved, efficiency K3) switches every part 2 hook on."""
 
-    RECOMMENDED = "musicbrainz=600,listenbrainz=300,lastfm=600,deezer=600,apple=400,wikipedia=300"
+    RECOMMENDED = "musicbrainz=600,listenbrainz=300,deezer=600,apple=400,wikipedia=300"
 
     def test_every_provider_parses(self):
         self.assertEqual(ps.parse_budgets(self.RECOMMENDED), {

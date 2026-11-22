@@ -27,7 +27,7 @@ class MusicKeyTests(unittest.TestCase):
 
     def test_dependents_import_leaf_not_discovery_core(self):
         root = Path(__file__).resolve().parents[1]
-        for rel in ("integrations/lastfm/client.py", "recommendation_feedback.py",
+        for rel in ("recommendation_feedback.py",
                     "recommendation/profile_comparison.py"):
             with self.subTest(module=rel):
                 tree = ast.parse((root / rel).read_text(encoding="utf-8"))

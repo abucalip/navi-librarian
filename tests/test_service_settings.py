@@ -9,7 +9,6 @@ from settings.service import (
     engine2_lens_lists_enabled_value,
     get_automatic_refill_settings,
     set_automatic_refill_settings,
-    get_lastfm_settings,
     get_recommendation_diversity_settings,
     recommendation_diversity_value,
     recommendation_selection_policy_value,
@@ -18,10 +17,8 @@ from settings.service import (
     listenbrainz_username,
     navidrome_config,
     set_listenbrainz_settings,
-    set_lastfm_settings,
     set_navidrome_settings,
     test_navidrome_connection as check_navidrome_connection,
-    test_lastfm_connection as check_lastfm_connection,
     test_listenbrainz_connection as check_listenbrainz_connection,
 )
 
@@ -32,7 +29,6 @@ class ServiceSettingsTests(unittest.TestCase):
             "navidrome_url": "http://navidrome:4533",
             "navidrome_user": "test-user",
             "navidrome_password": "super-secret",
-            "lastfm_api_key": "lastfm-secret",
             "listenbrainz_username": "listener",
             "music_library_path": "",
             "recommendation_diversity": 0,
@@ -151,69 +147,6 @@ class ServiceSettingsTests(unittest.TestCase):
                 self.assertFalse(result["ok"])
         self.assertEqual(self.writes, [])
 
-    def test_lastfm_settings_only_return_configured_flag(self):
-        result = json.loads(get_lastfm_settings(self.read_settings))
-        self.assertTrue(result["api_key_configured"])
-        self.assertNotIn("lastfm-secret", json.dumps(result))
-        self.assertNotIn("lastfm_api_key", result)
-
-    def test_lastfm_save_preserves_blank_key_and_never_returns_secret(self):
-        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "  new-key  "))
-        self.assertTrue(result["ok"])
-        self.assertEqual(self.state["lastfm_api_key"], "new-key")
-        self.assertNotIn("new-key", json.dumps(result))
-        self.assertNotIn("lastfm_api_key", result)
-
-        before = len(self.writes)
-        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "   "))
-        self.assertTrue(result["ok"])
-        self.assertEqual(self.state["lastfm_api_key"], "new-key")
-        self.assertEqual(len(self.writes), before + 1)
-        self.assertNotIn("new-key", json.dumps(result))
-
-    def test_a_new_lastfm_key_bumps_the_search_generation_and_the_same_key_does_not(self):
-        from settings.service import lastfm_generation
-
-        self.assertEqual(lastfm_generation(self.read_settings), 0)
-        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
-        self.assertEqual(lastfm_generation(self.read_settings), 1)
-        self.assertEqual(self.state["lastfm_generation"], 1)
-
-        # Saving the same key again, or a blank key that keeps the stored one, changes nothing.
-        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
-        set_lastfm_settings(self.read_settings, self.write_settings, "   ")
-        self.assertEqual(lastfm_generation(self.read_settings), 1)
-
-        set_lastfm_settings(self.read_settings, self.write_settings, "another-key")
-        self.assertEqual(lastfm_generation(self.read_settings), 2)
-
-    def test_lastfm_username_saves_clears_and_preserves(self):
-        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "", "listener_fm"))
-        self.assertTrue(result["ok"])
-        self.assertEqual(result["username"], "listener_fm")
-        self.assertEqual(self.state["lastfm_username"], "listener_fm")
-        self.assertEqual(self.state["lastfm_api_key"], "lastfm-secret")
-        self.assertEqual(json.loads(get_lastfm_settings(self.read_settings))["username"], "listener_fm")
-
-        # An absent username (None) leaves the stored value alone.
-        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
-        self.assertEqual(self.state["lastfm_username"], "listener_fm")
-
-        # A blank username clears it, so the LASTFM_USERNAME variable applies again.
-        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "", "  "))
-        self.assertTrue(result["ok"])
-        self.assertEqual(self.state["lastfm_username"], "")
-        self.assertEqual(json.loads(get_lastfm_settings(self.read_settings))["username"], "")
-
-    def test_lastfm_username_rejects_invalid_input_without_writing(self):
-        for bad in ("has space", "bad/slash", "x" * 65):
-            with self.subTest(username=bad):
-                before = len(self.writes)
-                result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "new-key", bad))
-                self.assertFalse(result["ok"])
-                self.assertEqual(len(self.writes), before)
-                self.assertEqual(self.state["lastfm_api_key"], "lastfm-secret")
-
     def test_listenbrainz_username_validation_and_save(self):
         self.assertEqual(listenbrainz_username(self.read_settings), "listener")
         self.state["listenbrainz_username"] = ""
@@ -326,23 +259,6 @@ class ServiceSettingsTests(unittest.TestCase):
         ))
         self.assertEqual(failed["message"], "Configure credentials")
         self.assertNotIn("password", json.dumps(failed))
-
-    def test_lastfm_connection_service_redacts_key_and_handles_auth_failure(self):
-        calls = []
-        class Response:
-            def raise_for_status(self): pass
-            def json(self): return {"error": 10}
-        def http_get(*args, **kwargs):
-            calls.append((args, kwargs))
-            return Response()
-        result = json.loads(check_lastfm_connection(self.read_settings, http_get, json.dumps))
-        self.assertEqual(result["status"], "authentication_failed")
-        self.assertNotIn("lastfm-secret", json.dumps(result))
-        self.assertEqual(calls[0][1]["params"]["api_key"], "lastfm-secret")
-        empty = json.loads(check_lastfm_connection(
-            lambda: {"lastfm_api_key": ""}, http_get, json.dumps
-        ))
-        self.assertEqual(empty["status"], "not_configured")
 
     def test_listenbrainz_connection_service_handles_missing_profile_and_errors(self):
         class Response:

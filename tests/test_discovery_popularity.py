@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
 
 from discovery.popularity import (
     apply_popularity_bonus,
@@ -108,21 +107,68 @@ class DiscoveryPopularityTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual(albums[("a", "b")]["listeners"], 100)
 
-    def test_build_discovery_lookups_filters_top_albums(self):
-        records = [
-            {"artist": "Artist", "album": "Valid", "mbid": None,
-             "lastfm_listeners": 1, "lastfm_playcount": 2, "lastfm_url": None},
-            {"artist": "Artist", "album": "Various Artists", "mbid": None,
-             "lastfm_listeners": 3, "lastfm_playcount": 4, "lastfm_url": None},
-        ]
-        with patch("integrations.lastfm.client.LastFmClient.artist_top_albums", return_value=records):
-            lookups = build_discovery_lookups(
-                settings_reader=dict,
-                cache_get=lambda _k, _t: None,
-                cache_set=lambda _k, _v: None,
-                is_album_candidate=lambda item: item["album"] == "Valid",
-            )
-            self.assertEqual(lookups.top_albums("Artist", limit=2), [records[0]])
+    def test_build_discovery_lookups_filters_top_albums_and_uses_lb_deezer_discogs(self):
+        class FakeResponse:
+            def __init__(self, status_code, payload):
+                self.status_code = status_code
+                self._payload = payload
+
+            def json(self):
+                return self._payload
+
+        class OpenLane:
+            def acquire(self):
+                return True
+
+        def fake_get(url, **kwargs):
+            if "musicbrainz.org/ws/2/artist/" in url:
+                query = (kwargs.get("params") or {}).get("query", "")
+                if "NoMbid" in query:
+                    return FakeResponse(200, {"artists": []})
+                return FakeResponse(200, {"artists": [{"id": "mbid-1", "name": "Artist"}]})
+            if "top-release-groups-for-artist/mbid-1" in url:
+                return FakeResponse(200, [
+                    {"release_group_mbid": "rg-1", "release_group_name": "Valid",
+                     "total_user_count": 10, "total_listen_count": 20},
+                    {"release_group_mbid": "rg-2", "release_group_name": "Various Artists",
+                     "total_user_count": 30, "total_listen_count": 40},
+                ])
+            if "lb-radio/artist/mbid-1" in url:
+                return FakeResponse(200, {
+                    "mbid-1": [{"similar_artist_mbid": "mbid-2", "similar_artist_name": "Peer"}]
+                })
+            if "api.deezer.com/search/artist" in url:
+                return FakeResponse(200, {"data": [{"id": 99, "name": "NoMbid"}]})
+            if "api.deezer.com/artist/99/related" in url:
+                return FakeResponse(200, {"data": [{"id": 100, "name": "Deezer Peer"}]})
+            if "musicbrainz.org/ws/2/genre/all" in url:
+                return FakeResponse(200, {"genres": [{"name": "ambient"}]})
+            if "api.discogs.com/database/search" in url:
+                return FakeResponse(200, {"results": [{"title": "Artist - Album", "style": ["Ambient"]}]})
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        cache = {}
+        lookups = build_discovery_lookups(
+            cache_get=lambda k, _t: cache.get(k),
+            cache_set=cache.__setitem__,
+            is_album_candidate=lambda item: item["album"] == "Valid",
+            settings_reader=lambda: {"discogs_token": "tok"},
+            http_get=fake_get,
+            lane=OpenLane(),
+        )
+        self.assertEqual(
+            lookups.top_albums("Artist", limit=2),
+            [{"artist": "Artist", "album": "Valid", "mbid": "rg-1", "listeners": 10, "playcount": 20}],
+        )
+        self.assertEqual(
+            lookups.similar_artists("Artist", limit=5),
+            [{"artist": "Peer", "similarity": 1.0}],
+        )
+        self.assertEqual(
+            lookups.similar_artists("NoMbid", limit=5),
+            [{"artist": "Deezer Peer", "similarity": 1.0}],
+        )
+        self.assertEqual(lookups.artist_genres("Artist"), ["ambient"])
 
     def test_navidrome_server_has_no_lastfm_client_or_adapters(self):
         import navidrome_server

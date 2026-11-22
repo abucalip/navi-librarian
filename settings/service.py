@@ -182,17 +182,6 @@ def navidrome_generation(settings_read):
         return 0
 
 
-LASTFM_GENERATION_KEY = "lastfm_generation"
-
-
-def lastfm_generation(settings_read):
-    """Return the non-secret counter that changes whenever the saved Last.fm key changes."""
-    try:
-        return int(settings_read().get(LASTFM_GENERATION_KEY) or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
 DISCOGS_TOKEN_KEY = "discogs_token"
 DISCOGS_GENERATION_KEY = "discogs_generation"
 DISCOGS_ENV_VARIABLE = "DISCOGS_TOKEN"
@@ -340,42 +329,6 @@ def set_navidrome_settings(
     }, ensure_ascii=False)
 
 
-def get_lastfm_settings(settings_read):
-    """Return Last.fm configuration status without exposing its API key."""
-    settings = settings_read()
-    return json.dumps({
-        "api_key_configured": bool(settings.get("lastfm_api_key")),
-        "username": str(settings.get("lastfm_username") or ""),
-    })
-
-
-def set_lastfm_settings(settings_read, settings_write, api_key="", username=None):
-    """Save a Last.fm API key and, when given, its username.
-
-    A blank key preserves the stored key. A blank username clears the stored one, so the
-    LASTFM_USERNAME variable applies again; ``None`` leaves the stored username unchanged. An
-    invalid username is refused before anything is written."""
-    values = {}
-    if username is not None:
-        value = str(username or "").strip()
-        if value and not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", value):
-            return json.dumps({"ok": False, "error": "Enter a valid Last.fm username (letters, numbers, hyphen or underscore)."})
-        values["lastfm_username"] = value
-    current = settings_read()
-    key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
-    values["lastfm_api_key"] = key
-    if key != str(current.get("lastfm_api_key") or ""):
-        # A new key makes every cached Last.fm search unreachable (contract section 5.2).
-        values[LASTFM_GENERATION_KEY] = lastfm_generation(settings_read) + 1
-    settings_write(values)
-    return json.dumps({
-        "ok": True,
-        "api_key_configured": bool(key),
-        "username": str(values.get("lastfm_username", current.get("lastfm_username") or "")),
-        "message": "Last.fm settings saved; the API key is never returned.",
-    })
-
-
 def get_listenbrainz_settings(settings_read, username):
     """Return the username and whether a token is saved, never the token itself."""
     return json.dumps({
@@ -516,25 +469,6 @@ def test_navidrome_connection(api_call, json_dumps):
             "ok": False, "status": "connection_failed",
             "message": str(exc) if isinstance(exc, ValueError) else "Navidrome is unavailable or authentication failed.",
         })
-
-
-def test_lastfm_connection(settings_read, http_get, json_dumps):
-    """Validate the configured Last.fm key without exposing it in the result."""
-    key = str(settings_read().get("lastfm_api_key") or "").strip()
-    if not key:
-        return json_dumps({"ok": False, "status": "not_configured", "message": "Add a Last.fm API key first."})
-    try:
-        response = http_get(
-            "https://ws.audioscrobbler.com/2.0/",
-            params={"method": "chart.getTopArtists", "api_key": key, "format": "json", "limit": 1},
-            headers={"User-Agent": "Discair/0.1"}, timeout=10,
-        )
-        response.raise_for_status()
-        if response.json().get("error"):
-            return json_dumps({"ok": False, "status": "authentication_failed", "message": "Last.fm rejected the API key. Check the key in Settings."})
-        return json_dumps({"ok": True, "status": "connected", "message": "Last.fm API connection succeeded."})
-    except Exception:
-        return json_dumps({"ok": False, "status": "connection_failed", "message": "Could not reach Last.fm or validate the API key."})
 
 
 def test_listenbrainz_connection(username_get, http_get, json_dumps):

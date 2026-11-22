@@ -354,27 +354,6 @@ class NewReleaseListenerEnrichmentTests(unittest.TestCase):
         self.assertEqual(calls, ["0", "1"])
 
 
-class NewReleaseRouteEnrichmentTests(unittest.TestCase):
-    def test_route_adds_cached_listener_counts_to_new_release_items_only(self):
-        from app.api import discovery
-
-        class Lastfm:
-            def cached_album_popularity(self, artist, album):
-                return {"listeners": 5, "playcount": 9} if album == "Known" else None
-
-        class Library:
-            _lastfm_client = Lastfm()
-
-            def discovery_get_list(self, list_name, count):
-                return {"items": [{"artist": "A", "album": "Known"}, {"artist": "A", "album": "Unknown"}]}
-
-        data = discovery.discovery_list("new_releases", 30, Library())
-        self.assertEqual(data["items"][0]["lastfm_playcount"], 9)
-        self.assertNotIn("lastfm_playcount", data["items"][1])
-        classics = discovery.discovery_list("classics", 30, Library())
-        self.assertNotIn("lastfm_playcount", classics["items"][0])
-
-
 if __name__ == "__main__":
     unittest.main()
 

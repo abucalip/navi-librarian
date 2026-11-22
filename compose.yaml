@@ -24,9 +24,6 @@ services:
       NAVIDROME_PASSWORD: ${NAVIDROME_PASSWORD:-}
       SLSKD_URL: ${SLSKD_URL:-}
       SLSKD_API_KEY: ${SLSKD_API_KEY:-}
-      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
-      LASTFM_SHARED_SECRET: ${LASTFM_SHARED_SECRET:-}
-      LASTFM_SESSION_KEY: ${LASTFM_SESSION_KEY:-}
       GUARDIAN_API_KEY: ${GUARDIAN_API_KEY:-}
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
       NAVI_EDITION_AWARE_OWNERSHIP: ${NAVI_EDITION_AWARE_OWNERSHIP:-1}
@@ -64,11 +61,9 @@ services:
       NAVIDROME_PASSWORD: ${NAVIDROME_PASSWORD:-}
       NAVI_AUTO_FILL_POLL_SECONDS: ${NAVI_AUTO_FILL_POLL_SECONDS:-}
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
-      # The similar-artist precompute uses Last.fm; the key's default comes from here, as in the web service.
-      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
       # K3 owned prefetch: daily per-provider caps; the default is the owner-approved set (docs/plans/efficiency.md, K3).
       # Set OWNED_PREFETCH_BUDGETS=off to switch it off (an empty value falls back to this default).
-      OWNED_PREFETCH_BUDGETS: ${OWNED_PREFETCH_BUDGETS:-musicbrainz=600,listenbrainz=300,lastfm=600,deezer=600,apple=400,wikipedia=300}
+      OWNED_PREFETCH_BUDGETS: ${OWNED_PREFETCH_BUDGETS:-musicbrainz=600,listenbrainz=300,deezer=600,apple=400,wikipedia=300}
     volumes:
       - librarian_data:/data
 

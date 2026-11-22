@@ -7,7 +7,6 @@ the contract reports (``failed`` or ``rate_limited``); the runner maps a deadlin
 
 from __future__ import annotations
 
-import html
 import re
 import time
 from collections.abc import Callable
@@ -26,13 +25,11 @@ from integrations.deezer.artist import (
 from integrations.provider_gate import musicbrainz_lane
 
 MUSICBRAINZ = "musicbrainz"
-LASTFM = "lastfm"
 LISTENBRAINZ = "listenbrainz"
 DISCOGS = "discogs"
 DEEZER = "deezer"
 
 MB_BASE = "https://musicbrainz.org/ws/2"
-LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
 DISCOGS_BASE = "https://api.discogs.com"
 DISCOGS_ATTRIBUTION = "Data provided by Discogs"
 MB_HEADERS = {
@@ -507,150 +504,6 @@ def _identity_batches(wanted: dict[str, str]):
         size += term
     if batch:
         yield batch
-
-
-class LastFmSearch:
-    """Last.fm text search. Needs the saved API key; the caller checks it before any call."""
-
-    source = LASTFM
-
-    def __init__(
-        self,
-        *,
-        get: Callable[..., Any],
-        limiter: SourceLimiter,
-        api_key: str,
-    ):
-        self._get = get
-        self._limiter = limiter
-        self._api_key = api_key
-
-    def _call(self, method: str, params: dict[str, Any], *, remaining, cancelled) -> dict[str, Any]:
-        if cancelled.is_set():
-            raise ProviderError("failed")
-        if not self._limiter.admit(self.source, remaining()):
-            raise ProviderError("rate_limited")
-        response = self._get(
-            LASTFM_BASE,
-            params={"method": method, "api_key": self._api_key, "format": "json", "limit": DEPTH, **params},
-            headers={"User-Agent": MB_HEADERS["User-Agent"]},
-            timeout=REQUEST_TIMEOUT,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, dict) or payload.get("error"):
-            # Last.fm reports errors inside an HTTP 200 body; those are failures, not empty answers.
-            raise ProviderError("failed")
-        return payload
-
-    def artists(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        payload = self._call("artist.search", {"artist": query}, remaining=remaining, cancelled=cancelled)
-        matches = _as_list(((payload.get("results") or {}).get("artistmatches") or {}).get("artist"))
-        candidates = [
-            artist_candidate(self.source, str(item.get("name") or "").strip(), item.get("mbid"))
-            for item in matches
-            if isinstance(item, dict)
-        ]
-        return [c for c in candidates if _usable(c)]
-
-    def albums(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        payload = self._call("album.search", {"album": query}, remaining=remaining, cancelled=cancelled)
-        matches = _as_list(((payload.get("results") or {}).get("albummatches") or {}).get("album"))
-        candidates = [
-            album_candidate(
-                self.source,
-                str(item.get("name") or "").strip(),
-                str(item.get("artist") or "").strip(),
-                None,
-                None,
-            )
-            for item in matches
-            if isinstance(item, dict)
-        ]
-        return [c for c in candidates if _usable(c) and c["artist"]]
-
-    def similar(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Last.fm's similar artists, best first, with the match score (0 to 1) it reports."""
-        payload = self._call("artist.getSimilar", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
-        matches = _as_list((payload.get("similarartists") or {}).get("artist"))
-        output = []
-        for item in matches:
-            if not isinstance(item, dict):
-                continue
-            name = str(item.get("name") or "").strip()
-            if not name:
-                continue
-            try:
-                match = float(item.get("match") or 0)
-            except (TypeError, ValueError):
-                match = 0.0
-            output.append({
-                "name": name,
-                "mbid": str(item.get("mbid") or "").strip() or None,
-                "match": min(max(match, 0.0), 1.0),
-            })
-        return output
-
-    def artist_bio(self, artist_name: str, *, remaining, cancelled) -> str | None:
-        """Last.fm's biography of an artist as plain text (the source Navidrome's own bios usually come from)."""
-        payload = self._call("artist.getInfo", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
-        content = str(((payload.get("artist") or {}).get("bio") or {}).get("content") or "")
-        text = re.sub(r"<a\b[^>]*>.*?</a>", "", content, flags=re.S | re.I)
-        text = re.sub(r"<[^>]+>", "", text)
-        return re.sub(r"\s+", " ", html.unescape(text)).strip() or None
-
-    def album_tracks(self, artist_name: str, album_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Last.fm's tracklist for one album (one request)."""
-        payload = self._call(
-            "album.getInfo", {"artist": artist_name, "album": album_name},
-            remaining=remaining, cancelled=cancelled,
-        )
-        output: list[dict[str, Any]] = []
-        for item in _as_list(((payload.get("album") or {}).get("tracks") or {}).get("track")):
-            title = str(item.get("name") or "").strip() if isinstance(item, dict) else ""
-            if title:
-                try:
-                    seconds = int(item.get("duration") or 0)
-                except (TypeError, ValueError):
-                    seconds = 0
-                output.append({"track_number": len(output) + 1, "title": title, "duration_seconds": seconds})
-        return output
-
-    def top_albums(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Last.fm's top albums for one artist. Used on the artist page, not in search."""
-        payload = self._call("artist.getTopAlbums", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
-        albums = _as_list((payload.get("topalbums") or {}).get("album"))
-        candidates = []
-        for item in albums:
-            if not isinstance(item, dict):
-                continue
-            candidate = album_candidate(self.source, str(item.get("name") or "").strip(), artist_name, None, None)
-            try:
-                candidate["playcount"] = int(item.get("playcount") or 0) or None
-            except (TypeError, ValueError):
-                candidate["playcount"] = None
-            candidates.append(candidate)
-        return [c for c in candidates if _usable(c)]
-
-    def top_tracks(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Last.fm's top tracks for one artist, most played first. Used on the artist page."""
-        payload = self._call("artist.getTopTracks", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
-        output: list[dict[str, Any]] = []
-        for item in _as_list((payload.get("toptracks") or {}).get("track")):
-            title = str(item.get("name") or "").strip() if isinstance(item, dict) else ""
-            if not title:
-                continue
-            try:
-                plays = int(item.get("playcount") or 0) or None
-            except (TypeError, ValueError):
-                plays = None
-            output.append({
-                "name": title,
-                "listen_count": plays,
-                "recording_mbid": str(item.get("mbid") or "").strip() or None,
-                "album": None,
-            })
-        return output
 
 
 LB_RADIO_BASE = "https://api.listenbrainz.org/1/lb-radio/artist"
