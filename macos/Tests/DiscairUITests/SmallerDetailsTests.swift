@@ -53,6 +53,7 @@ struct SmallerDetailsTests {
         #expect(quietBrightness > 0.01, "waveform should still be subtly visible under text")
         #expect(fullBrightness > quietBrightness * 2.0,
                 "trailing waveform (\(fullBrightness)) should be noticeably brighter than under text (\(quietBrightness))")
+        try saveScreenshot(rep, name: "smaller-details-waveform")
     }
 
     @Test func onMediaQualityBadgeKeepsDarkGroundOverLightBlur() throws {
@@ -85,6 +86,7 @@ struct SmallerDetailsTests {
         let luminance = 0.2126 * c.redComponent + 0.7152 * c.greenComponent + 0.0722 * c.blueComponent
         let contrastWithWhite = 1.05 / (luminance + 0.05)
         #expect(contrastWithWhite >= 4.5, "onMedia badge contrast \(contrastWithWhite) should be at least 4.5:1 over a light blur")
+        try saveScreenshot(rep, name: "smaller-details-badge")
     }
 
     @Test func narrowHomeRendersWithHorizontalNextPicks() throws {
@@ -114,5 +116,14 @@ struct SmallerDetailsTests {
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: rep)
         #expect(rep.pixelsWide > 0 && rep.pixelsHigh > 0)
+        try saveScreenshot(rep, name: "smaller-details-home-narrow")
+    }
+
+    private func saveScreenshot(_ rep: NSBitmapImageRep, name: String) throws {
+        guard let dirPath = ProcessInfo.processInfo.environment["DISCAIR_SCREENSHOT_DIR"], !dirPath.isEmpty else { return }
+        let dir = URL(fileURLWithPath: dirPath)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let png = try #require(rep.representation(using: .png, properties: [:]))
+        try png.write(to: dir.appendingPathComponent("\(name).png"))
     }
 }
