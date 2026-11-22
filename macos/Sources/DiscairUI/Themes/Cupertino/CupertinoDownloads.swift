@@ -8,6 +8,8 @@ struct CupertinoDownloads: View {
     static let stepperColumnWidth: CGFloat = 70
     static let stepperWidth: CGFloat = stepperColumnWidth * CGFloat(CUChartMath.stageNames.count)
     static let actionWidth: CGFloat = 128
+    /// Maximum width of the Downloads list card and its aligned "Clear ... imported" action (D5.3).
+    static let maxListWidth: CGFloat = 1040
 
     let state: AppState
     @State private var filter: Filter = .all
@@ -43,7 +45,12 @@ struct CupertinoDownloads: View {
                 }
                 .padding(.top, CU.Space.xs)
                 if acq.importedCount > 0 {
-                    HStack { Spacer(minLength: 0); Button("Clear \(acq.importedCount) imported") { acq.dismissImported() }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true)) }
+                    HStack {
+                        Spacer(minLength: 0)
+                        Button("Clear \(acq.importedCount) imported") { acq.dismissImported() }
+                            .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
+                    }
+                    .frame(maxWidth: Self.maxListWidth)
                 }
                 if jobs.isEmpty {
                     Text(state.session == nil || state.library.isLive ? "Nothing is downloading. Albums you Get appear here." : "Downloads are available in the running app.")
@@ -57,8 +64,7 @@ struct CupertinoDownloads: View {
                             row(job)
                         }
                     }
-                    // Circles need less room than bars did: the list takes half the page, never less than a row needs.
-                    .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in max(width / 2, 520) }
+                    .frame(maxWidth: Self.maxListWidth, alignment: .leading)
                 }
             }
             .padding(.horizontal, CU.Space.xl)
