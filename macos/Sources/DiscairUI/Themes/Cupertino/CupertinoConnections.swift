@@ -177,6 +177,11 @@ struct CupertinoConnections: View {
     /// Node sizes from section 5.2: the start artist 72, step 1 48, step 2 32. A ring that would need smaller nodes switches to List.
     enum Sizes { static let centre: CGFloat = 72, step1: CGFloat = 48, step2: CGFloat = 32 }
 
+    /// D7.1: small rounded halo (`CU.content` at 80%, 4 pt padding) behind graph labels so edges never cross through text.
+    static let labelHaloOpacity: Double = 0.8
+    static let labelHaloPadding: CGFloat = 4
+    static let labelHaloCornerRadius: CGFloat = 6
+
     private func canvas(_ size: CGSize) -> some View {
         let layout = graph.sectorLayout
         let deepest = max(graph.nodes.map(\.depth).max() ?? 1, 1)
@@ -188,7 +193,7 @@ struct CupertinoConnections: View {
             let p = layout[id] ?? .zero
             return CGPoint(x: origin.x + p.x * GraphLayout.firstRingPoints * scale, y: origin.y + p.y * GraphLayout.firstRingPoints * scale)
         }
-        let centres = GraphLayout.sectorCentres(graph.nodes.map { .init(id: $0.id, depth: $0.depth, via: $0.via, kind: $0.entity.type) })
+        let sectorLabels = GraphLayout.sectorLabelAngles(graph.nodes.map { .init(id: $0.id, depth: $0.depth, via: $0.via, kind: $0.entity.type) })
         return ZStack {
             Canvas { ctx, _ in
                 for depth in 1...max(graph.depth, deepest) where !graph.nodes.isEmpty {
@@ -207,22 +212,28 @@ struct CupertinoConnections: View {
             }
             .accessibilityHidden(true)
             ForEach(GraphSector.allCases, id: \.self) { sector in
-                if let angle = centres[sector] {
+                if let angle = sectorLabels[sector] {
                     Text(sector.title).cuRole(CU.Font.eyebrow).textCase(.uppercase).foregroundStyle(CU.textSecondary)
-                        .padding(.horizontal, CU.Space.xs).background(CU.content.opacity(0.85), in: Capsule())
+                        .padding(Self.labelHaloPadding)
+                        .background(CU.content.opacity(Self.labelHaloOpacity), in: RoundedRectangle(cornerRadius: Self.labelHaloCornerRadius, style: .continuous))
                         .position(x: origin.x + cos(angle) * 112 * scale, y: origin.y + sin(angle) * 112 * scale)
                         .accessibilityHidden(true)
                 }
             }
             ForEach(graph.nodes) { n in
+                nodeFace(n).position(point(n.id))
+            }
+            ForEach(graph.nodes) { n in
                 let p = point(n.id), a = atan2(p.y - origin.y, p.x - origin.x)
-                nodeFace(n).position(p)
                 nodeLabel(n, angle: a).position(Self.labelCentre(for: p, angle: a, size: n.depth <= 1 ? Sizes.step1 : Sizes.step2))
             }
             if let c = graph.centre {
                 VStack(spacing: CU.Space.xs) {
                     GraphNodeFace(entity: c, size: Sizes.centre, library: state.library, hintArtist: c.name, forceOwned: true, ink: CU.text)
-                    Text(c.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1).frame(width: 140)
+                    Text(c.name).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
+                        .padding(Self.labelHaloPadding)
+                        .background(CU.content.opacity(Self.labelHaloOpacity), in: RoundedRectangle(cornerRadius: Self.labelHaloCornerRadius, style: .continuous))
+                        .frame(maxWidth: 148)
                 }
                 .position(x: origin.x, y: origin.y + 10)
                 .accessibilityElement(children: .ignore).accessibilityLabel("Centre: \(c.name)")
@@ -268,9 +279,14 @@ struct CupertinoConnections: View {
     private func nodeLabel(_ n: GraphNode, angle: CGFloat) -> some View {
         let picked = n.id == graph.selectedID
         let side = abs(cos(angle)) > 0.5
+        let textAlignment: TextAlignment = side ? (cos(angle) > 0 ? .leading : .trailing) : .center
+        let frameAlignment: Alignment = side ? (cos(angle) > 0 ? .leading : .trailing) : .center
         return Text(n.entity.name).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(picked ? CU.accentStrong : CU.text)
-            .multilineTextAlignment(side ? (cos(angle) > 0 ? .leading : .trailing) : .center).lineLimit(2)
-            .frame(width: Self.labelWidth, alignment: side ? (cos(angle) > 0 ? .leading : .trailing) : .center)
+            .multilineTextAlignment(textAlignment).lineLimit(2)
+            .frame(maxWidth: Self.labelWidth)
+            .padding(Self.labelHaloPadding)
+            .background(CU.content.opacity(Self.labelHaloOpacity), in: RoundedRectangle(cornerRadius: Self.labelHaloCornerRadius, style: .continuous))
+            .frame(width: Self.labelWidth + 2 * Self.labelHaloPadding, alignment: frameAlignment)
             .allowsHitTesting(false).accessibilityHidden(true)
     }
 

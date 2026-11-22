@@ -16,6 +16,9 @@ struct TimelineView: View {
 
     /// Year labels align to the card title's first baseline rather than the card's padded top edge (D5.6).
     static let rowAlignment: VerticalAlignment = .firstTextBaseline
+    /// D7.4: footer legend item spacing and vertical line spacing.
+    static let footerItemSpacing: CGFloat = 14
+    static let footerLineSpacing: CGFloat = 4
 
     var body: some View {
         HStack(spacing: 0) {
@@ -51,14 +54,21 @@ struct TimelineView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 14) {
-            Label("In library: colour", systemImage: "circle.fill")
-            Label("Not in library: dashed", systemImage: "circle.dashed")
-            Text("Studio albums only, judged from titles · dates as MusicBrainz states them")
-            Spacer()
-            if timeline.truncated { Text("Showing the first items only.") }
+        VStack(alignment: .leading, spacing: Self.footerLineSpacing) {
+            FlowLayout(spacing: Self.footerItemSpacing, rowSpacing: Self.footerLineSpacing) {
+                Label("In library: colour", systemImage: "circle.fill")
+                Label("Not in library: dashed", systemImage: "circle.dashed")
+                Text("Studio albums only, judged from titles")
+                Text("Dates as MusicBrainz states them")
+            }
+            if timeline.truncated {
+                Text("Showing the first items only.")
+            }
         }
-        .labelStyle(.titleAndIcon).font(.system(size: 11)).foregroundStyle(style.muted)
+        .labelStyle(.titleAndIcon)
+        .font(.system(size: 11))
+        .foregroundStyle(style.muted)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Rail

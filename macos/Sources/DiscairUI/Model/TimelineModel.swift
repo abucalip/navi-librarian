@@ -76,8 +76,8 @@ public final class TimelineModel {
     public init() {}
 
     /// Shows a finished load without a server: screenshots and tests.
-    func preview(person: KnowledgeEntity, items: [TimelineItem], undated: Int = 0) {
-        self.person = person; self.items = items; undatedCount = undated; coverage = "loaded"
+    func preview(person: KnowledgeEntity, items: [TimelineItem], undated: Int = 0, truncated: Bool = false) {
+        self.person = person; self.items = items; undatedCount = undated; self.truncated = truncated; coverage = "loaded"
     }
 
     public var dated: [TimelineItem] { items.filter { $0.year != nil } }

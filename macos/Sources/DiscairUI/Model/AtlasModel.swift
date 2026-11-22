@@ -22,6 +22,103 @@ public enum AtlasGeometry {
         return MKCoordinateRegion(center: .init(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2),
                                   span: .init(latitudeDelta: latSpan, longitudeDelta: lonSpan))
     }
+
+    /// MapKit display priority for a place pin (D7.2): selected pins win first, then owned places ordered by owned
+    /// recording count, then unowned places ordered by total recordings, so lower-count pins and labels hide first.
+    public static func displayPriority(owned: Int, recordings: Int, selected: Bool = false) -> MKFeatureDisplayPriority {
+        if selected { return .required }
+        if owned > 0 {
+            return MKFeatureDisplayPriority(rawValue: Float(min(950, 500 + owned * 20)))
+        }
+        return MKFeatureDisplayPriority(rawValue: Float(min(450, 200 + max(recordings, 0) * 10)))
+    }
+
+    /// Diameter of a numbered MapKit cluster badge, growing gently with member count (28..42 pt).
+    public static func clusterBadgeSize(count: Int) -> Double {
+        min(42, max(28, 24 + 4.5 * Double(max(count, 2)).squareRoot()))
+    }
+}
+
+/// One pin's label candidate for collision-free, in-bounds placement on the Atlas map (D7.2).
+public struct AtlasLabelCandidate: Equatable, Sendable {
+    public let id: String
+    public let pinCenter: CGPoint
+    public let pinSize: CGFloat
+    public let labelSize: CGSize
+    public let priority: Float
+
+    public init(id: String, pinCenter: CGPoint, pinSize: CGFloat, labelSize: CGSize, priority: Float) {
+        self.id = id
+        self.pinCenter = pinCenter
+        self.pinSize = pinSize
+        self.labelSize = labelSize
+        self.priority = priority
+    }
+}
+
+/// Placed label frame and visibility decision for one Atlas pin (D7.2).
+public struct AtlasLabelPlacement: Equatable, Sendable {
+    public let id: String
+    public let frame: CGRect
+    public let visible: Bool
+}
+
+/// Pure collision and map-bounds clamping for Atlas pin labels (D7.2). Higher-priority labels win; lower-count
+/// labels hide when they would overlap another label or pin, and labels stay strictly inside the map's safe bounds.
+public enum AtlasLabelLayout {
+    public static let edgeInset: CGFloat = 8
+    public static let pinGap: CGFloat = 4
+    public static let collisionPadding: CGFloat = 3
+
+    public static func place(_ candidates: [AtlasLabelCandidate], in bounds: CGRect) -> [String: AtlasLabelPlacement] {
+        let safe = bounds.insetBy(dx: edgeInset, dy: edgeInset)
+        guard safe.width > 0, safe.height > 0 else {
+            return Dictionary(uniqueKeysWithValues: candidates.map { ($0.id, AtlasLabelPlacement(id: $0.id, frame: .zero, visible: false)) })
+        }
+
+        let ordered = candidates.sorted { a, b in
+            if a.priority != b.priority { return a.priority > b.priority }
+            return a.id < b.id
+        }
+        let pinRects: [(id: String, rect: CGRect)] = candidates.map { c in
+            let r = CGRect(x: c.pinCenter.x - c.pinSize / 2, y: c.pinCenter.y - c.pinSize / 2, width: c.pinSize, height: c.pinSize)
+            return (c.id, r)
+        }
+
+        var accepted: [CGRect] = []
+        var out: [String: AtlasLabelPlacement] = [:]
+
+        for c in ordered {
+            let w = c.labelSize.width, h = c.labelSize.height
+            guard w > 0, h > 0, w <= safe.width, h <= safe.height else {
+                out[c.id] = AtlasLabelPlacement(id: c.id, frame: .zero, visible: false)
+                continue
+            }
+            let clampedX = min(max(c.pinCenter.x - w / 2, safe.minX), safe.maxX - w)
+            let below = CGRect(x: clampedX, y: c.pinCenter.y + c.pinSize / 2 + pinGap, width: w, height: h)
+            let above = CGRect(x: clampedX, y: c.pinCenter.y - c.pinSize / 2 - pinGap - h, width: w, height: h)
+
+            var chosen: CGRect?
+            for candidateRect in [below, above] {
+                guard safe.contains(candidateRect) else { continue }
+                let padded = candidateRect.insetBy(dx: -collisionPadding, dy: -collisionPadding)
+                let hitsLabel = accepted.contains { $0.intersects(padded) }
+                let hitsPin = pinRects.contains { $0.id != c.id && $0.rect.intersects(candidateRect) }
+                if !hitsLabel && !hitsPin {
+                    chosen = candidateRect
+                    break
+                }
+            }
+
+            if let frame = chosen {
+                accepted.append(frame)
+                out[c.id] = AtlasLabelPlacement(id: c.id, frame: frame, visible: true)
+            } else {
+                out[c.id] = AtlasLabelPlacement(id: c.id, frame: .zero, visible: false)
+            }
+        }
+        return out
+    }
 }
 
 extension AtlasGeometry {
@@ -53,7 +150,9 @@ public final class AtlasModel {
     public init() {}
 
     /// Shows a finished load without a server: screenshots and tests.
-    func preview(places: [AtlasPlace], detail: KnowledgePlace? = nil) { self.places = places; self.detail = detail; loaded = true; coverage = "loaded" }
+    func preview(places: [AtlasPlace], detail: KnowledgePlace? = nil, truncated: Bool = false) {
+        self.places = places; self.detail = detail; self.truncated = truncated; loaded = true; coverage = "loaded"
+    }
 
     public var selected: AtlasPlace? { places.first { $0.id == selectedID } }
     public var region: MKCoordinateRegion { AtlasGeometry.region(for: places) }

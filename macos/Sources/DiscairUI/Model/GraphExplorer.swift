@@ -104,6 +104,31 @@ public enum GraphLayout {
         sectorArcs(items.filter { $0.depth == 1 }).centres
     }
 
+    /// Angles for drawing sector eyebrow labels on the graph (D7.1): drops any sector with fewer than 2 step-1 nodes,
+    /// and places each remaining label in the midpoint gap between two adjacent edges inside the sector rather than on top of an edge.
+    public static func sectorLabelAngles(_ items: [Item]) -> [GraphSector: Double] {
+        let step1 = items.filter { $0.depth == 1 }
+        let groups = Dictionary(grouping: step1, by: { GraphSector.of(kind: $0.kind) })
+        let used = GraphSector.allCases.filter { groups[$0] != nil }
+        let gap = used.count > 1 ? sectorGap : 0
+        let available = 2 * Double.pi - gap * Double(used.count)
+        let total = Double(step1.count)
+        guard total > 0 else { return [:] }
+        var out: [GraphSector: Double] = [:]
+        var start = -Double.pi / 2
+        for sector in used {
+            let count = groups[sector]?.count ?? 0
+            let arc = available * Double(count) / total
+            if count >= 2 {
+                // Edges sit at (i + 0.5) / count for i = 0 ..< count. Placing the label at floor(count / 2) / count
+                // puts it strictly halfway between edges (count / 2 - 1) and (count / 2) for both even and odd counts.
+                out[sector] = start + arc * Double(count / 2) / Double(count)
+            }
+            start += arc + gap
+        }
+        return out
+    }
+
     /// Each step-1 node's angle, with each sector in its own arc: the arcs follow `GraphSector` order and share the circle
     /// in proportion to how many nodes each holds. Within an arc the nodes keep their input order.
     static func sectorArcs(_ items: [Item]) -> (angles: [String: Double], centres: [GraphSector: Double]) {
