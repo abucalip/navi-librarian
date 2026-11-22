@@ -169,3 +169,38 @@ class PersonalReadTimeOwnershipTests(unittest.TestCase):
         ))
         self.assertEqual(result["recommendations"], items)
         self.assertNotIn("read_filter", result["diagnostics"])
+
+    def test_attaches_why_at_read_time_for_cached_and_lens_lists(self):
+        from discovery.list_payload import build_lens_list_response
+
+        classic_item = {
+            "artist": "Alice Coltrane",
+            "album": "Journey in Satchidananda",
+            "artist_library_album_count": 3,
+            "lastfm_listeners": 120_000,
+        }
+        classic = json.loads(build_cached_discovery_list_response(
+            "classics", 10,
+            lambda _name: {"generated_at": 1, "payload": {"items": [classic_item]}},
+            [], {}, music_key, is_album_candidate,
+        ))
+        self.assertEqual(classic["items"][0]["why"]["kind"], "collection")
+        self.assertEqual(
+            classic["items"][0]["why"]["sentence"],
+            "A well-known album; you have 3 albums by this artist",
+        )
+
+        lens = json.loads(build_lens_list_response(
+            "deep_cuts", 10,
+            {"generated_at": 1, "payload": {
+                "label": "Deep cuts",
+                "day": "2026-11-22",
+                "albums": [{"artist": "Mal Waldron", "album": "Left Alone", "lens": "deep_cuts", "seed_tag": "jazz"}],
+            }},
+            None,
+        ))
+        self.assertEqual(lens["items"][0]["why"]["kind"], "lens")
+        self.assertEqual(
+            lens["items"][0]["why"]["sentence"],
+            "A lesser-known record from the jazz you play",
+        )

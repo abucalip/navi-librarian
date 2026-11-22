@@ -38,6 +38,7 @@ def collect_missing_album_candidates(
             candidate = {
                 **album,
                 "discovery_type": "artist_deep_dive",
+                "deep_dive_kind": "missing_album",
                 "reason": "Missing album from an artist already well represented in your library",
                 "anchor_artist": anchor["name"],
                 "anchor_album_count": anchor["album_count"],
@@ -87,6 +88,7 @@ def merge_resolved_pool_candidates(
             "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
             "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
             "discovery_type": "artist_deep_dive",
+            "deep_dive_kind": "missing_album",
             "discovery_source": "resolved_candidate_pool_beyond_main_selection",
             "reason": (
                 "An additional resolved candidate for an artist with at least "
@@ -148,6 +150,7 @@ def collect_similar_artist_candidates(
             candidate = {
                 **album,
                 "discovery_type": "similar_artist",
+                "deep_dive_kind": "similar_artist",
                 "reason": "A similar artist not currently represented in your library",
                 "anchor_artist": similar["anchor_artist"],
                 "anchor_album_count": similar["anchor_album_count"],

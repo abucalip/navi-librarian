@@ -12,6 +12,7 @@ from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from discovery import artist_block, artist_lean, genre_block, lens_service
 from discovery.new_releases import enrich_new_release_listeners
+from discovery.pick_why import attach_why
 from discovery.taste_families import deep_dive_row
 
 router = APIRouter()
@@ -129,10 +130,10 @@ def recommendations(count: int = 10, librarian=Depends(get_librarian)):
         if isinstance(data, dict):
             for key in ("recommendations", "items"):
                 if isinstance(data.get(key), list):
-                    data[key] = [
+                    data[key] = attach_why([
                         item for item in data[key]
                         if librarian._discovery_is_album_candidate(item)
-                    ]
+                    ], list_name="recommendations")
         return data
     except Exception:
         raise HTTPException(

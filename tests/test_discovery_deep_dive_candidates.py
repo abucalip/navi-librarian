@@ -29,6 +29,7 @@ class MissingAlbumTests(unittest.TestCase):
         )
         self.assertEqual(list(out), [("x", "one")])
         self.assertEqual(out[("x", "one")]["anchor_artist"], "A6")
+        self.assertEqual(out[("x", "one")]["deep_dive_kind"], "missing_album")
         self.assertEqual(len(pauses), 1)  # index 5 only
 
     def test_equal_anchor_count_keeps_first(self):
@@ -59,6 +60,7 @@ class ResolvedPoolTests(unittest.TestCase):
         self.assertEqual(list(out), [("band", "new")])
         self.assertEqual(out[("band", "new")]["candidate_pool_score"], 0.0)
         self.assertEqual(out[("band", "new")]["anchor_album_count"], 4)
+        self.assertEqual(out[("band", "new")]["deep_dive_kind"], "missing_album")
 
     def test_existing_candidate_is_annotated_not_replaced(self):
         existing = {"artist": "Band", "album": "New", "marker": 1}
@@ -96,6 +98,7 @@ class SimilarArtistTests(unittest.TestCase):
         self.assertEqual(item["anchor_artist"], "Big")
         self.assertEqual(item["similar_artist_score"], round(0.5 * (1 + 15 / 30), 4))
         self.assertEqual(item["discovery_type"], "similar_artist")
+        self.assertEqual(item["deep_dive_kind"], "similar_artist")
 
 
 class GenreTests(unittest.TestCase):
