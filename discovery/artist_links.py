@@ -1,26 +1,27 @@
 """Similar-artist and collaborator links for Current tastes (Engine 2).
 
-Similar artists come from Last.fm ``artist.getSimilar`` by artist MBID. Collaborators come from the
-MusicBrainz artist lookup with ``inc=artist-rels``, keeping relations that link two artists through
-a band, a collaboration, a production or a performance role. Each answer is cached for 90 days (an
-empty answer too), at most ``LINK_MAX_CALLS`` provider calls run per kind per run, and a failed
-call leaves its artist uncached so a later run asks again. Never raises. Injected callables keep
-tests offline. See docs/plans/engine2.md.
+Similar artists come from ListenBrainz ``lb-radio/artist`` by artist MBID. Collaborators come from
+the MusicBrainz artist lookup with ``inc=artist-rels``, keeping relations that link two artists
+through a band, a collaboration, a production or a performance role. Each answer is cached for 90
+days (an empty answer too), at most ``LINK_MAX_CALLS`` provider calls run per kind per run, and a
+failed call leaves its artist uncached so a later run asks again. Never raises. Injected callables
+keep tests offline. See docs/plans/engine2.md.
 """
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
+from urllib.parse import quote
 
-from discovery.artist_tag_fallback import LASTFM_API_URL
-from discovery.mbid_popularity import LASTFM_SPACING_SECONDS
 from integrations.provider_gate import musicbrainz_lane
 
+LISTENBRAINZ_RADIO_URL = "https://api.listenbrainz.org/1/lb-radio/artist/"
+LISTENBRAINZ_SPACING_SECONDS = 0.5
 MUSICBRAINZ_ARTIST_URL = "https://musicbrainz.org/ws/2/artist/"
-SIMILAR_CACHE_PREFIX = "lastfm:similar:"
+SIMILAR_CACHE_PREFIX = "lb:similar:"
 COLLABORATOR_CACHE_PREFIX = "mb:artist-collaborators:"
 LINK_TTL_SECONDS = 90 * 24 * 60 * 60
-# Similar artists kept per artist (Last.fm returns more; the window weights are discounted anyway).
+# Similar artists kept per artist (the window weights are discounted anyway).
 SIMILAR_LIMIT = 10
 LINK_MAX_CALLS = 30
 # MusicBrainz relation types that tie two artists together as people who made music together.
@@ -30,16 +31,24 @@ COLLABORATOR_RELATIONS = frozenset({
 })
 
 
-def _lastfm_similar(body: Any) -> list[str] | None:
-    """Similar-artist MBIDs from a Last.fm body; None when the body is not an answer at all."""
-    if not isinstance(body, Mapping) or "error" in body:
+def _lb_similar(body: Any, seed_mbid: str) -> list[str] | None:
+    """Similar-artist MBIDs from a ListenBrainz radio body; None when the body is not an answer at all."""
+    if not isinstance(body, Mapping):
         return None
-    block = body.get("similarartists")
-    artists = block.get("artist") if isinstance(block, Mapping) else None
-    if not isinstance(artists, list):
-        return None
-    return [str(item["mbid"]) for item in artists
-            if isinstance(item, Mapping) and item.get("mbid")][:SIMILAR_LIMIT]
+    found: list[str] = []
+    for entries in body.values():
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, Mapping):
+                continue
+            mbid = str(entry.get("similar_artist_mbid") or "").strip()
+            if not mbid or mbid == seed_mbid or mbid in found:
+                continue
+            found.append(mbid)
+            if len(found) >= SIMILAR_LIMIT:
+                return found
+    return found
 
 
 def _collaborators(body: Any) -> list[str] | None:
@@ -112,32 +121,37 @@ def fetch_similar_artists(
     get: Callable[..., Any],
     artist_mbids: Iterable[str],
     *,
-    api_key: str,
+    headers: Mapping[str, str] | None = None,
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
     sleep: Callable[[float], Any] | None = None,
     timeout: float = 30,
 ) -> dict[str, list[str]]:
-    """Return {artist MBID: similar artist MBIDs} from Last.fm. Without an API key nothing is asked."""
+    """Return {artist MBID: similar artist MBIDs} from ListenBrainz radio."""
     from recommendation_run_metrics import record_provider_call
 
-    if not api_key:
-        return {}
+    req_headers = dict(headers or {})
 
     def ask(mbid: str) -> list[str] | None:
-        record_provider_call("lastfm", "artist.getSimilar")
+        record_provider_call("listenbrainz", "lb_radio_artist")
         response = get(
-            LASTFM_API_URL,
-            params={"method": "artist.getSimilar", "mbid": mbid, "limit": SIMILAR_LIMIT,
-                    "api_key": api_key, "format": "json"},
+            f"{LISTENBRAINZ_RADIO_URL}{quote(mbid, safe='')}",
+            params={
+                "mode": "easy",
+                "max_similar_artists": SIMILAR_LIMIT,
+                "max_recordings_per_artist": 1,
+                "pop_begin": 0,
+                "pop_end": 100,
+            },
+            headers=req_headers,
             timeout=timeout,
         )
         if response.status_code != 200:
             return None
-        return _lastfm_similar(response.json())
+        return _lb_similar(response.json(), mbid)
 
     return _fetch_links(artist_mbids, prefix=SIMILAR_CACHE_PREFIX, cache_get=cache_get,
-                        cache_set=cache_set, ask=ask, sleep=sleep, spacing=LASTFM_SPACING_SECONDS)
+                        cache_set=cache_set, ask=ask, sleep=sleep, spacing=LISTENBRAINZ_SPACING_SECONDS)
 
 
 def fetch_collaborators(

@@ -1,7 +1,7 @@
 """State and budgets of the owned-entity prefetch (efficiency K3), with no job or network code.
 
 The prefetch (``app/services/owned_prefetch.py``) is off unless the owner sets daily per-provider caps
-in the worker's environment, for example ``OWNED_PREFETCH_BUDGETS="musicbrainz=300,lastfm=600"``. A
+in the worker's environment, for example ``OWNED_PREFETCH_BUDGETS="musicbrainz=300,listenbrainz=300"``. A
 provider that is not listed has a cap of zero, and a request to it is refused before it is sent, so the
 job can never call a source the owner did not name. Nothing here imports a job, a provider client or
 the web app: the diagnostics route reads ``read_coverage`` without loading worker code.
@@ -34,11 +34,11 @@ COVERAGE_KEY = "prefetch:coverage"
 # network only when their providers are named (``owned_prefetch.prefetch_network``). ``reviews`` is the album
 # review outlets together (``album_review_sources``); it has no default, so reviews are prefetched only once the
 # owner names a cap for it.
-PROVIDERS = ("musicbrainz", "listenbrainz", "lastfm", "discogs", "deezer", "apple", "wikipedia", "reviews")
+PROVIDERS = ("musicbrainz", "listenbrainz", "discogs", "deezer", "apple", "wikipedia", "reviews")
 
 
 def provider_of(url) -> str:
-    """The provider a URL belongs to, by the diagnostics host table (which names Last.fm's API host)."""
+    """The provider a URL belongs to, by the diagnostics host table."""
     return provider_for_url(url)
 
 
@@ -47,7 +47,7 @@ class BudgetExhausted(httpx.TransportError):
 
 
 def parse_budgets(text: Optional[str]) -> dict:
-    """``{provider: cap}`` from ``"musicbrainz=300,lastfm=600"``. Unknown names, bad numbers and negatives are dropped."""
+    """``{provider: cap}`` from ``"musicbrainz=300,listenbrainz=300"``. Unknown names, bad numbers and negatives are dropped."""
     caps = {}
     for part in (text or "").split(","):
         name, _, number = part.partition("=")

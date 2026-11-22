@@ -87,12 +87,12 @@ def gather_lens_pools(
     cache_get, cache_set = providers.metadata_cache_get, providers.metadata_cache_set
     usable = usable_listens(listen for listen in listens if isinstance(listen, Mapping))
     history = sorted(history_artist_mbids(usable))
-    # Current tastes links: similar artists (Last.fm) and collaborators (MusicBrainz) of the window
+    # Current tastes links: similar artists (ListenBrainz) and collaborators (MusicBrainz) of the window
     # artists. Their genres are needed too, or the links have no tags to seed from.
     window, _days = recent_window(usable)
     window_mbids = sorted({listen_artist_mbid(listen) for listen in window} - {""})
     similar = fetch_similar_artists(
-        get, window_mbids, api_key=lastfm_api_key, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+        get, window_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
     collaborators = fetch_collaborators(
         get, window_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set)
     linked = {m for values in (*similar.values(), *collaborators.values()) for m in values}

@@ -10,9 +10,9 @@ from discovery import lens_pool_gatherer as gatherer
 from discovery.batch_metadata import LISTENBRAINZ_ARTIST_URL
 from discovery.lens_lists import LENS_LIST_SIZE, build_lens_lists
 from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
-from discovery.artist_links import LASTFM_API_URL, MUSICBRAINZ_ARTIST_URL
+from discovery.artist_links import LISTENBRAINZ_RADIO_URL, MUSICBRAINZ_ARTIST_URL
 from discovery.artist_profiles import MUSICBRAINZ_ARTIST_SEARCH_URL
-from discovery.artist_tag_fallback import MUSICBRAINZ_GENRE_URL
+from discovery.artist_tag_fallback import LASTFM_API_URL, MUSICBRAINZ_GENRE_URL
 from discovery.recommendations import music_key
 from integrations.listenbrainz.popularity import (
     LISTENBRAINZ_ARTIST_POPULARITY_URL,
@@ -73,9 +73,9 @@ class _Net:
                 {"tag": g, "genre_mbid": f"id-{g}"} for g in self.artist_genres[m]]}}
                 for m in params["artist_mbids"].split(",") if m in self.artist_genres]
             return _Response(entries)
+        if url.startswith(LISTENBRAINZ_RADIO_URL):
+            return _Response({})
         assert url == LASTFM_API_URL, url
-        if params["method"] == "artist.getSimilar":
-            return _Response({"similarartists": {"artist": []}})
         if params["method"] == "artist.gettoptags":
             tags = self.toptags.get(params["mbid"], [])
             return _Response({"toptags": {"tag": [{"name": n, "count": c} for n, c in tags]}})
