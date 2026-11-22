@@ -1,3 +1,19 @@
+## 2026-11-22 — Listening Room web L1: foundations behind Appearance switch (PR #1222 merged)
+
+- **Merged:** PR [#1222](https://github.com/abucalip/navi-librarian/pull/1222), squash commit `ab3e7663a35e76070039d54581275bbb32042289`, from exact PR head `585482d0dadfe718663b5e7395f657d134d85bf2`; branch `web/listening-room-l1`, based on `main` at `54e5e719`.
+- **Changes:**
+  - **Fonts:** copied `instrument-sans-600.woff2`, `instrument-sans-700.woff2`, and `LICENSE-instrument-sans.txt` (OFL 1.1) from `docs/design/listening-room/fonts/` into `static/fonts/`; declared both weights (`font-display: swap`) in `static/fonts/fonts.css`.
+  - **Tokens:** copied `docs/design/listening-room/tokens.css` to `static/listening-room/tokens.css` with the four `@font-face` URLs updated to `../fonts/...`, keeping all `--lr-*` variables, reduced-motion overrides, and `.lr-type-*` classes identical to the package.
+  - **Template and sprite:** linked `/static/listening-room/tokens.css` and inlined all 52 `#lr-*` `<symbol>` icons inside `<svg aria-hidden="true" style="display:none">` after the skip link in `app/templates/index.html`.
+  - **Appearance switch:** added opt-in `listeningroom` (`label: 'Listening Room'`, `layout: 'listeningroom'`, `dark: true`, `bar: '#0c0d10'`; `DEFAULT` unchanged at `ink`) in `static/appearance.js`, added `:root[data-theme="listeningroom"]` in `static/themes.css`, and noted `static/listening-room/` in `docs/ARCHITECTURE.md`.
+  - **Tests:** extended `tests/test_fonts_and_icons_ui_contract.py` (font count/budget/licence, `THEME_IDS`, `ListeningRoomFoundationTests`) and allowed `layout: 'listeningroom'` in `tests/test_tape_layout_ui_contract.py`.
+- **Tests run:** focused run `.venv/bin/python -m pytest tests/test_tape_layout_ui_contract.py tests/test_fonts_and_icons_ui_contract.py` — 50 passed in 0.28 s on exact head `585482d0` (plus 81 passed across `test_fonts_and_icons_ui_contract.py`, `test_header_menu_ui_contract.py` and `test_zine_layout_ui_contract.py` on `e95ee227`, `node --check static/appearance.js`, and `scripts/check_lint_changed.py --base origin/main` with 0 new findings). Full unit suite not run locally.
+- **CI on head `585482d0`:** `compile`, `container-smoke`, `lint-changed`, `test-and-build`, `validate-container`, and `validate-release-workflow` passed (`publish-release` skipped).
+- **Not verified:** not checked in a live browser; not published, deployed or runtime-verified.
+- **Next action:** start Listening Room slice L2 (shell: rail, icon rail, phone tab bar with More sheet, top bar with search and mode switch, skip link, focus ring).
+
+---
+
 ## 2026-11-22 — Listening Room web L0: server audit, deep_dive_kind and pick_why builder (PR #1221 merged)
 
 - **Merged:** PR [#1221](https://github.com/abucalip/navi-librarian/pull/1221), squash commit `c941c6a1f75a3a3de0f12563367976d75caff5e4`, from exact PR head `c6c7c74ccd64e277e8d67aac98b6b4f02dd7180a`; branch `web/listening-room-l0`, based on `main` at `b31b1165`.
