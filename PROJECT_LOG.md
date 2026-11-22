@@ -1,3 +1,18 @@
+## 2026-11-22 — macOS design details D7.1–D7.4, graph and map labels (PR #1217 merged)
+
+- **Merged:** PR [#1217](https://github.com/abucalip/navi-librarian/pull/1217), squash commit `96ade9f3c9ecbd5f0f7f78898de7cadb9ff84c71`, from exact PR head `70a278c1deeaa7fc0a78486e31f0e72d185c73d2`; branch `macos/d7-graph-map-labels`, based on `main` at `19bb6a05` (D6.1–D6.4 merged in PR #1216).
+- **Changes:**
+  - **D7.1:** added `GraphLayout.sectorLabelAngles(_:)` (`GraphExplorer.swift`) to drop sector eyebrows with fewer than 2 step-1 nodes and place remaining sector labels in edge midpoint gaps; updated `CupertinoConnections.swift` and `GraphExplorerView.swift` so edges draw beneath nodes/labels and centre, node, and sector labels sit on a rounded `CU.content` 80% halo with 4 pt padding.
+  - **D7.2:** replaced SwiftUI `Map` with `AtlasMapView` (`MKMapView` via `NSViewRepresentable` in `AtlasView.swift`) enabling native MapKit clustering (`clusteringIdentifier = "atlas-place"`, numbered `AtlasClusterView` badges that zoom to members on click) and `collisionMode = .circle`; added `AtlasGeometry.displayPriority(owned:recordings:selected:)`, `AtlasGeometry.clusterBadgeSize(count:)`, and pure `AtlasLabelLayout.place(_:in:)` (`AtlasModel.swift`) so lower-count labels hide first and visible labels stay inside the map's safe bounds.
+  - **D7.3:** added `AtlasInspector.albumLine(for:)` (`AtlasView.swift`) and omitted the album `Text` when a recording has no linked albums (or only blank names).
+  - **D7.4:** added optional `rowSpacing` and width clamping to `FlowLayout` (`CupertinoHome.swift`), and updated `AtlasView.footer` (`AtlasView.swift`) and `TimelineView.footer` (`TimelineView.swift`) to wrap legend clauses as one block with `"Showing the first … only."` on its own line.
+- **Tests run:** `select-tests.sh` selected `DiscairUITests` (`bundle=false`); `swift test --package-path navi-librarian/macos --disable-sandbox --filter 'D7GraphMapLabelsTests|AtlasTests|GraphLayoutTests|GraphSectorTests|TimelineGroupingTests|TimelineModelTests|D4PageTitleEdgeTests|D57TrailingInspectorHeightTests'` — 38 tests in 10 suites passed (9.067 s) on exact head `70a278c1`. Day and Night offscreen renders of Connections, Atlas and Timeline were inspected. No full suite.
+- **CI on head `70a278c1`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Not verified:** owner visual acceptance in a live window (including live MapKit clustering/tiles); no CPU measurement (no continuous or looping SwiftUI motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks D7.1–D7.4 in a live window; Slice D8 (user-facing copy) can start.
+
+---
+
 ## 2026-11-22 — macOS design details D5.1–D5.9, columns in lists (PR #1215 merged)
 
 - **Merged:** PR [#1215](https://github.com/abucalip/navi-librarian/pull/1215), squash commit `10e9e228cd5f22c36591d8d7927cc453b3df1f11`, from exact PR head `9a807380df6ad655fcc48f5aa9aff15f55685227`; branch `macos/d5-columns-in-lists`, based on `main` at `8fd63365` (D4.7–D4.8 docs closeout).
