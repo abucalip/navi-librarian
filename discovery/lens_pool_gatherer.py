@@ -1,8 +1,8 @@
 """Daily lens pools: gathers each lens's candidate pool (Engine 2, Phase 4, slice 2).
 
 For each lens in ``LENS_LIST_ORDER`` the gatherer runs ``run_deep_cuts_tag_supply`` with the lens
-name and the day as the radio scope, then looks up the album listeners (MusicBrainz release search
-and Last.fm album.getInfo), the artist genre tags (one ListenBrainz artist batch per lens, cached)
+name and the day as the radio scope, then looks up the album listeners (batched ListenBrainz
+release-group popularity), the artist genre tags (one ListenBrainz artist batch per lens, cached)
 and the fallback tags for pool artists with fewer than two genre tags. Its output is the input of
 ``discovery.lens_lists.build_lens_lists``.
 
@@ -27,9 +27,6 @@ from discovery.lens_lists import LENS_LIST_ORDER, history_artist_mbids, lens_see
 from discovery.mbid_popularity import resolve_popularity
 from settings.service import engine2_lens_lists_enabled_value
 
-# Last.fm album.getInfo calls per lens. The selection reads album listeners only, so the
-# artist.getInfo lookups are skipped. Approved budget: 40 to 60 album lookups per lens.
-LENS_LASTFM_CALL_BUDGET = 60
 # Last.fm top-tag calls per lens for pool artists with fewer than two genre tags. Each answer is
 # cached for 90 days, so a repeat run costs nothing for artists already answered.
 LENS_FALLBACK_CALL_BUDGET = 40
@@ -86,7 +83,7 @@ def gather_lens_pools(
     if not engine2_lens_lists_enabled_value(settings_read):
         return {"status": "disabled", "day": day}
 
-    get, sleep = providers.http_get, providers.sleep
+    get, post, sleep = providers.http_get, providers.http_post, providers.sleep
     cache_get, cache_set = providers.metadata_cache_get, providers.metadata_cache_set
     usable = usable_listens(listen for listen in listens if isinstance(listen, Mapping))
     history = sorted(history_artist_mbids(usable))
@@ -123,8 +120,7 @@ def gather_lens_pools(
         pools[lens.name] = pool
 
         found = resolve_popularity(
-            get, pool, api_key=lastfm_api_key, headers=headers, cache_get=cache_get,
-            cache_set=cache_set, sleep=sleep, max_lastfm_calls=LENS_LASTFM_CALL_BUDGET,
+            post, pool, headers=headers, cache_get=cache_get, cache_set=cache_set,
             with_artist_listeners=False,
         )
         popularity.update(found)
