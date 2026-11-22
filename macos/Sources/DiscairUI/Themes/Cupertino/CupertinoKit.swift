@@ -389,3 +389,50 @@ struct CUSwitchRow: View {
         }
     }
 }
+
+// MARK: Quality badge
+
+/// Filled format/quality badge shared across the player bar, track table, album header and library song table (D4.5).
+/// Uses a filled rounded rectangle in every context (never outlined): neutral on standard grounds, inverted on an accent
+/// playing row (D2.8), and translucent white on dark media/tinted grounds.
+struct CUQualityBadge: View {
+    enum Surface: Equatable {
+        case standard
+        case playing
+        case onMedia
+    }
+
+    static let cornerRadius: CGFloat = 4
+    static let horizontalPadding: CGFloat = CU.Space.s
+    static let verticalPadding: CGFloat = 2
+
+    let text: String
+    var surface: Surface = .standard
+    @Environment(\.cuInPanel) private var inPanel
+
+    var body: some View {
+        Text(text)
+            .font(CU.Font.caption.weighted(.bold))
+            .padding(.horizontal, Self.horizontalPadding)
+            .padding(.vertical, Self.verticalPadding)
+            .foregroundStyle(foreground)
+            .background(background, in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+            .fixedSize()
+    }
+
+    private var foreground: Color {
+        switch surface {
+        case .standard: CU.text
+        case .playing: CU.accent
+        case .onMedia: CU.onMedia
+        }
+    }
+
+    private var background: Color {
+        switch surface {
+        case .standard: inPanel ? CU.bgFillOnPanel : CU.bgFill
+        case .playing: CU.onAccent
+        case .onMedia: CU.onMedia.opacity(0.22)
+        }
+    }
+}

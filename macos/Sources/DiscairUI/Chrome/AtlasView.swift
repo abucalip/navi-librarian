@@ -11,6 +11,9 @@ struct AtlasView: View {
     private var atlas: AtlasModel { state.atlas }
     @State private var camera: MapCameraPosition = .automatic
 
+    /// Shared Cupertino page horizontal inset (`CU.Space.xl`, D4.4) so the title and map/list align with other pages.
+    static let horizontalPadding: CGFloat = CU.Space.xl
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
@@ -19,7 +22,7 @@ struct AtlasView: View {
                 if atlas.showsList { list } else { map }
                 footer
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, Self.horizontalPadding)
             inspector.frame(width: 290)
         }
         .task { await state.loadAtlas(); camera = .region(atlas.region) }

@@ -185,8 +185,7 @@ struct CupertinoLibrary: View {
             cell(w[3]) { Text(String(r.year)) }
             cell(w[4]) { Text(r.genre).lineLimit(1) }
             cell(w[5]) {
-                Text(r.format).font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
-                    .background(on ? CU.onAccent.opacity(0.25) : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
+                CUQualityBadge(text: r.format, surface: on ? .playing : .standard)
             }
             cell(w[6]) { Text(r.bitrate) }
             cell(w[7]) { Text(SongTable.stars(r.rating)).font(CU.Font.caption.weighted(.regular)).accessibilityLabel(r.rating > 0 ? "\(r.rating) stars" : "Not rated") }
