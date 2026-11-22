@@ -1,10 +1,14 @@
 import unittest
 
 from integrations.listenbrainz.popularity import (
+    ARTIST_POPULARITY_CACHE_PREFIX,
     NEGATIVE_TTL_SECONDS,
     POPULARITY_CACHE_PREFIX,
     POPULARITY_CHUNK,
+    TOP_RELEASE_GROUPS_CACHE_PREFIX,
     build_popularity_lookup,
+    fetch_artist_popularity,
+    fetch_artist_top_release_groups,
     fetch_release_group_popularity,
 )
 
@@ -102,6 +106,103 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(asked, [[A]], "limit 2 keeps Z (no mbid) and X; Y is cut")
         self.assertEqual(lookup("x", "ONE"), stats[A])
         self.assertIsNone(lookup("Y", "Two"))
+
+
+class ArtistPopularityTests(unittest.TestCase):
+    def setUp(self):
+        self.cache, self.posts, self.now = {}, [], 1_000_000.0
+
+    def _get(self, key, ttl_seconds):
+        return self.cache.get(key)
+
+    def _fetch(self, body, mbids, status=200):
+        def post(url, json, headers, timeout):
+            self.posts.append((url, json["artist_mbids"]))
+            return FakeResponse(status, body)
+        return fetch_artist_popularity(
+            post, self._get, self.cache.__setitem__, mbids, headers={},
+            clock=lambda: self.now)
+
+    def test_maps_artist_counts_skips_nulls_and_caches(self):
+        body = [
+            {"artist_mbid": A, "total_listen_count": 5000, "total_user_count": 120},
+            {"artist_mbid": B, "total_listen_count": None, "total_user_count": None},
+        ]
+        found = self._fetch(body, [A, B])
+        self.assertEqual(found, {A: {"listeners": 120, "playcount": 5000, "tags": []}})
+        self.assertEqual(len(self.posts), 1)
+        self.assertEqual(
+            self.cache[f"{ARTIST_POPULARITY_CACHE_PREFIX}{A}"],
+            {"listeners": 120, "playcount": 5000, "tags": []},
+        )
+        self.assertEqual(
+            self.cache[f"{ARTIST_POPULARITY_CACHE_PREFIX}{B}"],
+            {"negative": True, "at": self.now},
+        )
+        self._fetch(body, [A, B])
+        self.assertEqual(len(self.posts), 1, "cached and fresh negative artists must not be re-requested")
+
+    def test_chunks_and_errors_write_nothing(self):
+        many = [f"{i:08x}-1111-2222-3333-444444444444" for i in range(POPULARITY_CHUNK + 1)]
+        self.assertEqual(self._fetch([], many), {})
+        self.assertEqual([len(p[1]) for p in self.posts], [POPULARITY_CHUNK, 1])
+        before = dict(self.cache)
+        self.assertEqual(self._fetch(None, [A], status=500), {})
+        self.assertEqual(self.cache, before)
+
+
+class ArtistTopReleaseGroupsTests(unittest.TestCase):
+    def setUp(self):
+        self.cache, self.gets, self.now = {}, [], 1_000_000.0
+
+    def _get_cache(self, key, ttl_seconds):
+        return self.cache.get(key)
+
+    def _fetch(self, body, mbid, status=200):
+        def get(url, headers, timeout):
+            self.gets.append(url)
+            return FakeResponse(status, body)
+        return fetch_artist_top_release_groups(
+            get, self._get_cache, self.cache.__setitem__, mbid, headers={},
+            clock=lambda: self.now)
+
+    def test_parses_and_caches_top_release_groups(self):
+        body = [
+            {
+                "release_group_mbid": B,
+                "release_group_name": "First Album",
+                "total_listen_count": 300,
+                "total_user_count": 25,
+            },
+            {
+                "release_group_mbid": C,
+                "release_group_name": "Second Album",
+                "total_listen_count": None,
+                "total_user_count": None,
+            },
+        ]
+        items = self._fetch(body, A)
+        self.assertEqual(items, [
+            {"release_group_mbid": B, "name": "First Album", "listeners": 25, "playcount": 300},
+            {"release_group_mbid": C, "name": "Second Album", "listeners": 0, "playcount": 0},
+        ])
+        self.assertEqual(len(self.gets), 1)
+        self.assertEqual(self.cache[f"{TOP_RELEASE_GROUPS_CACHE_PREFIX}{A}"], items)
+        self.assertEqual(self._fetch([], A), items)
+        self.assertEqual(len(self.gets), 1, "cached top release groups must not be re-requested")
+
+    def test_empty_or_error_handling(self):
+        self.assertEqual(self._fetch([], ""), [])
+        self.assertEqual(len(self.gets), 0)
+        self.assertEqual(self._fetch(None, A, status=502), [])
+        self.assertEqual(self.cache, {})
+        self.assertEqual(self._fetch([], A), [])
+        self.assertEqual(
+            self.cache[f"{TOP_RELEASE_GROUPS_CACHE_PREFIX}{A}"],
+            {"negative": True, "at": self.now},
+        )
+        self._fetch([], A)
+        self.assertEqual(len(self.gets), 2, "fresh negative entry must not be re-requested")
 
 
 if __name__ == "__main__":
