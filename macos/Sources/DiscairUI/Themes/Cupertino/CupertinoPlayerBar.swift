@@ -186,10 +186,8 @@ struct CupertinoPlayerBar: View {
             nowPlayingButton
             middle
             if let q = p.current?.qualityLabel {
-                Text(q).font(CU.Font.caption.weighted(.semibold)).foregroundStyle(secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(secondary.opacity(0.6), lineWidth: 1))
-                    .fixedSize().accessibilityLabel("Quality \(q)")
+                CUQualityBadge(text: q, surface: tinted ? .onMedia : .standard)
+                    .accessibilityLabel("Quality \(q)")
             }
             if p.current != nil { lineSwitches }
             transport

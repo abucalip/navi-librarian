@@ -310,6 +310,11 @@ struct CupertinoSidebar: View {
         ("map", "Atlas", .atlas), ("lightbulb", "Insights", .insights),
     ]
 
+    /// Equal top gap before each sidebar group (Discover, tools, Playlists; D4.6).
+    static let groupGap: CGFloat = CU.Space.m
+    /// Shared sidebar group-header font (D4.6): the small bold grey label used by both Discover and Playlists.
+    static let groupHeaderFont: SwiftUI.Font = CU.Font.eyebrow.font
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             TrafficLights().padding(.leading, CU.Space.s).padding(.bottom, CU.Space.m)
@@ -318,27 +323,29 @@ struct CupertinoSidebar: View {
                     row("house", "Home", .home)
                     row("books.vertical", "Library", .library)
                     row("radio", "Radio", .stations)
-                    Color.clear.frame(height: CU.Space.m)
                     Button { state.discoverOpen.toggle() } label: {
                         HStack(spacing: CU.Space.s) {
                             Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(CU.Icon.small(.bold)).frame(width: 18)
-                            Text("Discover").font(CU.Font.headline.font)
+                            Text("Discover").font(Self.groupHeaderFont)
                             Spacer()
                         }
                         .foregroundStyle(CU.textSecondary).padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .padding(.top, Self.groupGap)
                     .accessibilityLabel("Discover").accessibilityValue(state.discoverOpen ? "expanded" : "collapsed")
                     .accessibilityHint("Shows or hides the discovery pages")
                     if state.discoverOpen {
                         ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen).padding(.leading, 16) }
                     }
-                    Color.clear.frame(height: CU.Space.m)
                     row("wand.and.stars", "Smart Playlists", .smartPlaylists)
+                        .padding(.top, Self.groupGap)
                     row("arrow.down.circle", "Downloads", .downloads)
                     row("gearshape", "Settings", .settings)
-                    Text("Playlists").font(CU.Font.eyebrow.font).foregroundStyle(CU.textSecondary).padding(.leading, CU.Space.s).padding(.top, CU.Space.m)
+                    Text("Playlists").font(Self.groupHeaderFont).foregroundStyle(CU.textSecondary)
+                        .padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
+                        .padding(.top, Self.groupGap)
                     ForEach(state.smart.lists) { list in
                         Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
                             HStack(spacing: CU.Space.s) {

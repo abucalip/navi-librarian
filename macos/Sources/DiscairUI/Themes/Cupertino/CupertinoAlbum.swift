@@ -52,11 +52,9 @@ struct CupertinoAlbumBanner: View {
                             .opacity(0.85).padding(.top, 4)
                         HStack(spacing: 8) {
                             if let q = tracks.first(where: \.owned)?.format, !q.isEmpty {
-                                Text(q).font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
-                                    .background(CU.onMedia.opacity(0.22), in: RoundedRectangle(cornerRadius: 4))
+                                CUQualityBadge(text: q, surface: .onMedia)
                             }
-                            Text("\(owned) of \(tracks.count) owned").font(CU.Font.caption.weighted(.bold)).padding(.horizontal, 8).padding(.vertical, 0)
-                                .background(CU.onMedia.opacity(0.22), in: RoundedRectangle(cornerRadius: 4))
+                            CUQualityBadge(text: "\(owned) of \(tracks.count) owned", surface: .onMedia)
                         }
                         .padding(.top, 8).padding(.bottom, 16)
                         HStack(spacing: 8) {
@@ -225,10 +223,7 @@ struct CupertinoAlbum: View {
             cell(width: cols[3]) {
                 if isHeader { Text("Quality") }
                 else if track!.owned {
-                    Text(track!.format).font(CU.Font.caption.weighted(.bold))
-                        .padding(.horizontal, 8).padding(.vertical, 0)
-                        .foregroundStyle(on ? CU.accent : CU.text)
-                        .background(on ? CU.onAccent : CU.bgFill, in: RoundedRectangle(cornerRadius: 4))
+                    CUQualityBadge(text: track!.format, surface: on ? .playing : .standard)
                 } else { Text("Not owned") }
             }
             cell(width: cols[4]) {
