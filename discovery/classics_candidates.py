@@ -6,6 +6,32 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 
+def _listeners(item: dict[str, Any]) -> int:
+    value = item.get("listeners")
+    if value is None:
+        value = item.get("lastfm_listeners")
+    return int(value or 0)
+
+
+def _with_listener_aliases(album: dict[str, Any]) -> dict[str, Any]:
+    out = dict(album)
+    listeners = album.get("listeners")
+    if listeners is None:
+        listeners = album.get("lastfm_listeners")
+    if listeners is not None:
+        val = int(listeners)
+        out["listeners"] = val
+        out["lastfm_listeners"] = val
+    playcount = album.get("playcount")
+    if playcount is None:
+        playcount = album.get("lastfm_playcount")
+    if playcount is not None:
+        val = int(playcount)
+        out["playcount"] = val
+        out["lastfm_playcount"] = val
+    return out
+
+
 def collect_classic_candidates(
     library_artists: Iterable[dict[str, Any]],
     owned: set[tuple[str, str]],
@@ -18,7 +44,7 @@ def collect_classic_candidates(
     """Collect unowned eligible top-album candidates, retaining legacy deduplication.
 
     Artists are visited in descending library-album-count order. For duplicate
-    normalized artist/album identities, the record with the greatest Last.fm
+    normalized artist/album identities, the record with the greatest
     listener count wins. The optional pause callback is invoked after each fifth
     artist (excluding the first) to preserve provider pacing without owning a timer.
     """
@@ -35,11 +61,11 @@ def collect_classic_candidates(
             if key in owned:
                 continue
             old = candidates.get(key)
-            if old is None or album["lastfm_listeners"] > old["lastfm_listeners"]:
+            if old is None or _listeners(album) > _listeners(old):
                 candidates[key] = {
-                    **album,
+                    **_with_listener_aliases(album),
                     "discovery_type": "classic",
-                    "discovery_source": "Last.fm artist top albums",
+                    "discovery_source": "ListenBrainz artist top albums",
                     "artist_library_album_count": artist_record["album_count"],
                 }
         if pause is not None and index and index % 5 == 0:

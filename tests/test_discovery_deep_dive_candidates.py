@@ -12,8 +12,8 @@ def key(value):
     return str(value).lower().strip()
 
 
-def album(artist, name, listeners=1):
-    return {"artist": artist, "album": name, "lastfm_listeners": listeners}
+def album(artist, name, listeners=1, playcount=10):
+    return {"artist": artist, "album": name, "listeners": listeners, "playcount": playcount}
 
 
 class MissingAlbumTests(unittest.TestCase):
@@ -30,6 +30,10 @@ class MissingAlbumTests(unittest.TestCase):
         self.assertEqual(list(out), [("x", "one")])
         self.assertEqual(out[("x", "one")]["anchor_artist"], "A6")
         self.assertEqual(out[("x", "one")]["deep_dive_kind"], "missing_album")
+        self.assertEqual(out[("x", "one")]["listeners"], 1)
+        self.assertEqual(out[("x", "one")]["lastfm_listeners"], 1)
+        self.assertEqual(out[("x", "one")]["playcount"], 10)
+        self.assertEqual(out[("x", "one")]["lastfm_playcount"], 10)
         self.assertEqual(len(pauses), 1)  # index 5 only
 
     def test_equal_anchor_count_keeps_first(self):
@@ -47,7 +51,7 @@ class ResolvedPoolTests(unittest.TestCase):
 
     def test_filters_and_enriches(self):
         pool = [
-            {"artist": "Band", "album": "New", "score": "bad", "mbid": "m"},
+            {"artist": "Band", "album": "New", "score": "bad", "mbid": "m", "listeners": 42, "playcount": 123},
             {"artist": "Band", "album": "Sel", "selection_decision": "selected"},
             {"artist": "Band", "album": "Own", "exact_owned": True},
             {"artist": "Band", "album": "Have"},
@@ -61,6 +65,10 @@ class ResolvedPoolTests(unittest.TestCase):
         self.assertEqual(out[("band", "new")]["candidate_pool_score"], 0.0)
         self.assertEqual(out[("band", "new")]["anchor_album_count"], 4)
         self.assertEqual(out[("band", "new")]["deep_dive_kind"], "missing_album")
+        self.assertEqual(out[("band", "new")]["listeners"], 42)
+        self.assertEqual(out[("band", "new")]["lastfm_listeners"], 42)
+        self.assertEqual(out[("band", "new")]["playcount"], 123)
+        self.assertEqual(out[("band", "new")]["lastfm_playcount"], 123)
 
     def test_existing_candidate_is_annotated_not_replaced(self):
         existing = {"artist": "Band", "album": "New", "marker": 1}

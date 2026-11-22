@@ -146,6 +146,16 @@ class PickWhyTests(unittest.TestCase):
             "chips": [{"type": "listeners", "label": "850 listeners", "value": 850, "href_kind": None}],
         })
 
+        why_lb = build_pick_why({
+            "artist_library_album_count": 2,
+            "listeners": 12_300,
+        }, list_name="classics")
+        self.assertEqual(why_lb, {
+            "kind": "collection",
+            "sentence": "A well-known album; you have 2 albums by this artist",
+            "chips": [{"type": "listeners", "label": "12k listeners", "value": 12_300, "href_kind": None}],
+        })
+
     def test_r11_discover_music_categories(self):
         adj = build_pick_why({"discovery_category": "adjacent", "lastfm_listeners": 25_000})
         self.assertEqual(adj["kind"], "discover")

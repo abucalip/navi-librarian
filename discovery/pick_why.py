@@ -82,6 +82,8 @@ def _positive_int(value: Any) -> int | None:
 def _listeners_chip(item: Mapping[str, Any]) -> dict[str, Any] | None:
     listeners = _positive_int(item.get("album_listeners"))
     if listeners is None:
+        listeners = _positive_int(item.get("listeners"))
+    if listeners is None:
         listeners = _positive_int(item.get("lastfm_listeners"))
     if listeners is None:
         return None

@@ -6,8 +6,8 @@ from discovery.classics_ratings import enrich_critical_ratings
 class ClassicsCriticalRatingTests(unittest.TestCase):
     def test_queries_listener_ranked_shortlist_and_bounds_year_lookups(self):
         candidates = [
-            {"mbid": "low", "lastfm_listeners": 10, "year": 1990},
-            {"mbid": "high", "lastfm_listeners": 100},
+            {"mbid": "low", "listeners": 10, "year": 1990},
+            {"mbid": "high", "listeners": 100},
             {"mbid": "mid", "lastfm_listeners": 50},
         ]
         calls = []
