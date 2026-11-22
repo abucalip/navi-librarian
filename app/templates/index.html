@@ -594,7 +594,6 @@
     <div class="settings-tabs" role="tablist" aria-label="Service settings">
       <button type="button" id="tabNavidrome" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
       <button type="button" id="tabSlskd" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
-      <button type="button" id="tabLastfm" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
       <button type="button" id="tabListenbrainz" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
       <button type="button" id="tabDiscogs" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsDiscogs" data-settings-tab="discogs">Discogs</button>
       <button type="button" id="tabAppearance" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsAppearance" data-settings-tab="appearance">Appearance</button>
@@ -629,18 +628,6 @@
         <button id="testSlskd" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
       </div></div>
       <p id="slskdStatus" class="status-line" aria-live="polite"></p>
-    </div>
-    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabLastfm" hidden>
-      <h3>Last.fm API</h3>
-      <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
-      <label>Username <input id="lastfmUsername" type="text" autocomplete="off"></label>
-      <p class="muted">Your Last.fm username is used to read your listening history for Daily picks. Leave it blank to use the LASTFM_USERNAME setting.</p>
-      <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
-      <p id="lastfmStatus" class="status-line" aria-live="polite"></p>
-      <div class="settings-actions"><div class="action-group" role="group" aria-label="Last.fm settings">
-        <button id="saveLastfm" type="button" title="Save settings" aria-label="Save settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
-        <button id="testLastfm" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
-      </div></div>
     </div>
     <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabListenbrainz" hidden>
       <h3>ListenBrainz profile</h3>

@@ -130,7 +130,7 @@ class ZineLayoutTests(unittest.TestCase):
         for text in ("sits between the two you have", "comes after", "comes before", "is your way into"):
             self.assertIn(text, position)
         why = self.zine_js.split("function zineWhy(")[1].split("\n}\n")[0]
-        for text in ("Ranked first today", "from your plays of", "Last.fm neighbours of", "shelfItems.Frequent"):
+        for text in ("Ranked first today", "from your plays of", "artists similar to", "shelfItems.Frequent"):
             self.assertIn(text, why)
         fn = self.zine_js.split("function zineApplyLead(")[1].split("\n}\n")[0]
         self.assertIn("' Target quality: '", fn)
