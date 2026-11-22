@@ -224,7 +224,7 @@ def _scrobble_in_background(store, play_id: int) -> None:
 
 @router.get("/api/radio/scrobbling")
 def radio_scrobbling(store=Depends(get_store)):
-    """Whether radio songs are scrobbled to Last.fm (default off), and whether Last.fm is set up."""
+    """Whether radio songs are scrobbled to ListenBrainz (default off), and whether ListenBrainz is set up."""
     return {"enabled": scrobble.enabled(store), "configured": scrobble.credentials_from_env().ready}
 
 
@@ -243,7 +243,7 @@ def radio_set_scrobbling(payload: dict, store=Depends(get_store)):
 
 @router.post("/api/radio/plays/{play_id}/love")
 def radio_love(play_id: int, store=Depends(get_store)):
-    """Love a logged song on Last.fm. An explicit request, so it works whether or not scrobbling is on."""
+    """Love a logged song on ListenBrainz. An explicit request, so it works whether or not scrobbling is on."""
     try:
         scrobble.love(store, play_id, creds=scrobble.credentials_from_env())
     except LookupError:
