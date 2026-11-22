@@ -58,11 +58,11 @@ final class FakeRadioSettingsSource: RadioSettingsSource, @unchecked Sendable {
         #expect(m.appAddressText == "Not set")
     }
 
-    @Test func withoutLastFmTheSwitchIsDisabledWithTheReason() async {
+    @Test func withoutListenBrainzTheSwitchIsDisabledWithTheReason() async {
         let (m, s) = make()
         s.scrobbling = RadioScrobbling(enabled: false, configured: false)
         await m.load()
-        #expect(!m.canSwitchScrobbling && m.scrobblingDetail == "Last.fm is not set up on the server")
+        #expect(!m.canSwitchScrobbling && m.scrobblingDetail == "ListenBrainz is not set up on the server")
         await m.setScrobbling(true)
         #expect(!s.calls.contains("set scrobbling true") && !m.scrobblingOn)       // nothing is sent
     }
@@ -77,9 +77,9 @@ final class FakeRadioSettingsSource: RadioSettingsSource, @unchecked Sendable {
     @Test func aRefusalPutsTheSwitchBackAndKeepsTheServersSentence() async {
         let (m, s) = make()
         await m.load()
-        s.fail = .server(status: 409, message: "Last.fm needs to be set up first.")
+        s.fail = .server(status: 409, message: "ListenBrainz needs to be set up first.")
         await m.setScrobbling(true)
-        #expect(!m.scrobblingOn && m.note == "Last.fm needs to be set up first.")
+        #expect(!m.scrobblingOn && m.note == "ListenBrainz needs to be set up first.")
         s.fail = nil
         await m.setScrobbling(true)
         #expect(m.scrobblingOn && m.note == nil)

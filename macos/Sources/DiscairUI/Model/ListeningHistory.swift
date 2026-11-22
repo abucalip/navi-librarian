@@ -16,7 +16,7 @@ struct HeatCell: Identifiable, Equatable {
 
 /// Listening history from what Navidrome keeps per song: its play count and the time of its latest play (contract
 /// section 6.6). Navidrome stores only the latest play of each song, so a song played on three days appears on the
-/// last of them. A full play-by-play history would need the scrobble services (Last.fm, ListenBrainz), which this
+/// last of them. A full play-by-play history would need the scrobble service (ListenBrainz), which this
 /// screen does not read. Pure, so it is tested without a window.
 enum ListeningHistory {
     static func days(_ songs: [SongRow], calendar: Calendar = .current) -> [HistoryDay] {

@@ -40,7 +40,6 @@ private final class Recorder: HTTPTransport, @unchecked Sendable {
 
     @Test func rejectedKeysAndMissingUsersAreNamed() async {
         #expect(await ServiceDraftProbe(transport: Recorder(status: 401)).test(.slskd, draft: Self.draft(address: "http://h:1", secret: "k")).status == "authentication_failed")
-        #expect(await ServiceDraftProbe(transport: Recorder(status: 200, body: #"{"error":10,"message":"Invalid API key"}"#)).test(.lastfm, draft: Self.draft(secret: "bad")).status == "authentication_failed")
         #expect(await ServiceDraftProbe(transport: Recorder(status: 404)).test(.listenbrainz, draft: Self.draft(username: "nobody")).status == "not_found")
         #expect(await ServiceDraftProbe(transport: Recorder(status: 500)).test(.discogs, draft: Self.draft(secret: "t")).status == "connection_failed")
     }

@@ -18,15 +18,14 @@ import DiscairCore
         #expect(t.sent[0].httpMethod == "GET" && t.sent[0].url!.path == "/api/settings/navidrome")
     }
 
-    @Test func lastFMSlskdAndDiscogsSettingsDecode() async throws {
-        #expect(try await client(answer(#"{"api_key_configured":true,"username":"abc"}"#)).lastFMSettings() == LastFMSettings(apiKeyConfigured: true, username: "abc"))
+    @Test func slskdAndDiscogsSettingsDecode() async throws {
         let slskd = try await client(answer(#"{"music_library_path":"/music","slskd_url":"http://nas:5030","api_key_configured":true,"slskd_downloads_path":"/dl","quality_priority":["mp3_320","flac_cd"],"quality_labels":{"mp3_320":"MP3 320 kbps"}}"#)).slskdSettings()
         #expect(slskd == SlskdSettings(url: "http://nas:5030", apiKeyConfigured: true, downloadsPath: "/dl", musicLibraryPath: "/music", qualityPriority: ["mp3_320", "flac_cd"]))
         #expect(try await client(answer(#"{"token_configured":true,"source":"environment"}"#)).discogsSettings() == DiscogsSettings(tokenConfigured: true, source: "environment"))
     }
 
     @Test func missingFieldsReadAsNotConfigured() async throws {
-        #expect(try await client(answer("{}")).lastFMSettings() == LastFMSettings(apiKeyConfigured: false))
+        #expect(try await client(answer("{}")).slskdSettings() == SlskdSettings(url: "", apiKeyConfigured: false))
         #expect(try await client(answer("{}")).discogsSettings() == DiscogsSettings(tokenConfigured: false, source: "none"))
     }
 
@@ -34,9 +33,6 @@ import DiscairCore
         let nav = answer(#"{"ok":true,"status":"connected","message":"Navidrome connection succeeded."}"#)
         #expect(try await client(nav).testNavidrome().ok)
         #expect(nav.sent[0].httpMethod == "POST" && nav.sent[0].url!.path == "/api/settings/navidrome/test")
-
-        let last = try await client(answer(#"{"ok":false,"status":"authentication_failed","message":"Last.fm rejected the API key. Check the key in Settings."}"#)).testLastFM()
-        #expect(!last.ok && last.status == "authentication_failed")
 
         // slskd adds http_status on success; unknown fields are ignored.
         let slskd = try await client(answer(#"{"ok":true,"status":"connected","http_status":200,"message":"slskd API connection succeeded."}"#)).testSlskd()
@@ -84,15 +80,13 @@ import DiscairCore
         let t = answer(#"{"ok":true}"#)
         let c = try client(t)
         try await c.saveNavidrome(url: "http://nd:4533", username: "me")
-        try await c.saveLastFM(apiKey: "k")
         try await c.saveSlskd(url: "http://sl:5030", qualityPriority: ["mp3_320"])
         try await c.saveDiscogs(token: "")
         func body(_ i: Int) throws -> [String: Any] { try JSONSerialization.jsonObject(with: #require(t.sent[i].httpBody)) as! [String: Any] }
         #expect(t.sent.allSatisfy { $0.httpMethod == "PUT" })
         #expect(try body(0) as NSDictionary == ["navidrome_url": "http://nd:4533", "username": "me", "password": ""] as NSDictionary)
-        #expect(try body(1) as NSDictionary == ["api_key": "k"] as NSDictionary)      // no username key: the server keeps it
-        #expect(try body(2)["quality_priority"] as? [String] == ["mp3_320"])
-        #expect(try body(3) as NSDictionary == ["token": ""] as NSDictionary)
+        #expect(try body(1)["quality_priority"] as? [String] == ["mp3_320"])
+        #expect(try body(2) as NSDictionary == ["token": ""] as NSDictionary)
     }
 
     @Test func slskdFoldersAreSentOnlyWhenGiven() async throws {
