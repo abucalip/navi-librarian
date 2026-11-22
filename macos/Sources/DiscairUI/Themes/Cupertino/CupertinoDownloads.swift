@@ -5,6 +5,10 @@ import SwiftUI
 /// tracker, the state in words and a filter (All, Active, Needs you, Arrived). A failed row carries the only primary, Try again.
 /// The state is always icon plus words, never colour alone. Dismiss only hides the row.
 struct CupertinoDownloads: View {
+    static let stepperColumnWidth: CGFloat = 70
+    static let stepperWidth: CGFloat = stepperColumnWidth * CGFloat(CUChartMath.stageNames.count)
+    static let actionWidth: CGFloat = 128
+
     let state: AppState
     @State private var filter: Filter = .all
 
@@ -87,7 +91,15 @@ struct CupertinoDownloads: View {
                 Text(j.title).cuRole(CU.Font.headline).foregroundStyle(CU.text).lineLimit(1)
                 Text(j.isSong ? "\(j.artist) · Song on \(j.details?.albumName ?? j.album)" : j.artist)
                     .cuRole(CU.Font.callout).foregroundStyle(CU.textSecondary).lineLimit(1)
-                CUStageTracker(step: stageStep(j), progress: acq.fraction(j), failed: j.phase == .failed, failureReason: failure, showsNames: true)
+                CUStageTracker(
+                    step: stageStep(j),
+                    progress: acq.fraction(j),
+                    failed: j.phase == .failed,
+                    failureReason: failure,
+                    showsNames: true,
+                    width: Self.stepperWidth,
+                    columnWidth: Self.stepperColumnWidth
+                )
                     .padding(.top, CU.Space.xs)
                 stateLine(j, failure: failure)
             }
@@ -120,6 +132,7 @@ struct CupertinoDownloads: View {
                 Button("Dismiss") { acq.dismiss(j) }.buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
             }
         }
+        .frame(width: Self.actionWidth, alignment: .trailing)
     }
 
     /// The row's cover: the release's artwork is looked up by the same title and artist the library uses.

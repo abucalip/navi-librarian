@@ -1127,9 +1127,11 @@ struct CUStageTracker: View {
     var failureReason: String?
     var showsNames = false
     var width: CGFloat?
+    var columnWidth: CGFloat?
 
     var body: some View {
         let segments = CUChartMath.stageSegments(step: step, progress: progress, failed: failed)
+        let resolvedColumnWidth = columnWidth ?? (showsNames ? width.map { $0 / CGFloat(max(segments.count, 1)) } : nil)
         VStack(alignment: .leading, spacing: CU.Space.xs) {
             HStack(alignment: .top, spacing: showsNames ? 0 : CU.Space.s) {
                 ForEach(Array(segments.enumerated()), id: \.offset) { i, s in
@@ -1141,14 +1143,15 @@ struct CUStageTracker: View {
                                 .lineLimit(1).fixedSize()
                         }
                     }
-                    .frame(maxWidth: showsNames ? .infinity : nil)
+                    .frame(width: resolvedColumnWidth)
+                    .frame(maxWidth: resolvedColumnWidth == nil && showsNames ? .infinity : nil)
                 }
             }
             if failed, let failureReason {
                 CUErrorLine(message: failureReason).font(.system(size: 12))
             }
         }
-        .frame(width: width)
+        .frame(width: width, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(CUChartMath.stageWords(step: step, progress: progress, failed: failed, reason: failureReason))
     }
