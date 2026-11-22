@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`), D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`), D4.3 (PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, PR head `d972ac1abccf607a0443215fc4725275b271b166`) and D4.4–D4.6 (PR #1213, squash `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, PR head `c938fe73f2dc7c9ee3d65b875fe4e6e9177d7566`) are merged to main; D3 visual acceptance is still open; D4.7 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`), D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`), D4.3 (PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, PR head `d972ac1abccf607a0443215fc4725275b271b166`), D4.4–D4.6 (PR #1213, squash `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, PR head `c938fe73f2dc7c9ee3d65b875fe4e6e9177d7566`) and D4.7–D4.8 (PR #1214, squash `bb701cfaca4b2b6e6ab0d96fc618d35e791aad45`, PR head `36dc8ae4646e4b4e09a44dd88cb7c9af8aa666e3`) are merged to main; D3 visual acceptance is still open; D5 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -273,6 +273,14 @@ Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726
 **D4.8 Search field shortcut hint** (all pages: "Search ⌘K")
 - **What is wrong:** "⌘K" follows the placeholder one space later in the same colour, so it reads as part of the text.
 - **Fix:** move "⌘K" to the field's trailing edge in the tertiary text colour (a key-cap look is optional).
+
+**D4.7–D4.8 implementation record (2026-11-22; merged PR #1214, squash `bb701cfaca4b2b6e6ab0d96fc618d35e791aad45`, branch `macos/d4-7-sidebar-highlight-search-hint`).**
+
+- D4.7: `CupertinoSidebar` (`CupertinoTheme.swift`) now passes `subItemIndent` (`CU.Space.m`, 16 pt) into `row(_:_:_:indent:)` as inner leading padding on the icon and label instead of `.padding(.leading, 16)` outside the button, so the `CU.accentTint` highlight pill shares the same leading edge across top-level rows and Discover sub-items.
+- D4.8: `CupertinoToolbar` (`CupertinoTheme.swift`) splits `"Search  ⌘K"` into leading `Text("Search")` (`CU.textSecondary`) and trailing `Text("⌘K")` (`CU.textTertiary`) across `Spacer(minLength: 0)`.
+- **Tests:** `swift test --disable-sandbox --filter 'D4SidebarHighlightSearchHintTests|D4SidebarHeaderTests|CupertinoControlsTests'` passed 9 tests in 3 suites (`D4SidebarHighlightSearchHintTests` new, verifying `subItemIndent == CU.Space.m`, matching Day/Night highlight leading edges and icon indent, and Day/Night Search/⌘K separation and `CU.textTertiary` colour).
+- **CI on head `36dc8ae4`:** all five GitHub Actions checks passed (compile, container-smoke, lint-changed, test-and-build, validate-container).
+- **Not verified:** owner visual acceptance in a live window; no CPU measurement (no motion added). Not published, deployed or runtime-verified.
 
 ## Slice D5: columns in lists
 

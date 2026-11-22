@@ -1,3 +1,16 @@
+## 2026-11-22 — macOS design details D4.7–D4.8, sidebar sub-item highlight edge and search shortcut hint (PR #1214 merged)
+
+- **Merged:** PR [#1214](https://github.com/abucalip/navi-librarian/pull/1214), squash commit `bb701cfaca4b2b6e6ab0d96fc618d35e791aad45`, from exact PR head `36dc8ae4646e4b4e09a44dd88cb7c9af8aa666e3`; branch `macos/d4-7-sidebar-highlight-search-hint`, based on `main` at `27eb07f6` (D4.4–D4.6 docs closeout).
+- **Changes:**
+  - **D4.7:** `CupertinoSidebar` (`CupertinoTheme.swift`) now passes `subItemIndent` (`CU.Space.m`, 16 pt) into `row(_:_:_:indent:)` as inner leading padding on the icon and label instead of `.padding(.leading, 16)` outside the button, so the `CU.accentTint` highlight pill shares the same leading edge across top-level rows and Discover sub-items.
+  - **D4.8:** `CupertinoToolbar` (`CupertinoTheme.swift`) splits `"Search  ⌘K"` into leading `Text("Search")` (`CU.textSecondary`) and trailing `Text("⌘K")` (`CU.textTertiary`) across `Spacer(minLength: 0)`.
+- **Tests run:** `swift test --disable-sandbox --filter 'D4SidebarHighlightSearchHintTests|D4SidebarHeaderTests|CupertinoControlsTests'` — 9 tests in 3 suites passed (2.111 s), including Day/Night offscreen render checks in `D4SidebarHighlightSearchHintTests`. No full suite.
+- **CI on head `36dc8ae4`:** all five GitHub Actions checks passed: compile, container-smoke, lint-changed, test-and-build and validate-container.
+- **Not verified:** owner visual acceptance in a live window; no CPU measurement (no motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks D4.7–D4.8 in a live window; Slice D5 (columns in lists) can start.
+
+---
+
 ## 2026-11-22 — macOS design details D4.4–D4.6, page title edge, quality badge and sidebar group headers (PR #1213 merged)
 
 - **Merged:** PR [#1213](https://github.com/abucalip/navi-librarian/pull/1213), squash commit `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, from exact PR head `c938fe73f2dc7c9ee3d65b875fe4e6e9177d7566`; branch `macos/d4-4-page-title-edge`, based on `main` at `fab17724` (D4.3 docs closeout).
