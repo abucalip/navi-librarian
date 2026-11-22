@@ -1,3 +1,18 @@
+## 2026-11-22 — Listening Room web L0: server audit, deep_dive_kind and pick_why builder (PR #1221 merged)
+
+- **Merged:** PR [#1221](https://github.com/abucalip/navi-librarian/pull/1221), squash commit `c941c6a1f75a3a3de0f12563367976d75caff5e4`, from exact PR head `c6c7c74ccd64e277e8d67aac98b6b4f02dd7180a`; branch `web/listening-room-l0`, based on `main` at `b31b1165`.
+- **Changes:**
+  - **R7 vs R8:** added `deep_dive_kind` (`"missing_album"` / `"similar_artist"`) in `discovery/deep_dive_candidates.py` for missing-album, resolved-pool and similar-artist candidates.
+  - **Pure `why` builder:** added `discovery/pick_why.py` (`build_pick_why`, `attach_why`) producing `why: {kind, sentence, chips: [{type, label, value, href_kind}]}` following `docs/plans/LISTENING_ROOM_WEB.md` section 6 precedence (`R1`–`R12`) and wording (assuming recommended D1 = server), never exposing internal R7 `reason` strings.
+  - **Read-time attachment:** wired `why` into `discovery/list_payload.py` (`build_cached_discovery_list_response`, `build_lens_list_response`), `discovery/lens_week.py` (`to_pick`), and `app/api/discovery.py` (`/api/recommendations`), leaving `navidrome_server.py` untouched (D-016). Added the `discovery/pick_why.py` row in `docs/ARCHITECTURE.md`.
+  - **Page-field audit (section 9.3):** confirmed `quality` on owned albums (`discovery/search/album_page.py`), `{source, quote, url}` on reviews (`app/services/album_reviews.py`), `owned`/`id` without `album_count` on similar artists (`discovery/search/similar.py`), and client-supplied `metadata` only on Saved (`for_me`).
+- **Tests run:** focused run `.venv/bin/python -m pytest tests/test_discovery_pick_why.py tests/test_discovery_deep_dive_candidates.py tests/test_discovery_list_payload.py tests/test_lens_week.py tests/test_discovery_routes.py` — 50 passed in 0.78 s on exact head `c6c7c74c`. Full unit suite not run.
+- **CI on head `c6c7c74c`:** `compile`, `container-smoke`, `lint-changed`, `test-and-build`, `validate-container` and `validate-release-workflow` passed (`publish-release` skipped).
+- **Not verified:** not published, deployed or runtime-verified against a live server.
+- **Next action:** start Listening Room slice L1 (foundations behind a switch: fonts, `tokens.css`, icon sprite in `index.html`, Appearance toggle).
+
+---
+
 ## 2026-11-22 — macOS design details D8.1–D8.4, user-facing copy and player bar title width (PR #1218 merged)
 
 - **Merged:** PR [#1218](https://github.com/abucalip/navi-librarian/pull/1218), squash commit `b2a434bb6abd8ece27d31a2277d07e6fa3f9d639`, from exact PR head `8bf8ede5cbb2e2afaa2aed490453021142894a85`; branch `macos/d8-user-facing-copy`, based on `main` at `409665c4` (D7.1–D7.4 docs closeout).
