@@ -448,9 +448,9 @@ class SearchWiringTests(unittest.TestCase):
 
 
 class SimilarStylesTests(unittest.TestCase):
-    class Lastfm:
+    class Deezer:
         def similar(self, name, *, remaining, cancelled):
-            return [{"name": "Ride", "mbid": "m-ride", "match": 0.5}]
+            return [{"name": "Ride", "mbid": "m-ride", "match": None}]
 
     class Styles:
         def artist_styles(self, name, *, remaining, cancelled):
@@ -468,7 +468,7 @@ class SimilarStylesTests(unittest.TestCase):
         net = ArtistNetwork(
             musicbrainz=self.MB(), popularity=lambda m, c: {}, bio=lambda n: None,
             cache_read=store.read, cache_write=store.write,
-            lastfm=self.Lastfm(), discogs=self.Styles() if with_discogs else None,
+            deezer=self.Deezer(), discogs=self.Styles() if with_discogs else None,
         )
         return similar_items(
             net, "Slowdive", None, OwnedKeys(None),

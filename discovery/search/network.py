@@ -22,7 +22,7 @@ from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
 from discovery.search.normalize import normalize_key
 from discovery.search.genre_page import GenreNetwork
-from discovery.search.providers import DeezerSearch, DiscogsSearch, ListenBrainzRadio, MusicBrainzSearch, genre_candidate
+from discovery.search.providers import DeezerSearch, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, genre_candidate
 from discovery.search.runner import ExternalSearch, FetchRegistry, Part
 from integrations.listenbrainz.client import request_headers
 from settings.service import discogs_generation, discogs_token_and_source
@@ -34,10 +34,10 @@ MBID_TTL_SECONDS = 30 * 24 * 60 * 60  # The MusicBrainz genre list changes rarel
 MUSICBRAINZ_GENERATION = 0  # MusicBrainz has no credential (section 5.2).
 
 REGISTRY = FetchRegistry()
-# MusicBrainz asks for an average of one request per second per IP.
+# MusicBrainz asks for an average of one request per second per IP; Last.fm allows about five per second.
 # Discogs allows 60 authenticated requests a minute (secondary sources, section 9).
 # ListenBrainz radio allows 30 requests per window (contract section 5.1), so one every two seconds.
-LIMITER = SourceLimiter({"listenbrainz": 2.0, "discogs": 1.0})
+LIMITER = SourceLimiter({"lastfm": 0.2, "listenbrainz": 2.0, "discogs": 1.0})
 
 _KINDS = ("artist", "album")
 
@@ -194,13 +194,14 @@ def artist_network(
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, pause=time.sleep)
+    lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=lastfm_api_key) if lastfm_api_key else None
     listenbrainz = ListenBrainzRadio(get=get, limiter=rate_limiter, headers=request_headers())
     deezer = DeezerSearch(get=get, cache_read=cache_read, cache_write=cache_write)
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
     sources = {
         "navidrome": availability(True),
         "musicbrainz": availability(True),
-        "lastfm": availability(False, "source_disabled"),
+        "lastfm": availability(True) if lastfm is not None else availability(False, "source_disabled"),
         "listenbrainz": availability(True),
         "deezer": availability(True),
         "discogs": availability(True) if discogs is not None else availability(False, "source_disabled"),
@@ -216,6 +217,8 @@ def artist_network(
         deezer_tracks=deezer_tracks,
         album_year=album_year,
         album_description=album_description,
+        lastfm=lastfm,
+        lastfm_generation=lastfm_gen,
         listenbrainz=listenbrainz,
         deezer=deezer,
         discogs=discogs,
