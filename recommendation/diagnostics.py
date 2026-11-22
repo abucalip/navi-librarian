@@ -101,14 +101,7 @@ def summarize_candidate_diagnostics(
             "recent_artist_play_count": _numeric_summary(recent_counts),
             "final_discovery_score": _numeric_summary([row.get("discovery_score") for row in rows]),
             "recent_profile_bonus": _numeric_summary([row.get("recent_profile_bonus") for row in rows]),
-            "popularity_bonus": _numeric_summary([
-                row.get("popularity_bonus") if row.get("popularity_bonus") is not None else row.get("lastfm_popularity_bonus")
-                for row in rows
-            ]),
-            "lastfm_popularity_bonus": _numeric_summary([
-                row.get("popularity_bonus") if row.get("popularity_bonus") is not None else row.get("lastfm_popularity_bonus")
-                for row in rows
-            ]),
+            "popularity_bonus": _numeric_summary([row.get("popularity_bonus") for row in rows]),
         },
         "profile_evidence": {
             "listens_seen": len(gathered.get("listens") or []),

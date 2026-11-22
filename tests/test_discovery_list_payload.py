@@ -177,7 +177,7 @@ class PersonalReadTimeOwnershipTests(unittest.TestCase):
             "artist": "Alice Coltrane",
             "album": "Journey in Satchidananda",
             "artist_library_album_count": 3,
-            "lastfm_listeners": 120_000,
+            "listeners": 120_000,
         }
         classic = json.loads(build_cached_discovery_list_response(
             "classics", 10,

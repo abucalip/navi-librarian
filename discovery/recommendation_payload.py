@@ -34,17 +34,13 @@ def build_personal_recommendation_payload(
         )
 
     listeners = candidate.get("listeners")
-    if listeners is None:
-        listeners = candidate.get("lastfm_listeners")
     playcount = candidate.get("playcount")
-    if playcount is None:
-        playcount = candidate.get("lastfm_playcount")
     popularity_tags = candidate.get("popularity_tags")
     if popularity_tags is None:
-        popularity_tags = candidate.get("lastfm_tags", [])
+        popularity_tags = []
     raw_bonus = candidate.get("popularity_bonus")
     if raw_bonus is None:
-        raw_bonus = candidate.get("lastfm_popularity_bonus", 1.0)
+        raw_bonus = 1.0
     popularity_bonus = round(raw_bonus, 3)
 
     return {
@@ -70,10 +66,6 @@ def build_personal_recommendation_payload(
         "playcount": playcount,
         "popularity_tags": popularity_tags,
         "popularity_bonus": popularity_bonus,
-        "lastfm_listeners": listeners,
-        "lastfm_playcount": playcount,
-        "lastfm_tags": popularity_tags,
-        "lastfm_popularity_bonus": popularity_bonus,
         "suggested_tracks": candidate["tracks"][:3],
         "reason": reason,
     }

@@ -1,3 +1,15 @@
+## 2026-11-22 — FirstFM F5.2: drop temporary lastfm_* aliases and close out docs (PR pending)
+
+- **Branch:** `feat/firstfm-f5-2-cleanup`, based on `main` at `0bfba05a` (FirstFM F5.1 merged, PR `#1237`).
+- **Changes:**
+  - `discovery/` & `recommendation/`: removed all temporary `lastfm_listeners`, `lastfm_playcount`, `lastfm_tags`, `lastfm_popularity_bonus`, and `apply_lastfm_popularity_bonus` aliases and fallback reads in `recommendation_payload.py`, `popularity.py`, `deep_dive_candidates.py`, `new_releases.py`, `lens_week.py`, `classics_candidates.py`, `classics_ratings.py`, `pick_why.py`, `recommendations.py`, `recommendation/replay.py`, `recommendation/diagnostics.py`, `recommendation/profile_comparison.py`, and `scripts/discovery_mode_sweep.py`.
+  - **Clients:** removed transitional `lastfm_listeners` / `lastfm_playcount` fallback decoding in `static/app.js` and `android/app/src/main/kotlin/app/discair/model/{Discovery,Dto}.kt` (after confirming ListenBrainz `listeners` / `playcount` were already wired in F4.1/F4.2).
+  - **Tests & Docs:** updated 16 Python test files and `android/app/src/test/kotlin/app/discair/FixtureParsingTest.kt`; updated `docs/ARCHITECTURE.md`, `PRODUCT.md`, `docs/ACTIVE_WORK.md`, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md`. Verified zero remaining `ws.audioscrobbler.com` or `integrations.lastfm` references in production code.
+- **Tests run:** focused `pytest` across all 18 affected test files (all passed) and `./gradlew testDebugUnitTest --tests 'app.discair.FixtureParsingTest'` (`BUILD SUCCESSFUL`). Full suites not run locally.
+- **Not verified:** not published, deployed, or runtime-verified against a live server.
+
+---
+
 ## 2026-11-22 — FirstFM F1.2: switch mbid_popularity and lens_pool_gatherer to ListenBrainz (PR #1225 merged)
 
 - **Merged:** PR [#1225](https://github.com/abucalip/navi-librarian/pull/1225), squash commit `87fc2b40`, from exact PR head `7ab91bc4`; branch `feat/firstfm-f1-2-mbid-popularity-lb`, based on `main` at `ea63d22b`.

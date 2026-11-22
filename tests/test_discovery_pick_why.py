@@ -89,7 +89,7 @@ class PickWhyTests(unittest.TestCase):
         dash = build_pick_why({
             "dashboard_category": "Current tastes",
             "reason": "From your current tastes: ambient",
-            "lastfm_listeners": 1_200_000,
+            "listeners": 1_200_000,
         })
         self.assertEqual(dash, {
             "kind": "lens",
@@ -138,7 +138,7 @@ class PickWhyTests(unittest.TestCase):
     def test_r10_collection_classics(self):
         why = build_pick_why({
             "artist_library_album_count": 4,
-            "lastfm_listeners": 850,
+            "listeners": 850,
         }, list_name="classics")
         self.assertEqual(why, {
             "kind": "collection",
@@ -157,7 +157,7 @@ class PickWhyTests(unittest.TestCase):
         })
 
     def test_r11_discover_music_categories(self):
-        adj = build_pick_why({"discovery_category": "adjacent", "lastfm_listeners": 25_000})
+        adj = build_pick_why({"discovery_category": "adjacent", "listeners": 25_000})
         self.assertEqual(adj["kind"], "discover")
         self.assertEqual(adj["sentence"], "Close to genres you already love")
 

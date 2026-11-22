@@ -257,11 +257,7 @@ def enrich_new_release_listeners(items, popularity_lookup, *, pause=None, limit=
         listeners = stats.get("listeners")
         playcount = stats.get("playcount")
         if listeners is not None:
-            val = int(listeners)
-            item["listeners"] = val
-            item["lastfm_listeners"] = val
+            item["listeners"] = int(listeners)
         if playcount is not None:
-            val = int(playcount)
-            item["playcount"] = val
-            item["lastfm_playcount"] = val
+            item["playcount"] = int(playcount)
     return items

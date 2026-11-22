@@ -90,6 +90,11 @@ Finished and merged work, and owner checks on work merged before 2026-11-11, wer
 - All slices D1 to D8 are merged; remaining work in 2s is the owner's live visual acceptance of D3, D5, D6, D7 and D8.
 - Owner decisions (2026-11-18, all as recommended): hero gutter fade and collapse; selected-tab styles by mode; full-height inspectors; left-aligned artist bio. The cover stays shown twice (sidebar slot and player bar).
 
+## 2t. FirstFM — Last.fm API removal built, runtime checks open
+
+- Plan: [`FirstFM.md`](plans/FirstFM.md). All slices F1.1 to F5.2 are built (ListenBrainz popularity & radio scrobbling/love, Deezer artist fallback, Discogs tag fallback, web/Android/macOS client updates, `integrations/lastfm/` removal, and `lastfm_*` payload alias removal).
+- Open: live runtime verification (ListenBrainz popularity, Deezer fallback, ListenBrainz radio scrobbling/love) and deployment; nothing is published or deployed.
+
 ## 2n. Simplification candidates
 
 One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.

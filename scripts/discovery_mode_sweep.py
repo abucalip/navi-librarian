@@ -92,7 +92,7 @@ def sweep_personal(capture: str) -> dict[str, Any]:
 
     def row(output: dict[str, Any], baseline: set | None) -> dict[str, Any]:
         recs = output["recommendations"]
-        listeners = [r["lastfm_listeners"] for r in recs if r.get("lastfm_listeners") is not None]
+        listeners = [r["listeners"] for r in recs if r.get("listeners") is not None]
         keys = {(r["artist"], r["album"]) for r in recs}
         result = {
             "fill": len(recs),

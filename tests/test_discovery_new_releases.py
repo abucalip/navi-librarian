@@ -340,11 +340,8 @@ class NewReleaseListenerEnrichmentTests(unittest.TestCase):
         pauses = []
         enrich_new_release_listeners(items, lookup, pause=lambda: pauses.append(1))
         self.assertEqual((items[0]["listeners"], items[0]["playcount"]), (1200, 5000))
-        self.assertEqual((items[0]["lastfm_listeners"], items[0]["lastfm_playcount"]), (1200, 5000))
         self.assertNotIn("listeners", items[1])
-        self.assertNotIn("lastfm_listeners", items[1])
         self.assertNotIn("listeners", items[2])
-        self.assertNotIn("lastfm_listeners", items[2])
         self.assertEqual(len(pauses), 3)
 
     def test_limit_bounds_lookups(self):

@@ -8,10 +8,7 @@ from typing import Any
 
 
 def _listeners(item: dict[str, Any]) -> int:
-    value = item.get("listeners")
-    if value is None:
-        value = item.get("lastfm_listeners")
-    return int(value or 0)
+    return int(item.get("listeners") or 0)
 
 
 def enrich_critical_ratings(

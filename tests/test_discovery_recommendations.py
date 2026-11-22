@@ -37,7 +37,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_genre_families(self):
   self.assertEqual(deep_dive_genre_families(["Malian desert blues","Bossa Nova","Jazz"]),["african","brazilian","jazz"])
  def test_scoring(self):
-  rows=[{"lastfm_listeners":0,"lastfm_playcount":0},{"lastfm_listeners":100000,"lastfm_playcount":500000},{"musicbrainz_rating":4.5,"musicbrainz_rating_votes":20}]
+  rows=[{"listeners":0,"playcount":0},{"listeners":100000,"playcount":500000},{"musicbrainz_rating":4.5,"musicbrainz_rating_votes":20}]
   score_classic_candidates(rows,lambda _a,_b:0)
   self.assertEqual(rows[0]["discovery_score"],0.9); self.assertLess(rows[1]["discovery_score"],rows[0]["discovery_score"])
   self.assertEqual(rows[2]["discovery_score"],1.44)
@@ -78,11 +78,11 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_deep_dive_ranking_weights_candidate_evidence_and_filters_candidates(self):
   from discovery.recommendations import rank_and_diversify_deep_dive_candidates
   rows = [
-   {"artist":"A","album":"Known","lastfm_listeners":1000000,"candidate_pool_score":0.0,
+   {"artist":"A","album":"Known","listeners":1000000,"candidate_pool_score":0.0,
     "anchor_artist":"Anchor","anchor_album_count":5,"genre_families":["jazz"]},
-   {"artist":"B","album":"Less Known","lastfm_listeners":10,"candidate_pool_score":2.0,
+   {"artist":"B","album":"Less Known","listeners":10,"candidate_pool_score":2.0,
     "anchor_artist":"Anchor B","anchor_album_count":6,"genre_families":["brazilian"]},
-   {"artist":"C","album":"Compilation","lastfm_listeners":10,"candidate_pool_score":0.0,
+   {"artist":"C","album":"Compilation","listeners":10,"candidate_pool_score":0.0,
     "genre_families":["rock"]},
   ]
   ranked, diversified = rank_and_diversify_deep_dive_candidates(
@@ -96,12 +96,12 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_deep_dive_diversity_caps_artist_anchor_and_genre(self):
   from discovery.recommendations import rank_and_diversify_deep_dive_candidates
   rows = [
-   {"artist":"Same","album":f"Album {i}","lastfm_listeners":0,"anchor_artist":"Anchor",
+   {"artist":"Same","album":f"Album {i}","listeners":0,"anchor_artist":"Anchor",
     "anchor_album_count":3,"genre_families":["jazz"]}
    for i in range(6)
   ]
   rows += [
-   {"artist":f"Other {i}","album":"Record","lastfm_listeners":0,"anchor_artist":f"Anchor {i}",
+   {"artist":f"Other {i}","album":"Record","listeners":0,"anchor_artist":f"Anchor {i}",
     "anchor_album_count":3,"genre_families":["jazz"]}
    for i in range(14)
   ]
