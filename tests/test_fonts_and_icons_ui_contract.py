@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
 FONTS = STATIC / "fonts"
 TEMPLATES = ROOT / "app" / "templates"
-FONT_BUDGET_BYTES = 180 * 1024
+# Base fonts plus Instrument Sans 600 and 700 (Listening Room L1, ~188 KB total).
+FONT_BUDGET_BYTES = 200 * 1024
 # The Brut font pairs (Settings > Appearance) live in their own stylesheet. A browser fetches a face only when
 # the chosen pair uses it, so the default page still downloads only the faces above; this is the ceiling for
 # the whole optional set (owner-approved 2026-11-02, about 470 KB at the time of writing).
@@ -34,6 +35,7 @@ class SelfHostedFontTests(unittest.TestCase):
     def test_no_stylesheet_or_template_loads_a_third_party_font(self):
         for path in [STATIC / "app.css", STATIC / "login.css", STATIC / "themes.css", STATIC / "appearance.js",
                      STATIC / "fonts" / "fonts.css", STATIC / "fonts" / "brut-fonts.css",
+                     STATIC / "listening-room" / "tokens.css",
                      TEMPLATES / "index.html", TEMPLATES / "login.html"]:
             text = path.read_text(encoding="utf-8")
             self.assertNotIn("fonts.googleapis.com", text, path.name)
@@ -50,8 +52,8 @@ class SelfHostedFontTests(unittest.TestCase):
     def test_every_face_declared_is_shipped_with_swap_and_the_total_is_within_budget(self):
         css = (FONTS / "fonts.css").read_text(encoding="utf-8")
         urls = re.findall(r'url\("([^"]+\.woff2)"\)', css)
-        self.assertEqual(len(urls), 8)
-        self.assertEqual(css.count("font-display: swap"), 8)
+        self.assertEqual(len(urls), 10)
+        self.assertEqual(css.count("font-display: swap"), 10)
         total = 0
         for url in urls:
             path = FONTS / url
@@ -83,7 +85,7 @@ class SelfHostedFontTests(unittest.TestCase):
             self.assertIn("SIL OPEN FONT LICENSE VERSION 1.1", licence.upper(), family)
 
     def test_each_font_family_ships_its_ofl_licence(self):
-        for family in ("big-shoulders-display", "peace-sans", "open-sans", "jetbrains-mono"):
+        for family in ("big-shoulders-display", "peace-sans", "open-sans", "jetbrains-mono", "instrument-sans"):
             licence = (FONTS / f"LICENSE-{family}.txt").read_text(encoding="utf-8")
             self.assertIn("SIL OPEN FONT LICENSE VERSION 1.1", licence.upper(), family)
 
@@ -106,9 +108,9 @@ if __name__ == "__main__":
 
 
 class ThemeAndFontChoiceTests(unittest.TestCase):
-    """Settings > Appearance: nineteen themes and seven font pairs, applied before first paint from localStorage."""
+    """Settings > Appearance: twenty themes and seven font pairs, applied before first paint from localStorage."""
 
-    THEME_IDS = ["ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight", "zine"]
+    THEME_IDS = ["ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight", "zine", "listeningroom"]
     FONT_IDS = ["discair", "baseline", "technical", "editorial", "modern", "shout", "swiss"]
 
     def test_every_theme_and_font_in_the_script_has_a_stylesheet_block_except_the_defaults(self):
@@ -384,4 +386,62 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
                        ":root[data-brut] .library-control select"):
             self.assertIn(needle, css, needle)
         self.assertIn("background: var(--surface)", next(l for l in css.splitlines() if l.startswith(":root[data-brut] .album-quality {")))
+
+
+class ListeningRoomFoundationTests(unittest.TestCase):
+    """Listening Room web redesign L1: fonts, tokens.css, 52-icon sprite, opt-in Appearance choice."""
+
+    DESIGN = ROOT / "docs" / "design" / "listening-room"
+    ICON_IDS = [
+        "lr-home", "lr-discover", "lr-library", "lr-saved", "lr-radio", "lr-acquisitions",
+        "lr-settings", "lr-search", "lr-get", "lr-more", "lr-prev", "lr-next", "lr-chev-down",
+        "lr-close", "lr-check", "lr-refresh", "lr-skip", "lr-lean-more", "lr-lean-less",
+        "lr-block", "lr-tag", "lr-people", "lr-listeners", "lr-disc", "lr-calendar", "lr-layers",
+        "lr-repeat", "lr-flame", "lr-compass-spread", "lr-spark", "lr-info", "lr-alert",
+        "lr-external", "lr-menu", "lr-back", "lr-filter", "lr-sort", "lr-grid", "lr-list",
+        "lr-trash", "lr-quote", "lr-plug", "lr-grip", "lr-clock", "lr-note", "lr-chev-up",
+        "lr-key", "lr-folder", "lr-person", "lr-lock", "lr-palette", "lr-signal",
+    ]
+
+    def test_instrument_sans_fonts_and_licence_are_shipped_and_declared(self):
+        for filename in ("instrument-sans-600.woff2", "instrument-sans-700.woff2", "LICENSE-instrument-sans.txt"):
+            self.assertTrue((FONTS / filename).is_file(), filename)
+        css = (FONTS / "fonts.css").read_text(encoding="utf-8")
+        self.assertIn('font-family: "Instrument Sans"', css)
+        self.assertIn('url("instrument-sans-600.woff2")', css)
+        self.assertIn('url("instrument-sans-700.woff2")', css)
+
+    def test_tokens_stylesheet_is_linked_and_matches_design_package(self):
+        html = (TEMPLATES / "index.html").read_text(encoding="utf-8")
+        self.assertIn('href="/static/listening-room/tokens.css"', html)
+        shipped = (STATIC / "listening-room" / "tokens.css").read_text(encoding="utf-8")
+        package = (self.DESIGN / "tokens.css").read_text(encoding="utf-8")
+        urls = re.findall(r"url\('([^']+\.woff2)'\)", shipped)
+        self.assertEqual(len(urls), 4)
+        for rel in urls:
+            resolved = (STATIC / "listening-room" / rel).resolve()
+            self.assertTrue(resolved.is_file(), rel)
+        self.assertEqual(
+            shipped[shipped.index(":root {"):],
+            package[package.index(":root {"):],
+        )
+
+    def test_listening_room_icon_sprite_is_inlined_once_with_all_52_symbols(self):
+        html = (TEMPLATES / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none">', html)
+        ids = re.findall(r'<symbol id="(lr-[^"]+)"', html)
+        self.assertEqual(len(ids), 52)
+        self.assertEqual(ids, self.ICON_IDS)
+        package_sprite = (self.DESIGN / "icons" / "icons.svg").read_text(encoding="utf-8")
+        package_ids = re.findall(r'<symbol id="(lr-[^"]+)"', package_sprite)
+        self.assertEqual(ids, package_ids)
+
+    def test_listening_room_theme_is_opt_in_behind_appearance_switch(self):
+        script = (STATIC / "appearance.js").read_text(encoding="utf-8")
+        self.assertIn("var DEFAULT = { theme: 'ink', font: 'discair' };", script)
+        line = next(l for l in script.splitlines() if "id: 'listeningroom'" in l)
+        for field in ("label: 'Listening Room'", "group: 'Listening Room'", "dark: true", "layout: 'listeningroom'", "bar: '#0c0d10'"):
+            self.assertIn(field, line, field)
+        self.assertNotIn("brut: true", line)
+
 
