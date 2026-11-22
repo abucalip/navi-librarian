@@ -1,3 +1,16 @@
+## 2026-11-22 — FirstFM F1.2: switch mbid_popularity and lens_pool_gatherer to ListenBrainz (PR #1225 merged)
+
+- **Merged:** PR [#1225](https://github.com/abucalip/navi-librarian/pull/1225), squash commit `87fc2b40`, from exact PR head `7ab91bc4`; branch `feat/firstfm-f1-2-mbid-popularity-lb`, based on `main` at `ea63d22b`.
+- **Changes:**
+  - `discovery/mbid_popularity.py`: replaced Last.fm `artist.getInfo` / `album.getInfo` calls and the MusicBrainz release-search / ListenBrainz representative-release indirection with batched ListenBrainz `fetch_release_group_popularity` and `fetch_artist_popularity` (from F1.1). Kept `LASTFM_SPACING_SECONDS` temporarily while `discovery/artist_links.py` still imports it until F2.3.
+  - `discovery/lens_pool_gatherer.py`: switched `resolve_popularity` to pass `providers.http_post` and removed `LENS_LASTFM_CALL_BUDGET`.
+  - `tests/test_discovery_mbid_popularity.py` & `tests/test_discovery_lens_pool_gatherer.py`: updated offline unit tests to stub ListenBrainz batched popularity POSTs; removed obsolete `tests/test_discovery_release_years.py`.
+- **Tests run:** focused run `.venv/bin/python -m pytest tests/test_discovery_mbid_popularity.py tests/test_discovery_lens_pool_gatherer.py` — 18 passed in 0.24 s on exact head `7ab91bc4`; `scripts/check_lint_changed.py --base origin/main` — 4 file(s) checked, 0 new finding group(s). Full unit suite not run locally.
+- **Not verified:** not published, deployed or runtime-verified against a live server.
+- **Next action:** start FirstFM F1.3 (switch Classics, Deep Dives, and New Releases popularity & top albums to ListenBrainz).
+
+---
+
 ## 2026-11-22 — Listening Room web L1: foundations behind Appearance switch (PR #1222 merged)
 
 - **Merged:** PR [#1222](https://github.com/abucalip/navi-librarian/pull/1222), squash commit `ab3e7663a35e76070039d54581275bbb32042289`, from exact PR head `585482d0dadfe718663b5e7395f657d134d85bf2`; branch `web/listening-room-l1`, based on `main` at `54e5e719`.

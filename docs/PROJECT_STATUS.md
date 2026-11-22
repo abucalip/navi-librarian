@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-22. GitHub `main` is authoritative; this update is based on main at `d10b0cde` (FirstFM F1.1 merged).
+Last checked: 2026-11-22. GitHub `main` is authoritative; this update is based on main at `87fc2b40` (FirstFM F1.2 merged).
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **FirstFM F1.2 merged (2026-11-22, PR #1225):** squash commit `87fc2b40` merged PR head `7ab91bc4` into `main`, from branch `feat/firstfm-f1-2-mbid-popularity-lb` based on `ea63d22b`. Replaced Last.fm `artist.getInfo` / `album.getInfo` and MusicBrainz release-search / ListenBrainz representative-release indirection in `discovery/mbid_popularity.py` with batched ListenBrainz `fetch_release_group_popularity` and `fetch_artist_popularity` (keeping `LASTFM_SPACING_SECONDS` temporarily for `discovery/artist_links.py` until F2.3); updated `discovery/lens_pool_gatherer.py` to pass `providers.http_post` and removed `LENS_LASTFM_CALL_BUDGET`; updated `tests/test_discovery_mbid_popularity.py` and `tests/test_discovery_lens_pool_gatherer.py` and removed obsolete `tests/test_discovery_release_years.py`. **Tests:** focused run `.venv/bin/python -m pytest tests/test_discovery_mbid_popularity.py tests/test_discovery_lens_pool_gatherer.py` passed 18 tests in 0.24 s and `scripts/check_lint_changed.py --base origin/main` reported 0 new findings; full unit suite not run locally. Not published, deployed or runtime-verified. **Next action:** start FirstFM F1.3 (switch Classics, Deep Dives, and New Releases popularity & top albums to ListenBrainz).
 
 - **FirstFM F1.1 merged (2026-11-22, PR #1224):** squash commit `d10b0cde` merged PR head `4ecd6d49` into `main`, from branch `feat/firstfm-f1-1-lb-popularity` based on `a049111d`. Added `fetch_artist_popularity` (`POST /1/popularity/artist`, 50/chunk, 30-day cache + 1-hour negative mark) and `fetch_artist_top_release_groups` (`GET /1/popularity/top-release-groups-for-artist/{mbid}`, 30-day cache + 1-hour negative mark) in `integrations/listenbrainz/popularity.py`, sharing `_fetch_batched_popularity` with `fetch_release_group_popularity`, plus unit tests in `tests/test_listenbrainz_popularity.py`. **Tests:** focused run `.venv/bin/python -m pytest tests/test_listenbrainz_popularity.py` passed 11 tests in 0.11 s; full unit suite not run. Not published, deployed or runtime-verified. **Next action:** start FirstFM F1.2 (switch `discovery/mbid_popularity.py` and `discovery/lens_pool_gatherer.py` to ListenBrainz).
 
