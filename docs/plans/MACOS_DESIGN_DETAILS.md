@@ -1,6 +1,6 @@
 # macOS design details: fine fixes plan
 
-Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`), D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`) and D4.3 (PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, PR head `d972ac1abccf607a0443215fc4725275b271b166`) are merged to main; D3's visual acceptance is still open; D4.4 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
+Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726b253375`, PR head `0c306579c3fabfabd6e6076f782473814f99b30e`), D3 (PR #1209, squash `7808ab8c1bbee93def332ea4efd2d68ab1ffb8a5`, PR head `2495876f52b35bd055533d68dfa43a4c158ff78a`), D4.1 (PR #1210, squash `fe90cc43151bb2b10156200d8384829f5bca0036`, PR head `4abdb36be351b05d322cb2d7a10e08494df7b62a`), D4.2 (PR #1211, squash `bb96dbbaaa1e14921b046c8690423761e3704b98`, PR head `92e36ccd442833aa879083200cec934ef75054d2`), D4.3 (PR #1212, squash `2f62f933ac1c546754eefbced5ba0040dde398b5`, PR head `d972ac1abccf607a0443215fc4725275b271b166`) and D4.4–D4.6 (PR #1213, squash `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, PR head `c938fe73f2dc7c9ee3d65b875fe4e6e9177d7566`) are merged to main; D3 visual acceptance is still open; D4.7 to D8 are not started. Source: the owner's 12 screenshots of the Cupertino macOS client (`macos screenshots/`, local, not in the repo), taken 2026-11-18 between 02.20 and 02.37. This is a polish pass: alignments, overlaps, spacings, text sizes, small navigation details. It does not redesign any page.
 
 ## How to read this plan
 
@@ -256,6 +256,15 @@ Status: D1 (`dd95d6f9`), D2 (PR #1208, squash `5071453c8ba8a2b1dbd7b510349121726
   - The gap above "Smart Playlists" (about 45 pt) is larger than the gap above "Playlists" (about 25 pt).
 - **Fix:** one header style (the small "Playlists" style, with the chevron where the group folds) and equal group spacing.
 - **Pointer:** `CupertinoSidebar`, in `CupertinoTheme.swift`.
+
+**D4.4–D4.6 implementation record (2026-11-22; merged PR #1213, squash `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, branch `macos/d4-4-page-title-edge`).**
+
+- D4.4: `TimelineView` and `AtlasView` now use `Self.horizontalPadding = CU.Space.xl` (32 pt) instead of 28 pt, aligning their titles, search field and map/rail with Home, Radio, Connections and Downloads.
+- D4.5: added `CUQualityBadge` (`CupertinoKit.swift`, filled 4 pt rounded rectangle, bold caption, 8×2 pt padding; `.standard`, `.playing`, `.onMedia`) and adopted it across `CupertinoPlayerBar` (replacing the outlined badge), `CupertinoAlbum` (header and track table) and `CupertinoLibrary` (song table).
+- D4.6: `CupertinoSidebar` (`CupertinoTheme.swift`) now uses `groupHeaderFont = CU.Font.eyebrow.font` for both Discover and Playlists and `groupGap = CU.Space.m` above Discover, Smart Playlists and Playlists.
+- **Tests:** `swift test --disable-sandbox --filter 'D4PageTitleEdgeTests|TimelineTests|AtlasTests|D4SegmentedRenderTests'` passed 21 tests in 7 suites; `swift test --disable-sandbox --filter 'D4PageTitleEdgeTests|D4QualityBadgeTests|D4SidebarHeaderTests|CupertinoControlsTests|PlayerBarRefinementTests|HeroAlignmentTests'` passed 20 tests in 6 suites.
+- **Visual:** before (`fab17724`) and after (`c938fe73`) offscreen renders in Day and Night were captured and inspected for Timeline, Atlas, Connections, Album and Sidebar; the player bar rendered `"Nothing playing"` in preview mode so its badge was not shown in that render. Owner visual acceptance in a live window is not recorded. No motion added, so no CPU measurement.
+- **Not verified:** owner visual acceptance in a live window. Not published, deployed or runtime-verified.
 
 **D4.7 Selected sidebar sub-item highlight starts at the indent** (02.24.56 "Connections", 02.26.06 "Timeline", 02.27.57 "Atlas")
 - **What is wrong:** the highlight for Discover sub-items starts about 16 pt right of the top-level highlights ("Home", "Radio", "Downloads"), so the pills have two left edges.

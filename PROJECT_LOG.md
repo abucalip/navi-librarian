@@ -1,3 +1,17 @@
+## 2026-11-22 — macOS design details D4.4–D4.6, page title edge, quality badge and sidebar group headers (PR #1213 merged)
+
+- **Merged:** PR [#1213](https://github.com/abucalip/navi-librarian/pull/1213), squash commit `2ecb2921de46fb7ac18212e734c7fd78eceb19fc`, from exact PR head `c938fe73f2dc7c9ee3d65b875fe4e6e9177d7566`; branch `macos/d4-4-page-title-edge`, based on `main` at `fab17724` (D4.3 docs closeout).
+- **Changes:**
+  - **D4.4:** `TimelineView` and `AtlasView` now use `Self.horizontalPadding = CU.Space.xl` (32 pt) instead of 28 pt, aligning their titles, search field and map/rail with Home, Radio, Connections and Downloads.
+  - **D4.5:** added `CUQualityBadge` in `CupertinoKit.swift` (filled 4 pt rounded rectangle, bold caption, 8×2 pt padding; `.standard`, `.playing`, `.onMedia`) and adopted it across `CupertinoPlayerBar` (replacing the outlined badge), `CupertinoAlbum` (header and track table) and `CupertinoLibrary` (song table).
+  - **D4.6:** unified `CupertinoSidebar` (`CupertinoTheme.swift`) group headers onto `groupHeaderFont` (`CU.Font.eyebrow.font`) and `groupGap` (`CU.Space.m`) so Discover and Playlists share the same small bold grey label and equal inter-group spacing.
+- **Tests run:** `swift test --disable-sandbox --filter 'D4PageTitleEdgeTests|TimelineTests|AtlasTests|D4SegmentedRenderTests'` — 21 tests in 7 suites passed (15.410 s); `swift test --disable-sandbox --filter 'D4PageTitleEdgeTests|D4QualityBadgeTests|D4SidebarHeaderTests|CupertinoControlsTests|PlayerBarRefinementTests|HeroAlignmentTests'` — 20 tests in 6 suites passed (4.606 s). No full suite.
+- **Visual:** before (`fab17724`) and after (`c938fe73`) offscreen renders in Day and Night were captured and inspected for Timeline, Atlas, Connections, Album and Sidebar; the player bar rendered `"Nothing playing"` in preview mode so its badge was not shown in that render.
+- **Not verified:** owner visual acceptance in a live window; CI checks on `c938fe73` were not waited on; no CPU measurement (no motion added). Not published, deployed or runtime-verified.
+- **Next action:** the owner checks D4.4–D4.6 in a live window; D4.7 (sidebar sub-item highlight) can start.
+
+---
+
 ## 2026-11-22 — macOS design details D4.3, centre-align phone banner and notice rows (PR #1212 merged)
 
 - **Merged:** PR [#1212](https://github.com/abucalip/navi-librarian/pull/1212), squash commit `2f62f933ac1c546754eefbced5ba0040dde398b5`, from exact PR head `d972ac1abccf607a0443215fc4725275b271b166`; merged 2026-11-21 23:45:44 UTC. Branch `macos/d4-3-phone-banner`, based on `main` at `9c46aede` (D4.2 merged).
