@@ -142,8 +142,12 @@ struct CupertinoHome: View {
         .padding(CU.Space.l)
         .frame(maxWidth: .infinity, minHeight: Self.marqueeMinHeight, alignment: .topLeading)
         .background {
+            let h = a.hue / 360
             ZStack {
-                Color.clear.overlay { CoverView(album: a).scaledToFill() }.clipped()
+                LinearGradient(
+                    colors: [Color(hue: h, saturation: 0.55, brightness: 0.85), Color(hue: (h + 0.08).truncatingRemainder(dividingBy: 1), saturation: 0.7, brightness: 0.45)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
                 BlurredArtwork(album: a, radius: 44)
                 Color.black.opacity(0.55)
             }
@@ -188,16 +192,24 @@ struct CupertinoHome: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The other picks in order, after the current one and wrapping round: covers 46 across, three to a row, two rows at most.
-    private func nextPicksView(_ indices: [Int]) -> some View {
-        let rows = stride(from: 0, to: indices.count, by: 3).map { Array(indices[$0..<min($0 + 3, indices.count)]) }
-        let covers = ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-            HStack(spacing: 6) { ForEach(row, id: \.self) { nextPickButton($0) } }
-        }
-        // Narrow (mockup `home-marquee--narrow`): the same block, wrapped under the text instead of at the trailing edge.
-        return VStack(alignment: .trailing, spacing: 6) {
-            Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader).padding(.bottom, 2)
-            covers
+    /// The other picks in order, after the current one and wrapping round: covers 46 across, three to a row, two rows at most
+    /// when wide; one horizontal row across the card when stacked (`.nar .nextA` in `home-marquee.css`).
+    @ViewBuilder private func nextPicksView(_ indices: [Int]) -> some View {
+        if stacked {
+            HStack(alignment: .center, spacing: CU.Space.m) {
+                Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader)
+                HStack(spacing: 6) { ForEach(indices, id: \.self) { nextPickButton($0) } }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            let rows = stride(from: 0, to: indices.count, by: 3).map { Array(indices[$0..<min($0 + 3, indices.count)]) }
+            let covers = ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 6) { ForEach(row, id: \.self) { nextPickButton($0) } }
+            }
+            VStack(alignment: .trailing, spacing: 6) {
+                Text("NEXT PICKS").cuRole(CU.Font.eyebrow).accessibilityAddTraits(.isHeader).padding(.bottom, 2)
+                covers
+            }
         }
     }
 
