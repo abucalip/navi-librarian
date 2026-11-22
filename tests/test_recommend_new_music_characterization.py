@@ -192,7 +192,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
     def test_clear_inventory_returns_candidate_and_stable_response_shape(self):
         result = self._run_recommendations([])
 
-        self.assertEqual(result["source"], "ListenBrainz + MusicBrainz + Last.fm + Navidrome")
+        self.assertEqual(result["source"], "ListenBrainz + MusicBrainz + Navidrome")
         self.assertEqual(result["regional_candidates_added"], 0)
         self.assertEqual(result["regional_search_results_seen"], 0)
         self.assertEqual(result["candidate_albums_resolved"], 1)
@@ -398,7 +398,6 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             )),
             patch.object(server, "_metadata_cache_set"),
             patch.object(server, "_discovery_settings_read", return_value={}),
-            patch.object(server, "_lastfm_album_popularity", return_value=None),
             patch.object(server, "api_call", side_effect=RuntimeError("Navidrome unavailable")),
         ):
             result = json.loads(server.recommend_new_music(count=10))

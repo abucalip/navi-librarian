@@ -38,6 +38,10 @@ _RANKING_DERIVED_CANDIDATE_FIELDS = frozenset({
     "recent_profile_family",
     "recent_profile_families",
     "recent_profile_bonus",
+    "listeners",
+    "playcount",
+    "popularity_tags",
+    "popularity_bonus",
     "lastfm_listeners",
     "lastfm_playcount",
     "lastfm_tags",
@@ -528,7 +532,7 @@ def _comparable_output(value: dict[str, Any]) -> dict[str, Any]:
     # Diagnostics contain timestamps and previous-run overlap by design. They
     # are not ranking outputs and are not part of deterministic equivalence.
     return {key: item for key, item in value.items()
-            if key not in {"pool_diagnostics", "lastfm_last_error"}}
+            if key not in {"pool_diagnostics", "lastfm_last_error", "popularity_last_error"}}
 
 
 def main(argv: list[str] | None = None) -> int:

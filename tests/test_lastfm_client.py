@@ -1,7 +1,6 @@
 import hashlib
 import json
 import unittest
-from unittest.mock import patch
 
 import httpx
 
@@ -194,16 +193,6 @@ class LastFmClientTests(unittest.TestCase):
             None, "Last.fm returned HTTP 503."
         ))
 
-    def test_album_popularity_legacy_adapter_preserves_error_state(self):
-        import navidrome_server
-        with patch.object(navidrome_server, "LASTFM_LAST_ERROR", "previous"), patch.object(
-            navidrome_server._lastfm_client, "album_popularity",
-            return_value=(None, "Last.fm returned HTTP 503."),
-        ) as lookup:
-            self.assertIsNone(navidrome_server._lastfm_album_popularity("Artist", "Album"))
-            self.assertEqual(navidrome_server.LASTFM_LAST_ERROR, "Last.fm returned HTTP 503.")
-        lookup.assert_called_once_with("Artist", "Album")
-
 
     def test_artist_genres_normalizes_deduplicates_and_limits_tags(self):
         payload = {"toptags": {"tag": [
@@ -237,13 +226,6 @@ class LastFmClientTests(unittest.TestCase):
         self.assertFalse(any(row[0] == "http_get" for row in self.calls))
         missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
         self.assertEqual(missing.artist_genres("Artist"), [])
-
-    def test_artist_genres_legacy_adapter_delegates(self):
-        import navidrome_server
-        with patch.object(navidrome_server._lastfm_client, "artist_genres",
-                          return_value=["Jazz"]) as call:
-            self.assertEqual(navidrome_server._lastfm_artist_genres("Artist"), ["Jazz"])
-        call.assert_called_once_with("Artist")
 
 
     def test_artist_top_albums_normalizes_records_and_preserves_request_contract(self):
@@ -285,20 +267,6 @@ class LastFmClientTests(unittest.TestCase):
         missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
         self.assertEqual(missing.artist_top_albums("Artist"), [])
 
-    def test_artist_top_albums_legacy_adapter_keeps_discovery_filter(self):
-        import navidrome_server
-        records = [
-            {"artist": "Artist", "album": "Valid", "mbid": None,
-             "lastfm_listeners": 1, "lastfm_playcount": 2, "lastfm_url": None},
-            {"artist": "Artist", "album": "Various Artists", "mbid": None,
-             "lastfm_listeners": 3, "lastfm_playcount": 4, "lastfm_url": None},
-        ]
-        with patch.object(navidrome_server._lastfm_client, "artist_top_albums",
-                          return_value=records) as call, patch.object(
-                              navidrome_server, "_discovery_is_album_candidate",
-                              side_effect=lambda item: item["album"] == "Valid"):
-            self.assertEqual(navidrome_server._lastfm_top_albums("Artist", limit=2), [records[0]])
-        call.assert_called_once_with("Artist", limit=2)
 
 class CachedAlbumPopularityTests(LastFmClientTests):
     def test_reads_album_info_cache_then_top_albums_cache_and_never_requests(self):
