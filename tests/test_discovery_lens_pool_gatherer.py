@@ -10,11 +10,14 @@ from discovery import lens_pool_gatherer as gatherer
 from discovery.batch_metadata import LISTENBRAINZ_ARTIST_URL
 from discovery.lens_lists import LENS_LIST_SIZE, build_lens_lists
 from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
-from discovery.mbid_popularity import LASTFM_API_URL, MUSICBRAINZ_RELEASE_SEARCH_URL
-from discovery.artist_links import MUSICBRAINZ_ARTIST_URL
+from discovery.artist_links import LASTFM_API_URL, MUSICBRAINZ_ARTIST_URL
 from discovery.artist_profiles import MUSICBRAINZ_ARTIST_SEARCH_URL
 from discovery.artist_tag_fallback import MUSICBRAINZ_GENRE_URL
 from discovery.recommendations import music_key
+from integrations.listenbrainz.popularity import (
+    LISTENBRAINZ_ARTIST_POPULARITY_URL,
+    LISTENBRAINZ_POPULARITY_URL,
+)
 
 DAY = "2026-10-24"
 ON = {"engine2_lens_lists_enabled": True}
@@ -34,20 +37,30 @@ class _Net:
     """Routes MusicBrainz, ListenBrainz and Last.fm stubs and records every call."""
 
     def __init__(self, *, album=None, toptags=None, artist_genres=None, vocabulary=()):
-        self.album = album or {}              # release MBID -> album listeners
+        self.album = album or {}              # release-group MBID -> album listeners
         self.toptags = toptags or {}          # artist MBID -> [(tag, count)]
         self.artist_genres = artist_genres or {}  # artist MBID -> [genre names]
         self.vocabulary = list(vocabulary)
         self.calls = []
+        self.post_calls = []
+
+    def post(self, url, json=None, headers=None, timeout=None):
+        payload = dict(json or {})
+        self.post_calls.append((url, payload))
+        assert url == LISTENBRAINZ_POPULARITY_URL, url
+        return _Response([
+            {
+                "release_group_mbid": mbid,
+                "total_user_count": self.album[mbid],
+                "total_listen_count": self.album[mbid] * 5,
+            }
+            for mbid in payload["release_group_mbids"]
+            if mbid in self.album
+        ])
 
     def __call__(self, url, params=None, headers=None, timeout=None):
         params = dict(params or {})
         self.calls.append((url, params))
-        if url == MUSICBRAINZ_RELEASE_SEARCH_URL:
-            groups = params["query"][len("rgid:("):-1].split(" OR ")
-            releases = [{"id": f"rel-{g}", "status": "Official", "date": "2001",
-                         "release-group": {"id": g}} for g in groups]
-            return _Response({"count": len(releases), "releases": releases})
         if url == MUSICBRAINZ_ARTIST_SEARCH_URL:
             return _Response({"artists": []})
         if url.startswith(MUSICBRAINZ_ARTIST_URL):
@@ -61,10 +74,6 @@ class _Net:
                 for m in params["artist_mbids"].split(",") if m in self.artist_genres]
             return _Response(entries)
         assert url == LASTFM_API_URL, url
-        if params["method"] == "album.getInfo":
-            listeners = self.album.get(params["mbid"])
-            return _Response({"album": {"listeners": str(listeners), "playcount": "1"}}
-                             if listeners else {"error": 6})
         if params["method"] == "artist.getSimilar":
             return _Response({"similarartists": {"artist": []}})
         if params["method"] == "artist.gettoptags":
@@ -74,6 +83,9 @@ class _Net:
 
     def calls_to(self, url, method=None):
         return [p for u, p in self.calls if u == url and (method is None or p.get("method") == method)]
+
+    def posts_to(self, url):
+        return [p for u, p in self.post_calls if u == url]
 
 
 class _Cache:
@@ -110,7 +122,7 @@ class _Harness(unittest.TestCase):
         self.cache = _Cache()
         self.net = _Net()
         self.providers = SimpleNamespace(
-            http_get=self.net, http_post=None, http_client=None, sleep=lambda _s: None,
+            http_get=self.net, http_post=self.net.post, http_client=None, sleep=lambda _s: None,
             music_key=music_key, is_album_candidate=lambda *a, **k: True,
             metadata_cache_get=self.cache.get, metadata_cache_set=self.cache.set)
         self.seed_listens = []
@@ -174,21 +186,24 @@ class GatherTests(_Harness):
         self.assertEqual([c["lens"] for c in self.supply_calls], [REPEATED_TRACKS.name])
         self.assertEqual(out["pools"][DEEP_CUTS.name], [])
 
-    def test_popularity_uses_release_search_and_album_listeners_not_artist_lookups(self):
+    def test_popularity_uses_listenbrainz_batch_and_skips_artist_lookups(self):
         self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1"), _album(2, "a2", "g2")]}
-        self.net.album = {"rel-g1": 900}
+        self.net.album = {"g1": 900}
         out = self.gather()
         self.assertEqual(out["popularity"]["g1"]["album_listeners"], 900)
         self.assertIsNone(out["popularity"]["g2"]["album_listeners"])
-        self.assertEqual(self.net.calls_to(LASTFM_API_URL, "artist.getInfo"), [])
-        self.assertTrue(self.net.calls_to(MUSICBRAINZ_RELEASE_SEARCH_URL))
+        self.assertEqual(self.net.posts_to(LISTENBRAINZ_ARTIST_POPULARITY_URL), [])
+        self.assertEqual(
+            self.net.posts_to(LISTENBRAINZ_POPULARITY_URL),
+            [{"release_group_mbids": ["g1", "g2"]}],
+        )
         self.assertEqual(out["lenses"][DEEP_CUTS.name]["album_listeners"], 1)
 
-    def test_last_fm_album_lookups_stay_within_the_lens_budget(self):
+    def test_large_pool_is_chunked_in_listenbrainz_popularity_batches(self):
         self.pools = {DEEP_CUTS.name: [_album(n, f"a{n}", f"g{n}") for n in range(90)]}
         out = self.gather()
-        album_calls = self.net.calls_to(LASTFM_API_URL, "album.getInfo")
-        self.assertLessEqual(len(album_calls), gatherer.LENS_LASTFM_CALL_BUDGET)
+        posts = self.net.posts_to(LISTENBRAINZ_POPULARITY_URL)
+        self.assertEqual(len(posts), 2)
         self.assertEqual(out["lenses"][DEEP_CUTS.name]["albums"], 90)
 
     def test_artist_genres_come_from_one_batch_per_lens_and_fallback_fills_thin_artists(self):
@@ -206,13 +221,13 @@ class GatherTests(_Harness):
 
     def test_repeat_run_reuses_cached_album_listeners(self):
         self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1")]}
-        self.net.album = {"rel-g1": 900}
+        self.net.album = {"g1": 900}
         self.gather()
         self.net.calls.clear()
+        self.net.post_calls.clear()
         out = self.gather()
         self.assertEqual(out["popularity"]["g1"]["album_listeners"], 900)
-        self.assertEqual(self.net.calls_to(MUSICBRAINZ_RELEASE_SEARCH_URL), [])
-        self.assertEqual(self.net.calls_to(LASTFM_API_URL, "album.getInfo"), [])
+        self.assertEqual(self.net.posts_to(LISTENBRAINZ_POPULARITY_URL), [])
 
     def test_listens_stamped_in_1970_are_dropped_before_any_profile(self):
         self.pools = {}
@@ -228,7 +243,7 @@ class GatherTests(_Harness):
 
     def test_gathered_output_is_the_input_the_list_builder_takes(self):
         self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1")]}
-        self.net.album = {"rel-g1": 900}
+        self.net.album = {"g1": 900}
         self.net.artist_genres = {"a1": ["indie rock", "dream pop"]}
         out = self.gather()
         lists = build_lens_lists(
