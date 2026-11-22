@@ -12,6 +12,9 @@ struct TimelineView: View {
     /// Shared Cupertino page horizontal inset (`CU.Space.xl`, D4.4) so the title, search field and rail align with other pages.
     static let horizontalPadding: CGFloat = CU.Space.xl
 
+    /// Year labels align to the card title's first baseline rather than the card's padded top edge (D5.6).
+    static let rowAlignment: VerticalAlignment = .firstTextBaseline
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
@@ -71,7 +74,7 @@ struct TimelineView: View {
     }
 
     private func row(_ item: TimelineItem, label: String?) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: Self.rowAlignment, spacing: 14) {
             Text(label ?? "").font(.system(size: 16, weight: .bold)).monospacedDigit().foregroundStyle(style.ink)
                 .frame(width: 64, alignment: .trailing)
             card(item)
@@ -103,7 +106,7 @@ struct TimelineView: View {
 
     @ViewBuilder private var undatedBlock: some View {
         @Bindable var t = timeline
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: Self.rowAlignment, spacing: 14) {
             Text("?").font(.system(size: 16, weight: .bold)).foregroundStyle(style.muted).frame(width: 64, alignment: .trailing)
             VStack(alignment: .leading, spacing: 6) {
                 Button { t.showsUndated.toggle() } label: {
