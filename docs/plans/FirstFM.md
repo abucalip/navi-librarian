@@ -74,59 +74,94 @@ To keep the wire format clean and provider-agnostic, rename Last.fm-specific fie
 
 ---
 
-## 5. Phased Execution Plan
+## 5. Bite-Sized Implementation Steps
 
-Each phase is one or two small, reviewable PRs with focused unit/regression tests.
+Each step is scoped as a single, small PR so it can be implemented reliably by **Hydrogen (low)** or **Hydrogen (medium)** with focused tests.
 
-### Phase 1 — ListenBrainz Popularity Expansion & `navidrome_server.py` Detachment (Server)
-- **1a. ListenBrainz popularity client:** Extend `integrations/listenbrainz/popularity.py` with:
-  - `fetch_artist_popularity(post, cache_get, cache_set, mbids)` (`POST /1/popularity/artist`, batched 50/chunk, 30-day cache + 1-hour negative mark).
-  - `fetch_artist_top_release_groups(get, cache_get, cache_set, artist_mbid)` (`GET /1/popularity/top-release-groups-for-artist/{mbid}`, 30-day cache).
-- **1b. Replace `discovery/mbid_popularity.py` & candidate pipelines:**
-  - Switch `discovery/mbid_popularity.py`, `discovery/lens_pool_gatherer.py`, `discovery/classics_candidates.py`, `discovery/classics_ratings.py`, `discovery/deep_dive_candidates.py`, `discovery/new_releases.py`, and `discovery/recommendations.py` from Last.fm to ListenBrainz popularity.
-  - Detach the Last.fm popularity & lookup wrappers from `navidrome_server.py` into `discovery/popularity.py` (shrinking `navidrome_server.py`).
-  - Update `recommendation/replay.py`, `recommendation/diagnostics.py`, and `recommendation/profile_comparison.py`.
-  - Emit new field names (`listeners`, `playcount`, `popularity_bonus`) alongside temporary compatibility aliases until Phase 5, or switch directly once clients are updated in Phase 4.
+### Phase 1 — ListenBrainz Popularity Expansion & `navidrome_server.py` Detachment
 
-### Phase 2 — Deezer Fallback, Search, Artist/Album Pages & Tag Fallback (Server)
-- **2a. Deezer artist fallback client:** Add `integrations/deezer/artist.py` with paced, cached:
-  - `search_artist_id(name)`
-  - `related_artists(artist_id, limit)` (`/artist/{id}/related`)
-  - `top_tracks(artist_id, limit)` (`/artist/{id}/top`)
-  - Register in `docs/ARCHITECTURE.md`.
-- **2b. Wire into artist/album pages & search:**
-  - Remove `LastFmProvider` from `discovery/search/providers.py`, `discovery/search/network.py`, `discovery/search/artist_page.py`, `discovery/search/artist_sections.py`, `discovery/search/album_page.py`, `app/api/search.py`, and `app/services/similar_precompute.py`.
-  - Update `discovery/search/similar.py` to fuse ListenBrainz + Deezer fallback + MusicBrainz tags + Discogs styles (with clear reason strings, e.g., `"Deezer similar artist"`).
-  - Update `discovery/search/top_songs.py` to use ListenBrainz first, Deezer fallback second.
-  - Update `discovery/artist_links.py` to use ListenBrainz / Deezer instead of `artist.getSimilar`.
-  - Replace `artist.getTopTags` in `discovery/artist_tag_fallback.py` with Discogs styles filtered through the MusicBrainz genre vocabulary.
-  - Remove `lastfm` from `app/services/owned_prefetch.py` and `app/services/prefetch_state.py`.
+- **F1.1 — Add batched artist popularity & top release groups to ListenBrainz client**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `integrations/listenbrainz/popularity.py`, `tests/test_listenbrainz_popularity.py`  
+  - **Scope:** Add `fetch_artist_popularity(post, cache_get, cache_set, mbids)` (`POST /1/popularity/artist`, 50/chunk, 30-day cache + 1-hour negative mark) and `fetch_artist_top_release_groups(get, cache_get, cache_set, artist_mbid)` (`GET /1/popularity/top-release-groups-for-artist/{mbid}`, 30-day cache). Pure functions with injected HTTP/cache callables, matching the existing `fetch_release_group_popularity` pattern.
 
-### Phase 3 — Listening History & Radio Scrobbling to ListenBrainz (Server)
-- **3a. Listening history:** Remove `lastfm_window` and `LastFmResponseError` from `discovery/history_fetch.py` and `discovery/lens_service.py`.
-- **3b. Radio scrobbling & love:** Rewrite `integrations/radio/scrobble.py` (and `app/api/radio.py`) to submit to ListenBrainz:
-  - `POST https://api.listenbrainz.org/1/submit-listens` (`listen_type: "single"`) using `Authorization: Token <LISTENBRAINZ_TOKEN>` and the logged track's artist, title, and timestamp.
-  - `POST https://api.listenbrainz.org/1/feedback/recording-feedback` (`score: 1`) for radio love when a recording MBID is available (or resolve via MusicBrainz/ListenBrainz lookup; always keep local radio love state).
-  - Gate `scrobble_enabled` on `LISTENBRAINZ_TOKEN` being configured instead of `LASTFM_*`.
-  - Update radio API response copy/status fields so clients display ListenBrainz instead of Last.fm.
+- **F1.2 — Switch `discovery/mbid_popularity.py` and `discovery/lens_pool_gatherer.py` to ListenBrainz**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `discovery/mbid_popularity.py`, `discovery/lens_pool_gatherer.py`, `tests/test_mbid_popularity.py`, `tests/test_lens_pool_gatherer.py`  
+  - **Scope:** Replace Last.fm `artist.getInfo` / `album.getInfo` calls with `fetch_artist_popularity` and `fetch_release_group_popularity`. Drop MusicBrainz release-search indirection that was only needed because Last.fm rejected release-group MBIDs.
+
+- **F1.3 — Switch Classics, Deep Dives, and New Releases popularity & top albums to ListenBrainz**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `discovery/classics_candidates.py`, `discovery/classics_ratings.py`, `discovery/deep_dive_candidates.py`, `discovery/new_releases.py`, `discovery/lens_week.py`, `discovery/pick_why.py`, plus their focused unit tests  
+  - **Scope:** Read/emit `listeners` and `playcount` (keeping temporary `lastfm_listeners` / `lastfm_playcount` aliases in payloads until F5.2) and source top-album rankings from ListenBrainz popularity instead of Last.fm.
+
+- **F1.4 — Detach Last.fm popularity & lookup wiring from `navidrome_server.py`**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** new `discovery/popularity.py`, `discovery/recommendations.py`, `discovery/recommendation_payload.py`, `recommendation/replay.py`, `recommendation/diagnostics.py`, `recommendation/profile_comparison.py`, `navidrome_server.py`, `docs/ARCHITECTURE.md`, plus focused tests  
+  - **Scope:** Move the popularity bonus pass and Classics/Deep Dives/New Releases provider-lookup wiring out of `navidrome_server.py` into `discovery/popularity.py`. Remove `_lastfm_client`, `_lastfm_album_popularity`, `_lastfm_top_albums`, `_lastfm_artist_genres`, and `LASTFM_LAST_ERROR` from `navidrome_server.py` (net line reduction per D-016). Emit `listeners`, `playcount`, `popularity_bonus` (with temporary `lastfm_*` aliases until F5.2).
+
+### Phase 2 — Deezer Fallback, Search, Artist/Album Pages & Tag Fallback
+
+- **F2.1 — Add paced, cached Deezer artist fallback module**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** new `integrations/deezer/artist.py`, `docs/ARCHITECTURE.md`, new `tests/test_deezer_artist.py`  
+  - **Scope:** Implement `search_artist_id(name)`, `related_artists(artist_id, limit)`, and `top_tracks(artist_id, limit)` against `https://api.deezer.com` with 0.15 s spacing, 30-day positive cache, and 1-hour no-match negative marks.
+
+- **F2.2 — Replace Last.fm in `top_songs.py` and `similar.py` with Deezer fallback**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `discovery/search/top_songs.py`, `discovery/search/similar.py`, `discovery/search/providers.py`, `discovery/search/network.py`, plus focused search tests  
+  - **Scope:** Wire `integrations/deezer/artist.py` into `discovery/search/providers.py` / `network.py` as the fallback after ListenBrainz for `top_songs` and `similar` (reason `"Deezer similar artist"`). Remove `LastFmProvider` from `providers.py` and `network.py`.
+
+- **F2.3 — Remove Last.fm from artist/album pages, `artist_links.py`, precompute, and prefetch**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `discovery/search/artist_page.py`, `discovery/search/artist_sections.py`, `discovery/search/album_page.py`, `discovery/artist_links.py`, `app/api/search.py`, `app/services/similar_precompute.py`, `app/services/owned_prefetch.py`, `app/services/prefetch_state.py`, plus focused tests  
+  - **Scope:** Drop all remaining `lastfm` arguments, cache keys, and prefetch budgets from artist/album page builders and `artist_links.py` (using ListenBrainz + Deezer fallback).
+
+- **F2.4 — Replace `artist.getTopTags` in `discovery/artist_tag_fallback.py` with Discogs**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `discovery/artist_tag_fallback.py`, `tests/test_artist_tag_fallback.py`  
+  - **Scope:** Replace Last.fm top-tag lookups with Discogs artist/release styles filtered through the existing MusicBrainz genre vocabulary, keeping the same bounded best-effort contract and 90-day cache.
+
+### Phase 3 — Listening History & Radio Scrobbling to ListenBrainz
+
+- **F3.1 — Remove Last.fm listening history window**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `discovery/history_fetch.py`, `discovery/lens_service.py`, `tests/test_history_fetch.py`, `tests/test_lens_service.py`  
+  - **Scope:** Remove `lastfm_window`, `LastFmResponseError`, and `_lastfm_username` wiring so Lenses read history exclusively from ListenBrainz.
+
+- **F3.2 — Migrate radio scrobbling and love to ListenBrainz**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `integrations/radio/scrobble.py`, `app/api/radio.py`, `tests/test_radio_scrobble.py`, `tests/test_radio_api.py`  
+  - **Scope:** Replace Last.fm `track.scrobble` / `track.love` with ListenBrainz `POST /1/submit-listens` (`listen_type: "single"`) and `POST /1/feedback/recording-feedback` (`score: 1`), authenticated with `LISTENBRAINZ_TOKEN`. Gate `scrobble_enabled` on `LISTENBRAINZ_TOKEN` and update user-facing error/status copy to mention ListenBrainz.
 
 ### Phase 4 — Client Updates (Web, Android, macOS)
-- **4a. Web (`static/app.js`, `static/layout-zine.js`, `app/templates/index.html`):**
-  - Read `listeners` / `playcount` (with fallback to `lastfm_listeners` / `lastfm_playcount` if needed).
-  - Remove Last.fm API key / username inputs and status badges from Settings; update Radio scrobbling copy to ListenBrainz.
-- **4b. Android (`android/`):**
-  - Update `model/Discovery.kt`, `model/Dto.kt`, `model/Server.kt`, `model/Radio.kt`, `data/ServerRead.kt`, `data/Repository.kt`, `ui/settings/ServerModel.kt`, `ui/settings/RadioSettings.kt`.
-  - Update `android/contract-fixtures/librarian/*.json` and `docs/contracts/ANDROID_CLIENT_CONTRACT.md`.
-- **4c. macOS (`macos/`):**
-  - Update `DiscairLibrarian` (`ServiceSettings.swift`, `RadioClient.swift`, `Radio.swift`), `DiscairNavidrome` (`AlbumSpread.swift`), and `DiscairUI` (`ServicesModel.swift`, `ServicesController.swift`, `AppState+Services.swift`, `ServiceDraftProbe.swift`, `RadioSettingsModel.swift`, `CupertinoServices.swift`, `CupertinoRadioSettings.swift`, `CupertinoHome.swift`, `CupertinoAlbumSpread.swift`, `GraphExplorer.swift`, `ListeningHistory.swift`).
-  - Update `docs/contracts/MACOS_CLIENT_CONTRACT.md`.
 
-### Phase 5 — Final Last.fm Removal & Cleanup (Server + Docs)
-- Delete `integrations/lastfm/` (`__init__.py`, `client.py`).
-- Remove `lastfm_api_key` / `lastfm_username` / `lastfm` probe from `settings/service.py` and `app/api/settings.py`.
-- Remove `audioscrobbler.com` from `app/services/runtime_metrics.py`, `.env.example`, and `compose.yaml`.
-- Drop temporary `lastfm_*` payload aliases from server responses (leaving only `listeners`, `playcount`, `popularity_bonus`).
-- Update `docs/ARCHITECTURE.md`, `docs/contracts/SERVER_V2_CONTRACT.md`, `PRODUCT.md`, and `docs/ACTIVE_WORK.md`.
+- **F4.1 — Update Web client for renamed fields and ListenBrainz radio scrobbling**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `static/app.js`, `static/layout-zine.js`, `app/templates/index.html`, plus focused UI contract tests  
+  - **Scope:** Read `listeners` / `playcount` (with fallback to `lastfm_listeners` / `lastfm_playcount`), remove Last.fm API key / username inputs from Settings, and update Radio scrobbling copy to ListenBrainz.
+
+- **F4.2 — Update Android client models, settings, radio UI, and contract fixtures**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `android/app/src/main/kotlin/app/discair/model/{Discovery,Dto,Server,Radio}.kt`, `data/{ServerRead,Repository}.kt`, `ui/settings/{ServerModel,RadioSettings}.kt`, `android/contract-fixtures/librarian/*.json`, `docs/contracts/ANDROID_CLIENT_CONTRACT.md`, plus `RadioTest.kt` and `ServerModelTest.kt`  
+  - **Scope:** Decode `listeners` / `playcount` (with fallback), remove Last.fm server settings fields, update Radio scrobbling copy to ListenBrainz, and refresh contract fixtures.
+
+- **F4.3 — Update macOS client models, settings, probes, and radio UI**  
+  - **Model / effort:** `Hydrogen (medium)`  
+  - **Files:** `macos/Sources/DiscairLibrarian/{ServiceSettings,RadioClient,Radio}.swift`, `DiscairNavidrome/AlbumSpread.swift`, `DiscairUI/Model/{ServicesModel,ServicesController,AppState+Services,ServiceDraftProbe,RadioSettingsModel,AlbumSpread,GraphExplorer,ListeningHistory}.swift`, `DiscairUI/Themes/Cupertino/{CupertinoServices,CupertinoRadioSettings,CupertinoHome,CupertinoAlbumSpread}.swift`, `docs/contracts/MACOS_CLIENT_CONTRACT.md`, plus focused macOS unit tests  
+  - **Scope:** Decode `listeners` / `playcount`, remove Last.fm service settings and `ws.audioscrobbler.com` draft probe, and update Radio scrobbling copy to ListenBrainz.
+
+### Phase 5 — Final Last.fm Removal & Cleanup
+
+- **F5.1 — Delete `integrations/lastfm/`, settings, probes, and metrics host**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** delete `integrations/lastfm/__init__.py` and `integrations/lastfm/client.py`, update `settings/service.py`, `app/api/settings.py`, `app/services/runtime_metrics.py`, `.env.example`, `compose.yaml`, `navidrome_server.py` (drop `"lastfm_api_key"` default), plus focused tests  
+  - **Scope:** Remove the Last.fm client package, settings keys, health probe, and `audioscrobbler.com` metrics entry.
+
+- **F5.2 — Drop temporary `lastfm_*` payload aliases and close out docs**  
+  - **Model / effort:** `Hydrogen (low)`  
+  - **Files:** `discovery/recommendation_payload.py`, `discovery/deep_dive_candidates.py`, `discovery/new_releases.py`, `discovery/lens_week.py`, `docs/ARCHITECTURE.md`, `docs/contracts/SERVER_V2_CONTRACT.md`, `PRODUCT.md`, `docs/ACTIVE_WORK.md`  
+  - **Scope:** Remove temporary `lastfm_listeners` / `lastfm_playcount` / `lastfm_popularity_bonus` aliases once clients are updated, verify zero `ws.audioscrobbler.com` or `integrations.lastfm` references remain, and update documentation.
 
 ---
 
