@@ -9,6 +9,7 @@ import Testing
 /// and the trailing "⋯" action slot on every row so durations share one fixed column, and the header count's
 /// trailing edge aligns with that column.
 @MainActor
+@Suite(.serialized)
 struct D54QueueDurationColumnTests {
     @Test func queueLayoutConstantsReservePlayingAndActionSlots() {
         #expect(CupertinoQueueInspector.playingSlotWidth > 0)
@@ -60,7 +61,9 @@ struct D54QueueDurationColumnTests {
         let expectedTimeTrailingX = CupertinoQueueInspector.width - 16 - CupertinoQueueInspector.headerCountTrailingInset
 
         // Header count ("8 songs · 52 min") aligns with the reserved duration column.
-        let headerTrailingX = try rightmostInkX(in: rep, scale: scale, xRange: 210..<360, yRange: 66..<102, bgSampleX: 210, bgSampleY: 84)
+        let headerTop = CupertinoQueueInspector.headerTop
+        let headerBottom = headerTop + CupertinoToolbar.height
+        let headerTrailingX = try rightmostInkX(in: rep, scale: scale, xRange: 210..<360, yRange: headerTop..<headerBottom, bgSampleX: 210, bgSampleY: headerTop + CupertinoToolbar.height / 2)
         #expect(abs(headerTrailingX - expectedTimeTrailingX) <= 2.5,
                 "fixture header=\(headerTrailingX) vs expected=\(expectedTimeTrailingX) (\(mode))")
 
@@ -90,7 +93,9 @@ struct D54QueueDurationColumnTests {
         let rep = try renderInspector(mode, state: state, size: NSSize(width: CupertinoQueueInspector.width, height: 640))
         let scale = CGFloat(rep.pixelsWide) / CupertinoQueueInspector.width
 
-        let headerTrailingX = try rightmostInkX(in: rep, scale: scale, xRange: 210..<360, yRange: 66..<102, bgSampleX: 210, bgSampleY: 84)
+        let headerTop = CupertinoQueueInspector.headerTop
+        let headerBottom = headerTop + CupertinoToolbar.height
+        let headerTrailingX = try rightmostInkX(in: rep, scale: scale, xRange: 210..<360, yRange: headerTop..<headerBottom, bgSampleX: 210, bgSampleY: headerTop + CupertinoToolbar.height / 2)
         let rowCenters = findRowCenters(in: rep, scale: scale, count: 3)
         #expect(rowCenters.count == 3, "expected 3 rendered queue rows, found \(rowCenters.count)")
 

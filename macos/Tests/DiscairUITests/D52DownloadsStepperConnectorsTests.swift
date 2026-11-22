@@ -8,6 +8,7 @@ import Testing
 /// - `CUStageTracker` draws 2 pt connectors between the four dots, filled up to the current step.
 /// - `CupertinoDownloads` hides the stepper on completed (`.imported`) rows while keeping "✓ In your library".
 @MainActor
+@Suite(.serialized)
 struct D52DownloadsStepperConnectorsTests {
     @Test func stageConnectorsMatchStepProgress() {
         #expect(CUStageTracker.connectorThickness == 2)
@@ -38,8 +39,11 @@ struct D52DownloadsStepperConnectorsTests {
         // The dots are 20 pt tall at the top of the tracker, so the connector centerline is at y = 10 pt.
         let dotCenterY = Int(10 * scale)
         let scanYRange = Int(6 * scale)...Int(14 * scale)
+        let savedPalette = CUPalette.current
+        CUPalette.current = mode == .night ? .night : .day
         let filledTarget = rgb(CURGB: CU.textRGB)
         let trackTarget = rgb(CURGB: CU.trackerTrackRGB)
+        CUPalette.current = savedPalette
 
         var measuredColours: [(r: Double, g: Double, b: Double)] = []
         for connectorIndex in 0..<3 {
@@ -103,7 +107,8 @@ struct D52DownloadsStepperConnectorsTests {
         )
 
         // Verify the imported row still renders the green "In your library" checkmark/label.
-        let successTarget = rgb(CURGB: CU.successRGB)
+        let palette: CUPalette = mode == .night ? .night : .day
+        let successTarget = rgb(CURGB: palette.success)
         let hasSuccessTint = hasPixelNear(successTarget, in: importedRep, maxDistance: 0.22)
         #expect(hasSuccessTint, "imported row should keep ✓ In your library in CU.success (\(mode))")
     }
@@ -174,8 +179,8 @@ struct D52DownloadsStepperConnectorsTests {
         return (Double(c.redComponent), Double(c.greenComponent), Double(c.blueComponent))
     }
 
-    private func rgb(CURGB: (Double, Double, Double)) -> (r: Double, g: Double, b: Double) {
-        (CURGB.0, CURGB.1, CURGB.2)
+    private func rgb(CURGB c: CURGB) -> (r: Double, g: Double, b: Double) {
+        (Double((c.hex >> 16) & 0xFF) / 255, Double((c.hex >> 8) & 0xFF) / 255, Double(c.hex & 0xFF) / 255)
     }
 
     private func dist(_ a: (r: Double, g: Double, b: Double), _ b: (r: Double, g: Double, b: Double)) -> Double {

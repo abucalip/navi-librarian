@@ -62,6 +62,11 @@ public final class StationLogoStore {
 
     static func key(_ station: String, _ size: RadioLogoSize) -> String { "radio-logo|\(station)|\(size.rawValue)" }
 
+    /// Synchronously returns an already-cached logo if present in memory.
+    func cached(station: String, size: RadioLogoSize) -> NSImage? {
+        cache.object(forKey: Self.key(station, size) as NSString)
+    }
+
     /// The logo, or nil while it cannot be had. One request per station and size; a second ask joins the first.
     public func logo(station: String, size: RadioLogoSize) async -> NSImage? {
         let key = Self.key(station, size)
@@ -141,14 +146,15 @@ struct StationLogo: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: size * radiusFraction, style: .continuous)
+        let shown = image ?? store?.cached(station: station.id, size: size > 64 ? .large : .small)
         shape
             .fill(CU.bgFill)
             .overlay {
-                if let image {
-                    Image(nsImage: image)
+                if let shown {
+                    Image(nsImage: shown)
                         .resizable()
                         .scaledToFit()
-                        .padding(Self.logoPadding(for: image.size))
+                        .padding(Self.logoPadding(for: shown.size))
                 }
             }
             .clipShape(shape)

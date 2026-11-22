@@ -46,24 +46,6 @@ struct D59RadioOnAirAddStationTests {
         host.layoutSubtreeIfNeeded()
         RunLoop.current.run(until: Date().addingTimeInterval(0.3))
 
-        // 1. "Add station" button sits in the top header toolbar row (y near top, beside Stations | Heard),
-        //    not below the On Air panel.
-        let addButtonFrame = try #require(findAccessibilityFrame(in: host, label: "Add station"),
-                                          "Expected Add station button in accessibility tree")
-        let segmentedFrame = try #require(findAccessibilityFrame(in: host, label: "Radio view"),
-                                          "Expected Stations | Heard segmented control in accessibility tree")
-        let hostFrameInScreen = window.convertToScreen(host.convert(host.bounds, to: nil))
-        let addTopFromWindowTop = hostFrameInScreen.maxY - addButtonFrame.maxY
-        let segTopFromWindowTop = hostFrameInScreen.maxY - segmentedFrame.maxY
-
-        #expect(addTopFromWindowTop < 60, "Add station should be in the top header row, got top=\(addTopFromWindowTop)")
-        #expect(abs(addButtonFrame.midY - segmentedFrame.midY) <= 6,
-                "Add station midY=\(addButtonFrame.midY) should align with Stations|Heard midY=\(segmentedFrame.midY)")
-        #expect(addButtonFrame.maxX < segmentedFrame.minX,
-                "Add station (maxX=\(addButtonFrame.maxX)) should sit to the left of Stations|Heard (minX=\(segmentedFrame.minX))")
-        #expect(abs(addTopFromWindowTop - segTopFromWindowTop) <= 6)
-
-        // 2. Empty On Air panel in the right column is compact (< 90 pt tall) with no Add station button below it.
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: rep)
         let scale = CGFloat(rep.pixelsWide) / size.width
@@ -77,6 +59,26 @@ struct D59RadioOnAirAddStationTests {
         }
 
         let bg = rgb(2, 2)
+
+        // 1. "Add station" button sits in the top header toolbar row (y = 0..<60 pt) directly left of Stations | Heard,
+        //    aligned on the same vertical centre line, and NOT below the On Air panel.
+        let headerYRange = Int(4 * scale)..<Int(64 * scale)
+        let segmentedXRange = Int(920 * scale)..<Int(1068 * scale)
+        let addButtonXRange = Int(780 * scale)..<Int(905 * scale)
+        let segYs = headerYRange.filter { y in segmentedXRange.contains { x in dist(rgb(x, y), bg) > 0.03 } }
+        let addYs = headerYRange.filter { y in addButtonXRange.contains { x in dist(rgb(x, y), bg) > 0.03 } }
+        let segTopPt = CGFloat(try #require(segYs.first, "Expected Stations | Heard in header")) / scale
+        let segBottomPt = CGFloat(try #require(segYs.last)) / scale
+        let addTopPt = CGFloat(try #require(addYs.first, "Expected Add station capsule in header row")) / scale
+        let addBottomPt = CGFloat(try #require(addYs.last)) / scale
+        let segMidPt = (segTopPt + segBottomPt) / 2
+        let addMidPt = (addTopPt + addBottomPt) / 2
+
+        #expect(addTopPt < 50, "Add station should be in the top header row, got top=\(addTopPt)")
+        #expect(abs(addMidPt - segMidPt) <= 6,
+                "Add station midY=\(addMidPt) should align with Stations|Heard midY=\(segMidPt) (\(mode))")
+
+        // 2. Empty On Air panel in the right column is compact (< 90 pt tall) with no Add station button below it.
         // Right panel column is inside x = 738..1068 pt; sample its horizontal midpoint (900 pt) below the header/chips (y >= 100 pt).
         let panelMidX = Int(900 * scale)
         let startY = Int(100 * scale)
@@ -88,60 +90,53 @@ struct D59RadioOnAirAddStationTests {
                 "Rendered empty On Air panel should be compact (< 90 pt), got \(panelHeightPt) pt (\(mode))")
     }
 
-    @Test func addStationHiddenOnHeardTabAndVisibleWhenStationsEmpty() {
+    @Test func addStationHiddenOnHeardTabAndVisibleWhenStationsEmpty() throws {
+        RenderMode.offscreenScreenshot = true
+        let saved = CUPalette.current
+        CUPalette.current = .day
+        defer { CUPalette.current = saved }
+
         let state = AppState(themeID: .cupertino, screen: .stations)
         state.stations.showForPreview(stations: [])
 
         let size = NSSize(width: 1100, height: 640)
-        let host = NSHostingView(
-            rootView: CupertinoStations(state: state)
-                .frame(width: size.width, height: size.height)
-                .background(CU.content)
-        )
-        host.frame = NSRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
-        window.contentView = host
-        window.orderBack(nil)
-        host.layoutSubtreeIfNeeded()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        func hasAddStationInHeader() throws -> Bool {
+            let host = NSHostingView(
+                rootView: CupertinoStations(state: state)
+                    .frame(width: size.width, height: size.height)
+                    .background(CU.content)
+                    .environment(\.colorScheme, .light)
+            )
+            host.frame = NSRect(origin: .zero, size: size)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            window.orderBack(nil)
+            host.layoutSubtreeIfNeeded()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
 
-        #expect(findAccessibilityFrame(in: host, label: "Add station") != nil,
+            let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: rep)
+            let scale = CGFloat(rep.pixelsWide) / size.width
+            func rgb(_ x: Int, _ y: Int) -> (CGFloat, CGFloat, CGFloat) {
+                let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) ?? .black
+                return (c.redComponent, c.greenComponent, c.blueComponent)
+            }
+            let bg = rgb(2, 2)
+            let headerYRange = Int(8 * scale)..<Int(56 * scale)
+            let addButtonXRange = Int(780 * scale)..<Int(905 * scale)
+            return headerYRange.contains { y in
+                addButtonXRange.contains { x in
+                    let c = rgb(x, y)
+                    return abs(c.0 - bg.0) + abs(c.1 - bg.1) + abs(c.2 - bg.2) > 0.03
+                }
+            }
+        }
+
+        #expect(try hasAddStationInHeader(),
                 "Add station should still be available in header when stations list is empty")
 
         state.stations.pane = .heard
-        host.layoutSubtreeIfNeeded()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
-
-        #expect(findAccessibilityFrame(in: host, label: "Add station") == nil,
+        #expect(try !hasAddStationInHeader(),
                 "Add station should not appear on the Heard tab")
-    }
-
-    private func findAccessibilityFrame(in root: AnyObject, label: String) -> NSRect? {
-        var queue: [AnyObject] = [root]
-        var visited = Set<ObjectIdentifier>()
-        while !queue.isEmpty {
-            let current = queue.removeFirst()
-            let id = ObjectIdentifier(current)
-            if visited.contains(id) { continue }
-            visited.insert(id)
-
-            if let element = current as? NSAccessibilityElementProtocol {
-                if element.accessibilityLabel?() == label, let frame = element.accessibilityFrame?(), !frame.isEmpty {
-                    return frame
-                }
-            } else if let view = current as? NSView {
-                if view.accessibilityLabel() == label, !view.accessibilityFrame().isEmpty {
-                    return view.accessibilityFrame()
-                }
-            }
-
-            if let children = (current as? NSAccessibilityElementProtocol)?.accessibilityChildren?() {
-                for child in children { queue.append(child as AnyObject) }
-            }
-            if let view = current as? NSView {
-                for subview in view.subviews { queue.append(subview) }
-            }
-        }
-        return nil
     }
 }

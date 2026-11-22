@@ -7,6 +7,7 @@ import Testing
 /// D5.3 (`docs/plans/MACOS_DESIGN_DETAILS.md`): the Downloads list card fills the content width up to a sensible max width,
 /// and the "Clear … imported" button aligns with the card's trailing edge rather than floating over empty space.
 @MainActor
+@Suite(.serialized)
 struct D53DownloadsCardWidthTests {
     @Test func maxListWidthIsSensible() {
         #expect(CupertinoDownloads.maxListWidth >= 900)
@@ -87,8 +88,8 @@ struct D53DownloadsCardWidthTests {
             dist(rgb(probeX, y), bg) > 0.02
         })
 
-        // Sample inside the panel's 16 pt top padding so we measure the panel background from edge to edge.
-        let cardSampleY = cardTopPx + Int(12 * scale)
+        // Sample below the panel's rounded top corners so we measure the straight vertical edges of CUPanel.
+        let cardSampleY = cardTopPx + Int(28 * scale)
         let cardXs = (0..<rep.pixelsWide).filter { x in dist(rgb(x, cardSampleY), bg) > 0.02 }
         let cardLeadingPx = try #require(cardXs.first)
         let cardTrailingPx = try #require(cardXs.last)

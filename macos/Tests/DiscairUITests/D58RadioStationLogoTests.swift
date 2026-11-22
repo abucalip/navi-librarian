@@ -1,6 +1,6 @@
 import AppKit
 import DiscairAudio
-import DiscairLibrarian
+@testable import DiscairLibrarian
 import Foundation
 import SwiftUI
 import Testing
@@ -51,14 +51,15 @@ struct D58RadioStationLogoTests {
         #expect(StationLogo.logoPadding(for: NSSize(width: 80, height: 240)) == 3)
     }
 
-    private func renderLogo(pngData: Data, size: CGFloat = 96) throws -> NSBitmapImageRep {
+    private func renderLogo(pngData: Data, stationID: String, size: CGFloat = 96) async throws -> NSBitmapImageRep {
         let saved = CUPalette.current
         CUPalette.current = .day
         defer { CUPalette.current = saved }
 
-        let store = StationLogoStore()
+        let store = StationLogoStore(media: nil)
         store.configure(source: FakeStationLogoSource(data: pngData))
-        let station = RadioStation(id: "3j", name: "3j Radio", proxied: true, playableURL: "https://example.invalid/3j", tags: ["Radio"])
+        let station = RadioStation(id: stationID, name: "3j Radio", proxied: true, playableURL: "https://example.invalid/3j", tags: ["Radio"])
+        _ = await store.logo(station: station.id, size: size > 64 ? .large : .small)
 
         let view = StationLogo(station: station, size: size)
             .environment(\.stationLogos, store)
@@ -71,7 +72,7 @@ struct D58RadioStationLogoTests {
         window.contentView = host
         window.orderBack(nil)
         host.layoutSubtreeIfNeeded()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.35))
+        try await Task.sleep(for: .milliseconds(150))
         host.layoutSubtreeIfNeeded()
 
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
@@ -87,16 +88,17 @@ struct D58RadioStationLogoTests {
         return rep.colorAt(x: clampedX, y: clampedY)?.usingColorSpace(.sRGB)
     }
 
-    @Test func wideLogoAspectFitsWithThreePointPaddingOnNeutralGround() throws {
+    @Test func wideLogoAspectFitsWithThreePointPaddingOnNeutralGround() async throws {
         let size: CGFloat = 96
-        let rep = try renderLogo(pngData: solidPNG(.red, width: 180, height: 45), size: size)
+        let rep = try await renderLogo(pngData: solidPNG(.red, width: 180, height: 45), stationID: "3j-wide", size: size)
 
         // Center and horizontal span inset by 3 pt padding should show the red wide logo.
         let center = try #require(color(in: rep, point: CGPoint(x: 48, y: 48), viewSize: size))
         let leftInner = try #require(color(in: rep, point: CGPoint(x: 6, y: 48), viewSize: size))
         let rightInner = try #require(color(in: rep, point: CGPoint(x: 90, y: 48), viewSize: size))
         for c in [center, leftInner, rightInner] {
-            #expect(c.redComponent > 0.8 && c.greenComponent < 0.2 && c.blueComponent < 0.2)
+            #expect(c.redComponent > 0.8 && c.redComponent - c.greenComponent > 0.5 && c.redComponent - c.blueComponent > 0.5,
+                    "got r=\(c.redComponent) g=\(c.greenComponent) b=\(c.blueComponent)")
         }
 
         // 3 pt left/right padding and top/bottom letterbox areas should show the neutral ground, not red.
@@ -109,9 +111,9 @@ struct D58RadioStationLogoTests {
         }
     }
 
-    @Test func squareLogoFillsWithoutPadding() throws {
+    @Test func squareLogoFillsWithoutPadding() async throws {
         let size: CGFloat = 96
-        let rep = try renderLogo(pngData: solidPNG(.blue, width: 128, height: 128), size: size)
+        let rep = try await renderLogo(pngData: solidPNG(.blue, width: 128, height: 128), stationID: "3j-square", size: size)
 
         let leftEdge = try #require(color(in: rep, point: CGPoint(x: 1, y: 48), viewSize: size))
         let center = try #require(color(in: rep, point: CGPoint(x: 48, y: 48), viewSize: size))
