@@ -13,17 +13,20 @@ class Resp:
         return self.body
 
 
-def top_tags(*pairs):
-    return Resp({"toptags": {"tag": [{"name": n, "count": str(c)} for n, c in pairs]}})
+def discogs_results(*releases):
+    """Build a Discogs /database/search response from (title, styles) pairs."""
+    return Resp({"results": [{"title": title, "style": list(styles)} for title, styles in releases]})
 
 
-class FakeLastfm:
+class FakeDiscogs:
     def __init__(self, answers):
-        self.answers, self.calls = answers, []
+        self.answers, self.calls, self.headers_seen = answers, [], []
 
-    def __call__(self, url, params=None, **_):
-        self.calls.append(params["mbid"])
-        answer = self.answers[params["mbid"]]
+    def __call__(self, url, params=None, headers=None, **_):
+        artist = (params or {}).get("artist")
+        self.calls.append(artist)
+        self.headers_seen.append(dict(headers or {}))
+        answer = self.answers[artist]
         if isinstance(answer, Exception):
             raise answer
         return answer
@@ -44,64 +47,109 @@ GENRES = {"desert blues", "blues", "jazz fusion", "rock"}
 
 
 class FallbackTagTests(unittest.TestCase):
-    def run_fallback(self, answers, existing=None, mbids=None, **kwargs):
-        self.lastfm, self.cache = FakeLastfm(answers), Cache()
+    def run_fallback(self, answers, existing=None, mbids=None, names=None, token="tok", **kwargs):
+        self.discogs, self.cache = FakeDiscogs(answers), Cache()
+        mbid_list = mbids if mbids is not None else list(answers)
+        artist_names = names if names is not None else {m: f"Artist {m}" for m in mbid_list}
         return fallback_artist_tags(
-            mbids if mbids is not None else list(answers), existing or {}, get=self.lastfm, api_key="k",
-            vocabulary=GENRES, cache_get=self.cache.get, cache_set=self.cache.set, **kwargs)
+            mbid_list, existing or {}, get=self.discogs, discogs_token=token,
+            artist_names=artist_names, vocabulary=GENRES,
+            cache_get=self.cache.get, cache_set=self.cache.set, **kwargs)
 
-    def test_keeps_only_genre_tags_above_the_count_threshold(self):
-        result = self.run_fallback({"a": top_tags(("desert blues", 100), ("tuareg", 90), ("blues", 5),
-                                                  ("female vocalists", 80), ("Rock", 20))})
+    def test_keeps_only_vocabulary_styles_ordered_by_frequency_and_ignores_other_artists(self):
+        result = self.run_fallback(
+            {"Artist a": discogs_results(
+                ("Artist a - One", ["Desert Blues", "Tuareg"]),
+                ("Artist a (2) - Two", ["Desert Blues", "Rock"]),
+                ("Other Artist - Three", ["Jazz Fusion"]),
+            )},
+            mbids=["a"],
+        )
         self.assertEqual(result, {"a": ["desert blues", "rock"]})
+        self.assertEqual(self.discogs.headers_seen[0]["Authorization"], "Discogs token=tok")
 
     def test_existing_tags_come_first_and_are_not_duplicated(self):
-        result = self.run_fallback({"a": top_tags(("blues", 100), ("rock", 50))}, existing={"a": ["rock"]})
+        result = self.run_fallback(
+            {"Artist a": discogs_results(("Artist a - Album", ["Blues", "Rock"]))},
+            existing={"a": ["rock"]}, mbids=["a"],
+        )
         self.assertEqual(result, {"a": ["rock", "blues"]})
 
     def test_artists_with_enough_tags_cost_no_call(self):
-        result = self.run_fallback({"a": top_tags(("blues", 100))}, existing={"a": ["rock", "blues"]})
-        self.assertEqual((result, self.lastfm.calls), ({}, []))
+        result = self.run_fallback(
+            {"Artist a": discogs_results(("Artist a - Album", ["Blues"]))},
+            existing={"a": ["rock", "blues"]}, mbids=["a"],
+        )
+        self.assertEqual((result, self.discogs.calls), ({}, []))
 
     def test_unchanged_artists_are_left_out(self):
-        self.assertEqual(self.run_fallback({"a": top_tags(("tuareg", 100))}), {})
+        result = self.run_fallback(
+            {"Artist a": discogs_results(("Artist a - Album", ["Tuareg"]))},
+            mbids=["a"],
+        )
+        self.assertEqual(result, {})
 
     def test_limit_caps_the_merged_list(self):
-        result = self.run_fallback({"a": top_tags(("blues", 100), ("rock", 90), ("jazz fusion", 80))}, limit=2)
+        result = self.run_fallback(
+            {"Artist a": discogs_results(
+                ("Artist a - 1", ["Blues", "Rock", "Jazz Fusion"]),
+                ("Artist a - 2", ["Blues", "Rock"]),
+                ("Artist a - 3", ["Blues"]),
+            )},
+            mbids=["a"], limit=2,
+        )
         self.assertEqual(result, {"a": ["blues", "rock"]})
 
     def test_results_are_cached_including_not_found(self):
-        answers = {"a": top_tags(("blues", 100)), "b": Resp({"error": 6, "message": "not found"})}
-        self.assertEqual(self.run_fallback(answers), {"a": ["blues"]})
-        self.assertEqual(self.cache.data["lfm:artist-tags:b"], [])
-        calls = len(self.lastfm.calls)
-        again = fallback_artist_tags(["a", "b"], {}, get=self.lastfm, api_key="k", vocabulary=GENRES,
-                                     cache_get=self.cache.get, cache_set=self.cache.set)
-        self.assertEqual((again, len(self.lastfm.calls)), ({"a": ["blues"]}, calls))
+        answers = {
+            "Artist a": discogs_results(("Artist a - Album", ["Blues"])),
+            "Artist b": discogs_results(),
+        }
+        self.assertEqual(self.run_fallback(answers, mbids=["a", "b"]), {"a": ["blues"]})
+        self.assertEqual(self.cache.data["discogs:artist-tags:b"], [])
+        calls = len(self.discogs.calls)
+        again = fallback_artist_tags(
+            ["a", "b"], {}, get=self.discogs, discogs_token="tok",
+            artist_names={"a": "Artist a", "b": "Artist b"}, vocabulary=GENRES,
+            cache_get=self.cache.get, cache_set=self.cache.set,
+        )
+        self.assertEqual((again, len(self.discogs.calls)), ({"a": ["blues"]}, calls))
 
     def test_transient_failure_is_not_cached_and_does_not_stop_others(self):
-        answers = {"a": RuntimeError("boom"), "b": Resp({"error": 11}), "c": top_tags(("blues", 100))}
-        self.assertEqual(self.run_fallback(answers), {"c": ["blues"]})
-        self.assertEqual(set(self.cache.data), {"lfm:artist-tags:c"})
+        answers = {
+            "Artist a": RuntimeError("boom"),
+            "Artist b": Resp({}, 429),
+            "Artist c": discogs_results(("Artist c - Album", ["Blues"])),
+        }
+        self.assertEqual(self.run_fallback(answers, mbids=["a", "b", "c"]), {"c": ["blues"]})
+        self.assertEqual(set(self.cache.data), {"discogs:artist-tags:c"})
 
     def test_call_budget_is_respected_in_the_order_given(self):
-        answers = {m: top_tags(("blues", 100)) for m in "abc"}
-        result = self.run_fallback(answers, max_calls=2, workers=1)
-        self.assertEqual((sorted(result), sorted(self.lastfm.calls)), (["a", "b"], ["a", "b"]))
+        answers = {f"Artist {m}": discogs_results((f"Artist {m} - Album", ["Blues"])) for m in "abc"}
+        result = self.run_fallback(answers, mbids=["a", "b", "c"], max_calls=2, workers=1)
+        self.assertEqual((sorted(result), self.discogs.calls), (["a", "b"], ["Artist a", "Artist b"]))
 
-    def test_empty_vocabulary_or_input_makes_no_calls(self):
-        fake = FakeLastfm({})
+    def test_empty_vocabulary_input_token_or_name_makes_no_calls(self):
+        fake = FakeDiscogs({})
         cache = Cache()
-        self.assertEqual(fallback_artist_tags(["a"], {}, get=fake, api_key="k", vocabulary=[],
-                                              cache_get=cache.get, cache_set=cache.set), {})
-        self.assertEqual(fallback_artist_tags([], {}, get=fake, api_key="k", vocabulary=GENRES,
-                                              cache_get=cache.get, cache_set=cache.set), {})
+        self.assertEqual(fallback_artist_tags(
+            ["a"], {}, get=fake, discogs_token="tok", artist_names={"a": "Artist a"},
+            vocabulary=[], cache_get=cache.get, cache_set=cache.set), {})
+        self.assertEqual(fallback_artist_tags(
+            [], {}, get=fake, discogs_token="tok", artist_names={},
+            vocabulary=GENRES, cache_get=cache.get, cache_set=cache.set), {})
+        self.assertEqual(fallback_artist_tags(
+            ["a"], {}, get=fake, discogs_token="", artist_names={"a": "Artist a"},
+            vocabulary=GENRES, cache_get=cache.get, cache_set=cache.set), {})
+        self.assertEqual(fallback_artist_tags(
+            ["a"], {}, get=fake, discogs_token="tok", artist_names={},
+            vocabulary=GENRES, cache_get=cache.get, cache_set=cache.set), {})
         self.assertEqual(fake.calls, [])
 
     def test_invalid_arguments_are_rejected(self):
-        for kwargs in ({"min_count": -1}, {"limit": True}, {"max_calls": 1.5}, {"workers": 0}):
+        for kwargs in ({"min_existing": -1}, {"limit": True}, {"max_calls": 1.5}, {"workers": 0}):
             with self.assertRaises(ValueError):
-                self.run_fallback({"a": top_tags(("blues", 100))}, **kwargs)
+                self.run_fallback({"Artist a": discogs_results(("Artist a - Album", ["Blues"]))}, mbids=["a"], **kwargs)
 
 
 class GenreListTests(unittest.TestCase):

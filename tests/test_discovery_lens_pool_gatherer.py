@@ -12,7 +12,7 @@ from discovery.lens_lists import LENS_LIST_SIZE, build_lens_lists
 from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
 from discovery.artist_links import LISTENBRAINZ_RADIO_URL, MUSICBRAINZ_ARTIST_URL
 from discovery.artist_profiles import MUSICBRAINZ_ARTIST_SEARCH_URL
-from discovery.artist_tag_fallback import LASTFM_API_URL, MUSICBRAINZ_GENRE_URL
+from discovery.artist_tag_fallback import DISCOGS_SEARCH_URL, MUSICBRAINZ_GENRE_URL
 from discovery.recommendations import music_key
 from integrations.listenbrainz.popularity import (
     LISTENBRAINZ_ARTIST_POPULARITY_URL,
@@ -34,11 +34,11 @@ class _Response:
 
 
 class _Net:
-    """Routes MusicBrainz, ListenBrainz and Last.fm stubs and records every call."""
+    """Routes MusicBrainz, ListenBrainz and Discogs stubs and records every call."""
 
-    def __init__(self, *, album=None, toptags=None, artist_genres=None, vocabulary=()):
-        self.album = album or {}              # release-group MBID -> album listeners
-        self.toptags = toptags or {}          # artist MBID -> [(tag, count)]
+    def __init__(self, *, album=None, discogs_styles=None, artist_genres=None, vocabulary=()):
+        self.album = album or {}                  # release-group MBID -> album listeners
+        self.discogs_styles = discogs_styles or {}  # artist name -> [style names]
         self.artist_genres = artist_genres or {}  # artist MBID -> [genre names]
         self.vocabulary = list(vocabulary)
         self.calls = []
@@ -75,11 +75,11 @@ class _Net:
             return _Response(entries)
         if url.startswith(LISTENBRAINZ_RADIO_URL):
             return _Response({})
-        assert url == LASTFM_API_URL, url
-        if params["method"] == "artist.gettoptags":
-            tags = self.toptags.get(params["mbid"], [])
-            return _Response({"toptags": {"tag": [{"name": n, "count": c} for n, c in tags]}})
-        raise AssertionError(f"unexpected Last.fm method {params['method']}")
+        assert url == DISCOGS_SEARCH_URL, url
+        artist = params.get("artist", "")
+        styles = self.discogs_styles.get(artist, [])
+        results = [{"title": f"{artist} - Release", "style": list(styles)}] if styles else []
+        return _Response({"results": results})
 
     def calls_to(self, url, method=None):
         return [p for u, p in self.calls if u == url and (method is None or p.get("method") == method)]
@@ -144,7 +144,7 @@ class _Harness(unittest.TestCase):
                 mock.patch.object(gatherer, "lens_seed_queries", side_effect=self.seeds):
             return gatherer.gather_lens_pools(
                 list(listens), day=day, providers=self.providers, headers=HEADERS,
-                lastfm_api_key="key", settings_read=lambda: dict(settings))
+                discogs_token="token", settings_read=lambda: dict(settings))
 
 
 class SettingGateTests(_Harness):
@@ -181,7 +181,7 @@ class GatherTests(_Harness):
                                              OBSESSIONS.name: []}):
             with mock.patch.object(gatherer, "run_deep_cuts_tag_supply", side_effect=self.supply):
                 out = gatherer.gather_lens_pools(
-                    [], day=DAY, providers=self.providers, headers=HEADERS, lastfm_api_key="key",
+                    [], day=DAY, providers=self.providers, headers=HEADERS, discogs_token="token",
                     settings_read=lambda: dict(ON))
         self.assertEqual([c["lens"] for c in self.supply_calls], [REPEATED_TRACKS.name])
         self.assertEqual(out["pools"][DEEP_CUTS.name], [])
@@ -210,7 +210,7 @@ class GatherTests(_Harness):
         self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1"), _album(2, "a2", "g2")]}
         self.net.artist_genres = {"a1": ["indie rock", "dream pop"], "a2": []}
         self.net.vocabulary = ["desert blues", "indie rock"]
-        self.net.toptags = {"a2": [("desert blues", 50), ("seen live", 99)]}
+        self.net.discogs_styles = {"Artist 2": ["Desert Blues", "Non-Genre Noise"]}
         out = self.gather()
         self.assertEqual(out["artist_tags"]["a1"], ["dream pop", "indie rock"])
         self.assertEqual(out["artist_tags"]["a2"], [], "a2 has no MusicBrainz genre tags")
