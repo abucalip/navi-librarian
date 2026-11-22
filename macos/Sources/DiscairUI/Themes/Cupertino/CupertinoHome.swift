@@ -348,13 +348,17 @@ private struct MarqueeButtonStyle: ButtonStyle {
 /// Lays children out left to right and wraps to the next line when the row is full.
 struct FlowLayout: Layout {
     var spacing: CGFloat
+    var rowSpacing: CGFloat? = nil
+
+    private var verticalSpacing: CGFloat { rowSpacing ?? spacing }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? .infinity
         var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
         for s in subviews {
-            let size = s.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > width { x = 0; y += rowHeight + spacing; rowHeight = 0 }
+            let natural = s.sizeThatFits(.unspecified)
+            let size = natural.width > width && width.isFinite ? s.sizeThatFits(ProposedViewSize(width: width, height: nil)) : natural
+            if x > 0, x + size.width > width { x = 0; y += rowHeight + verticalSpacing; rowHeight = 0 }
             x += size.width + spacing; rowHeight = max(rowHeight, size.height); maxX = max(maxX, x - spacing)
         }
         return CGSize(width: maxX, height: y + rowHeight)
@@ -363,8 +367,9 @@ struct FlowLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
         for s in subviews {
-            let size = s.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += rowHeight + spacing; rowHeight = 0 }
+            let natural = s.sizeThatFits(.unspecified)
+            let size = natural.width > bounds.width ? s.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil)) : natural
+            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += rowHeight + verticalSpacing; rowHeight = 0 }
             s.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
             x += size.width + spacing; rowHeight = max(rowHeight, size.height)
         }

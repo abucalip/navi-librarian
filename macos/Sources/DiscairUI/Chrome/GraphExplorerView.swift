@@ -145,7 +145,13 @@ struct GraphExplorerView: View {
             VStack(spacing: 2) {
                 GraphNodeFace(entity: n.entity, size: size, library: state.library, hintArtist: graph.centre?.name ?? "", forceOwned: false, ink: style.ink, discs: graph.showsDiscs)
                     .overlay { if n.id == graph.selectedID { Circle().strokeBorder(style.accent, lineWidth: 3).padding(-4) } }
-                if size >= 44 { Text(n.entity.name).font(.system(size: 10, weight: .semibold)).lineLimit(1).frame(width: 90) }
+                if size >= 44 {
+                    Text(n.entity.name).font(.system(size: 10, weight: .semibold)).lineLimit(1)
+                        .padding(CupertinoConnections.labelHaloPadding)
+                        .background(CU.content.opacity(CupertinoConnections.labelHaloOpacity),
+                                    in: RoundedRectangle(cornerRadius: CupertinoConnections.labelHaloCornerRadius, style: .continuous))
+                        .frame(maxWidth: 98)
+                }
             }
         }
         .buttonStyle(.plain)
