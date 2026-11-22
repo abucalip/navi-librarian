@@ -94,7 +94,7 @@ function initializePage(name) {
   else if (name === 'lensLists') loadLensList(activeLens);
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
-  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); loadDiscogsSettings(); }
+  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadListenbrainzSettings(); loadDiscogsSettings(); }
 }
 
 // One navigation path for the rail and the header menu, so Settings in the menu still runs
@@ -1107,11 +1107,11 @@ function addAlbumYear(title, year, block) {
   host.insertBefore(span, host.querySelector('.album-listens'));
 }
 
-// "12.3K listens" from the Last.fm playcount, else "12.3K listeners"; nothing when neither is known.
+// "12.3K listens" from the playcount, else "12.3K listeners"; nothing when neither is known.
 function listenCountLabel(item) {
-  const plays = Number(item && item.lastfm_playcount);
+  const plays = Number(item && (item.playcount ?? item.lastfm_playcount));
   if (Number.isFinite(plays) && plays > 0) return compactCount(plays) + ' listens';
-  const listeners = Number(item && (item.lastfm_listeners || item.album_listeners));
+  const listeners = Number(item && (item.listeners ?? item.lastfm_listeners ?? item.album_listeners));
   if (Number.isFinite(listeners) && listeners > 0) return compactCount(listeners) + ' listeners';
   return '';
 }
@@ -2104,7 +2104,7 @@ function shelfItemFromDiscovery(item) {
     name: item.album || item.title || '', artist: item.artist || item.album_artist || '',
     year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
     release_group_mbid: item.release_group_mbid || null, owned: item.owned === true,
-    lastfm_listeners: item.lastfm_listeners || null, lastfm_playcount: item.lastfm_playcount || null,
+    listeners: item.listeners ?? item.lastfm_listeners ?? null, playcount: item.playcount ?? item.lastfm_playcount ?? null,
   };
 }
 
@@ -2240,9 +2240,10 @@ function applyRecommendationFilters() {
     Number.isFinite(Number(value)) ? Number(value) : null;
 
   if (sort === 'popularity') {
+    const itemListeners = item => numeric(item.listeners) ?? numeric(item.lastfm_listeners);
     filtered.sort((a, b) =>
-      (numeric(b.lastfm_listeners) ?? -1) -
-      (numeric(a.lastfm_listeners) ?? -1));
+      (itemListeners(b) ?? -1) -
+      (itemListeners(a) ?? -1));
   } else if (sort === 'score') {
     filtered.sort((a, b) =>
       (numeric(b.discovery_score) ?? -Infinity) -
@@ -2316,21 +2317,21 @@ function reorderRecommendations(render) {
 }
 
 // Describes the order the rows are shown in. A numeral is only honest when the order is a real
-// one the API returns (server order, discovery_score, lastfm_listeners); a sort that has missing
+// one the API returns (server order, discovery_score, listeners); a sort that has missing
 // values, or an alphabetical sort, shows no numerals and says so (DESIGN_SYSTEM.md section 8).
 function rankingBasis(sort, items) {
   const numeric = value =>
     value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
-  const complete = field => items.length > 0 && items.every(item => numeric(item[field]));
+  const complete = (...fields) => items.length > 0 && items.every(item => fields.some(field => numeric(item[field])));
   if (sort === 'score') {
     return complete('discovery_score')
       ? {label: 'Ranked by discovery score', numbered: true}
       : {label: 'Sorted by discovery score; some albums have no score', numbered: false};
   }
   if (sort === 'popularity') {
-    return complete('lastfm_listeners')
-      ? {label: 'Ranked by Last.fm artist listeners', numbered: true}
-      : {label: 'Sorted by Last.fm artist listeners; some albums have no count', numbered: false};
+    return complete('listeners', 'lastfm_listeners')
+      ? {label: 'Ranked by ListenBrainz artist listeners', numbered: true}
+      : {label: 'Sorted by ListenBrainz artist listeners; some albums have no count', numbered: false};
   }
   if (sort === 'artist') return {label: 'Sorted A–Z by artist', numbered: false};
   return {label: 'Recommended order', numbered: true};
@@ -2863,9 +2864,9 @@ function addRecommendationMeta(meta, item) {
   if (item.diversity_style) {
     addTextElement(meta, 'p', 'row-meta-line', 'Style: ' + item.diversity_style.replaceAll('_', ' '));
   }
-  const listeners = item.lastfm_listeners;
+  const listeners = item.listeners ?? item.lastfm_listeners;
   if (listeners !== null && listeners !== undefined && Number.isFinite(Number(listeners))) {
-    addTextElement(meta, 'p', 'row-meta-line', 'Last.fm artist listeners: ' + Number(listeners).toLocaleString());
+    addTextElement(meta, 'p', 'row-meta-line', 'ListenBrainz artist listeners: ' + Number(listeners).toLocaleString());
   }
   if (item.discovery_score !== null && item.discovery_score !== undefined && Number.isFinite(Number(item.discovery_score))) {
     addTextElement(meta, 'p', 'row-meta-line', 'Discovery score: ' + Number(item.discovery_score).toFixed(4));
@@ -3281,7 +3282,7 @@ async function loadDiscovery(name, options = {}) {
     if (!items.length && !autoRefreshStarted.has(name)) {
       const emptyCopy = {
         new_releases: 'No new releases found. This view lists albums from the last 24 months by artists who already have a full album in your library, so it needs a connected Navidrome library to find candidates.',
-        personal: 'No personal discoveries yet. These recommendations are based on your listening history, so they need Last.fm or ListenBrainz configured in Settings before there is anything to work from.',
+        personal: 'No personal discoveries yet. These recommendations are based on your listening history, so they need ListenBrainz configured in Settings before there is anything to work from.',
         classics: 'No albums to add yet. This view looks for acclaimed albums missing from your library, so it needs a connected Navidrome library to compare against.',
         artist_deep_dive: 'No deep dives yet. This view finds missing albums by artists already in your library, so it needs a connected Navidrome library to find them.'
       }[name] || 'No results for this list yet.';
@@ -4071,28 +4072,6 @@ $('saveNavidrome').addEventListener('click', async () => {
   } catch (error) { $('navidromeStatus').textContent = error.message; setStatusState($('navidromeStatus'), 'error'); }
 });
 
-async function loadLastfmSettings() {
-  try {
-    const data = await requestJSON('/api/settings/lastfm');
-    $('lastfmUsername').value = data.username || '';
-    $('lastfmApiKey').value = '';
-    $('lastfmStatus').textContent = data.api_key_configured ? 'API key configured.' : 'API key not configured (optional).';
-    setStatusState($('lastfmStatus'), classifyStatus($('lastfmStatus').textContent));
-  } catch (error) { $('lastfmStatus').textContent = error.message; setStatusState($('lastfmStatus'), 'error'); }
-}
-$('saveLastfm').addEventListener('click', async () => {
-  try {
-    const result = await sendJSON('/api/settings/lastfm', 'PUT', {
-      api_key: $('lastfmApiKey').value,
-      username: $('lastfmUsername').value.trim()
-    });
-    $('lastfmApiKey').value = '';
-    $('lastfmStatus').textContent = result.message || 'Settings saved.';
-    setStatusState($('lastfmStatus'), 'success');
-    await loadLastfmSettings();
-  } catch (error) { $('lastfmStatus').textContent = error.message; setStatusState($('lastfmStatus'), 'error'); }
-});
-
 async function loadListenbrainzSettings(keepStatus = false) {
   try {
     const data = await requestJSON('/api/settings/listenbrainz');
@@ -4163,7 +4142,6 @@ async function testServiceConnection(endpoint, statusId) {
     setStatusState(status, 'error');
   }
 }
-$('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
 $('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
 $('testDiscogs').addEventListener('click', () => testServiceConnection('/api/settings/discogs/test', 'discogsStatus'));
 
@@ -4179,7 +4157,7 @@ $('testDiscogs').addEventListener('click', () => testServiceConnection('/api/set
 const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
 const settingsPanels = {
   navidrome: 'settingsNavidrome', slskd: 'settingsSlskd',
-  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz', discogs: 'settingsDiscogs',
+  listenbrainz: 'settingsListenbrainz', discogs: 'settingsDiscogs',
   appearance: 'settingsAppearance'
 };
 
@@ -5396,7 +5374,7 @@ function buildAlbumRow(item) {
   // Listen counts (ListenBrainz) show beside the name on the artist page, where albums are ranked by them.
   if (item.showListens && item.popularity !== null && item.popularity !== undefined) {
     const listens = addTextElement(title, 'span', 'album-row-listens', compactCount(item.popularity) + ' listens');
-    listens.title = Number(item.popularity).toLocaleString() + ' listens on ' + (item.popularity_source === 'lastfm' ? 'Last.fm' : 'ListenBrainz');
+    listens.title = Number(item.popularity).toLocaleString() + ' listens on ListenBrainz';
   }
   text.append(title);
   const detail = [item.year].filter(value => value !== null && value !== undefined && value !== '');
@@ -5687,7 +5665,7 @@ function buildTopSongRow(item) {
   row.append(text);
   const listens = addTextElement(row, 'span', 'top-song-listens', item.listen_count ? compactCount(item.listen_count) : '');
   if (item.listen_count) {
-    listens.title = Number(item.listen_count).toLocaleString() + ' listens on ' + (item.source === 'lastfm' ? 'Last.fm' : 'ListenBrainz');
+    listens.title = Number(item.listen_count).toLocaleString() + ' listens on ListenBrainz';
   }
   // A song the library lacks gets its own Get when the source named its album, which is where it is filed.
   row.append(item.owned ? buildOwnedCheck()

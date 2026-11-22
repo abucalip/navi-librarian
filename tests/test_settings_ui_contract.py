@@ -87,17 +87,17 @@ class SettingsSecretContractTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
     def test_secret_inputs_are_never_rendered_with_a_value(self):
-        for field_id in ("navidromePassword", "slskdApiKey", "lastfmApiKey"):
+        for field_id in ("navidromePassword", "slskdApiKey", "listenbrainzToken"):
             with self.subTest(field=field_id):
                 match = re.search(rf'<input id="{field_id}"[^>]*>', self.html)
                 self.assertIsNotNone(match)
                 self.assertNotIn(" value=", match.group(0))
                 self.assertIn('type="password"', match.group(0))
 
-    def test_lastfm_username_is_a_plain_field_loaded_and_saved_with_the_key(self):
-        self.assertRegex(self.html, r'<input id="lastfmUsername" type="text"')
-        self.assertIn("$('lastfmUsername').value = data.username || '';", self.js)
-        self.assertIn("username: $('lastfmUsername').value.trim()", self.js)
+    def test_lastfm_settings_ui_is_removed(self):
+        for token in ("tabLastfm", "settingsLastfm", "lastfmUsername", "lastfmApiKey", "/api/settings/lastfm"):
+            self.assertNotIn(token, self.html)
+            self.assertNotIn(token, self.js)
 
     def test_secret_fields_are_cleared_after_load_and_save(self):
         self.assertIn("$('navidromePassword').value = '';", self.js)

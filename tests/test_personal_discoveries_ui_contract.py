@@ -91,7 +91,7 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
 
     def test_empty_state_copy_names_the_precondition(self):
         self.assertIn("personal: 'No personal discoveries yet.", self.js)
-        self.assertIn("need Last.fm or ListenBrainz configured in Settings", self.js)
+        self.assertIn("need ListenBrainz configured in Settings", self.js)
 
     def test_every_personal_row_shows_the_artist_bio(self):
         body = self._function_body("function buildPersonalRow(", "function attachArtistBio(")

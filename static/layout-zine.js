@@ -161,7 +161,7 @@ function zinePosition(artist, year, facts) {
   return 'joins the ' + zineWord(facts.count) + ' you have' + (facts.count <= 3 ? ': ' + zineList(owned.map(entry => entry.name)) : '');
 }
 
-// The reason, in words: the owner's own plays of records by the artist, Last.fm neighbours, else the server's reason.
+// The reason, in words: the owner's own plays of records by the artist, similar artists, else the server's reason.
 function zineWhy(item, facts, rank) {
   const key = foldKey(item.artist || item.album_artist || '');
   const owned = new Set(((facts && facts.albums) || []).map(entry => foldKey(entry.name)));
@@ -173,7 +173,7 @@ function zineWhy(item, facts, rank) {
   const lead = rank === 0 ? 'Ranked first today' : 'Ranked ' + (ZINE_ORDINALS[rank] || '#' + (rank + 1)) + ' today';
   const parts = [];
   if (played.length) parts.push('from your plays of ' + zineList(played.slice(0, 2)));
-  if (item.anchor_artist) parts.push((played.length ? 'and ' : '') + 'from Last.fm neighbours of ' + item.anchor_artist);
+  if (item.anchor_artist) parts.push((played.length ? 'and ' : '') + 'from artists similar to ' + item.anchor_artist);
   if (parts.length) return lead + ' ' + parts.join(' ') + '.';
   if (item.reason && !generic) return lead + ': ' + item.reason.replace(/\.$/, '') + '.';
   return lead + ' among your recommendations.';
