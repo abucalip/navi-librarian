@@ -8,7 +8,6 @@ from discovery.pick_because import build_pick_context_lookup
 from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
-from integrations.lastfm import client as _lastfm_client_module
 from integrations.musicbrainz import rating_client as _musicbrainz_rating_client
 from settings import service as _service_settings
 from settings.music_paths import default_music_dir as _default_music_dir_from_environment
@@ -104,17 +103,6 @@ def _discovery_is_album_candidate(item):
     return is_album_candidate(item)
 
 
-LASTFM_LAST_ERROR = None
-
-
-def _lastfm_album_popularity(artist, album):
-    """Compatibility adapter for cached Last.fm album popularity lookup."""
-    global LASTFM_LAST_ERROR
-    result, error = _lastfm_client.album_popularity(artist, album)
-    if error is not None:
-        LASTFM_LAST_ERROR = error
-    return result
-
 def recent_listening_profile(days: int = 30) -> str:
     """Summarize recent ListenBrainz listening by artist and album.
 
@@ -170,7 +158,6 @@ def recommend_new_music(
     from discovery.mmr import diversity_setting_to_penalty
     from discovery.recommendations import (
         apply_familiarity_exploration_bonus,
-        apply_lastfm_popularity_bonus,
         classify_recommendation_candidates,
         classify_recommendation_category,
     )
@@ -227,38 +214,13 @@ def recommend_new_music(
         recent_family_counts, music_key_fn=_music_key
     )
 
-    lastfm_available = (
-        bool(_discovery_settings_read().get("lastfm_api_key"))
-        if _lastfm_available_override is None
-        else bool(_lastfm_available_override)
-    )
-    from recommendation.replay import prepare_lastfm_callback
-    live_popularity = _lastfm_album_popularity
-    if _lastfm_popularity_fn is None:
-        # Release-group popularity comes from one batched ListenBrainz request, not
-        # one Last.fm call per album.
-        from discovery.recommendations import POPULARITY_CANDIDATE_LIMIT
-        from integrations.listenbrainz.client import request_headers as listenbrainz_request_headers
-        from integrations.listenbrainz.popularity import build_popularity_lookup, fetch_release_group_popularity
-        live_popularity = build_popularity_lookup(
-            albums.values(), POPULARITY_CANDIDATE_LIMIT,
-            lambda mbids: fetch_release_group_popularity(
-                httpx.post, _metadata_cache_get, _metadata_cache_set, mbids,
-                headers=listenbrainz_request_headers(),
-            ),
-            _music_key,
-        )
-    lastfm_callback, _lastfm_calls = prepare_lastfm_callback(
-        _capture_path,
-        _gathered_override,
-        _provider_tape,
-        _lastfm_popularity_fn,
-        live_popularity,
-    )
-    lastfm_checked = apply_lastfm_popularity_bonus(
-        albums.values(),
-        recent_family_counts,
-        lastfm_callback,
+    from discovery.popularity import candidate_popularity_fields, run_personal_popularity_pass
+    popularity_available = True if _lastfm_available_override is None else bool(_lastfm_available_override)
+    popularity_checked, _lastfm_calls = run_personal_popularity_pass(
+        albums, recent_family_counts, metadata_cache_get=_metadata_cache_get,
+        metadata_cache_set=_metadata_cache_set, music_key=_music_key, http_post=httpx.post,
+        capture_path=_capture_path, gathered_override=_gathered_override,
+        provider_tape=_provider_tape, popularity_fn=_lastfm_popularity_fn,
     )
 
     for group in candidates_by_category.values():
@@ -441,11 +403,7 @@ def recommend_new_music(
             "recent_profile_bonus": round(
                 candidate.get("recent_profile_bonus", 1.0), 3
             ),
-            "lastfm_listeners": candidate.get("lastfm_listeners"),
-            "lastfm_playcount": candidate.get("lastfm_playcount"),
-            "lastfm_popularity_bonus": round(
-                candidate.get("lastfm_popularity_bonus", 1.0), 3
-            ),
+            **candidate_popularity_fields(candidate),
             "assigned_category": category,
             "allocation_category": candidate.get("discovery_category", "unclassified"),
             "genre_metadata_available": bool(tags),
@@ -489,9 +447,7 @@ def recommend_new_music(
         )
 
     result = {
-        "source": (
-            "ListenBrainz + MusicBrainz + Last.fm + Navidrome"
-        ),
+        "source": "ListenBrainz + MusicBrainz + Navidrome",
         "regional_candidates_added": regional_candidates_added,
         "regional_search_results_seen": regional_results_seen,
         "recent_history_days": 30,
@@ -501,9 +457,8 @@ def recommend_new_music(
             recent_family_play_counts.most_common()
         ),
         "selected_recent_genre_families": dict(selected_profile_families),
-        "lastfm_api_configured": lastfm_available,
-        "lastfm_albums_checked": lastfm_checked,
-        "lastfm_last_error": LASTFM_LAST_ERROR,
+        "popularity_provider_configured": popularity_available, "popularity_albums_checked": popularity_checked, "popularity_last_error": None,
+        "lastfm_api_configured": popularity_available, "lastfm_albums_checked": popularity_checked, "lastfm_last_error": None,
         "recommendations": found,
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
@@ -541,7 +496,7 @@ def recommend_new_music(
             "Genre tags are community-supplied and may be missing or incomplete.",
             "Candidates without genre tags are classified as unclassified, not adventurous.",
             "MusicBrainz genres are retrieved for up to 60 candidate artists plus up to 15 recently scrobbled artists.",
-            "Last.fm album listeners and playcounts are cached for 30 days and provide a capped popularity bonus; missing album data is ignored.",
+            "ListenBrainz album listeners and playcounts are cached for 30 days and provide a capped popularity bonus; missing album data is ignored.",
             "Recent genre balance uses a rolling 30-day scrobble profile and may be limited by available artist MBIDs and genre tags.",
             "Ownership checks use normalized album titles and artist credits; "
             "alternate editions or artist aliases may need manual review.",
@@ -723,12 +678,6 @@ def discovery_set_feedback(
         return json.dumps({"ok": False, "error": str(exc)})
 
 
-_lastfm_client = _lastfm_client_module.LastFmClient(
-    settings_reader=lambda: _discovery_settings_read(),
-    cache_get=lambda key, ttl_seconds: _metadata_cache_get(key, ttl_seconds),
-    cache_set=lambda key, value: _metadata_cache_set(key, value),
-)
-
 
 def _discovery_library_snapshot():
     """Compatibility adapter for cached Navidrome library inventory assembly."""
@@ -740,18 +689,6 @@ def _discovery_library_snapshot():
         _discovery_write_list,
     )
 
-
-def _lastfm_top_albums(artist, limit=8):
-    """Compatibility adapter retaining discovery-specific album filtering."""
-    return [
-        album for album in _lastfm_client.artist_top_albums(artist, limit=limit)
-        if _discovery_is_album_candidate({"album": album["album"]})
-    ]
-
-
-def _lastfm_artist_genres(artist):
-    """Compatibility adapter for cached Last.fm artist tags."""
-    return _lastfm_client.artist_genres(artist)
 
 
 def _deep_dive_genre_families(tags):
@@ -853,10 +790,15 @@ def _build_classics_list():
     # Candidate collection policy is independently tested; provider/cache access
     # and pacing remain supplied by this adapter.
     from discovery.classics_candidates import collect_classic_candidates
+    from discovery.popularity import build_discovery_lookups
+    lookups = build_discovery_lookups(
+        settings_reader=_discovery_settings_read, cache_get=_metadata_cache_get,
+        cache_set=_metadata_cache_set, is_album_candidate=_discovery_is_album_candidate,
+    )
     candidates = collect_classic_candidates(
         library_artists,
         owned,
-        top_albums_lookup=_lastfm_top_albums,
+        top_albums_lookup=lookups.top_albums,
         music_key=_music_key,
         is_album_candidate=_discovery_is_album_candidate,
         pause=lambda: time.sleep(0.15),
@@ -878,7 +820,7 @@ def _build_classics_list():
     from discovery.classics_genres import enrich_classic_genres
     enrich_classic_genres(
         ranked,
-        _lastfm_artist_genres,
+        lookups.artist_genres,
         _deep_dive_genre_families,
     )
     # A blocked genre leaves the pool before the list is chosen (it is also hidden at read time).
@@ -936,10 +878,15 @@ def _build_artist_deep_dive_list():
         enrich_candidate_genres,
         merge_resolved_pool_candidates,
     )
+    from discovery.popularity import build_discovery_lookups
+    lookups = build_discovery_lookups(
+        settings_reader=_discovery_settings_read, cache_get=_metadata_cache_get,
+        cache_set=_metadata_cache_set, is_album_candidate=_discovery_is_album_candidate,
+    )
     pause = lambda: time.sleep(0.15)
     collect_missing_album_candidates(
         anchors, owned_albums, candidates,
-        top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
+        top_albums_lookup=lookups.top_albums, music_key=_music_key, pause=pause,
     )
     # Only albums by artists with 3+ owned albums are reused from the resolved
     # personal pool, so this lane stays anchored in library depth.
@@ -952,12 +899,12 @@ def _build_artist_deep_dive_list():
     )
     collect_similar_artist_candidates(
         anchors, owned_artists, owned_albums, candidates,
-        similar_artists_lookup=_lastfm_client.similar_artists,
-        top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
+        similar_artists_lookup=lookups.similar_artists,
+        top_albums_lookup=lookups.top_albums, music_key=_music_key, pause=pause,
     )
     enrich_candidate_genres(
         candidates.values(),
-        artist_genres=_lastfm_artist_genres,
+        artist_genres=lookups.artist_genres,
         genre_families=_deep_dive_genre_families,
         music_key=_music_key,
     )

@@ -87,7 +87,7 @@ def score_classic_candidates(candidates: Iterable[dict[str, Any]], jitter: Calla
     for item in output:
         rating=item.get("musicbrainz_rating"); votes=int(item.get("musicbrainz_rating_votes") or 0)
         critical=(float(rating)/5.0) if rating is not None and votes else 0.0
-        listeners=max(0,int(item.get("lastfm_listeners") or 0)); plays=max(0,int(item.get("lastfm_playcount") or 0))
+        listeners=max(0,int(item.get("listeners") if item.get("listeners") is not None else (item.get("lastfm_listeners") or 0))); plays=max(0,int(item.get("playcount") if item.get("playcount") is not None else (item.get("lastfm_playcount") or 0)))
         item["critical_recognition_available"]=bool(rating is not None and votes)
         credit=0.9 if not (rating is not None and votes) else 0.0
         item["discovery_score"]=round(critical*1.6-math.log10(listeners+1)*0.55-math.log10(plays+1)*0.10+credit,4)
@@ -327,76 +327,9 @@ def apply_familiarity_exploration_bonus(
     return candidate["discovery_score"]
 
 # Candidates (by discovery_score) that receive a popularity lookup per run.
-POPULARITY_CANDIDATE_LIMIT = 40
+from discovery.popularity import apply_popularity_bonus
 
-
-def apply_lastfm_popularity_bonus(
-    candidates: Iterable[dict[str, Any]],
-    recent_family_counts: Mapping[str, int],
-    popularity_lookup: Callable[[str, str], Mapping[str, Any] | None],
-) -> int:
-    """Apply the existing bounded Last.fm popularity/profile adjustments in place.
-
-    Returns the number of candidates with usable Last.fm stats, matching the
-    diagnostic counter previously maintained by the legacy recommendation adapter.
-    """
-    checked = 0
-    for candidate in sorted(
-        candidates,
-        key=lambda album: album["discovery_score"],
-        reverse=True,
-    )[:POPULARITY_CANDIDATE_LIMIT]:
-        stats = popularity_lookup(
-            candidate.get("primary_artist") or candidate.get("artist", ""),
-            candidate.get("album", ""),
-        )
-        if stats is None:
-            continue
-
-        candidate["lastfm_listeners"] = stats["listeners"]
-        candidate["lastfm_playcount"] = stats["playcount"]
-        candidate["lastfm_tags"] = stats.get("tags", [])
-        if candidate["lastfm_tags"]:
-            candidate["listening_families"] = sorted(
-                recent_style_families(candidate["lastfm_tags"])
-            )
-            candidate["recent_profile_families"] = [
-                family for family in candidate["listening_families"]
-                if recent_family_counts.get(family, 0) > 0
-            ]
-            candidate["recent_profile_family"] = primary_recent_family(
-                candidate["lastfm_tags"], recent_family_counts
-            )
-            old_profile_bonus = candidate.get("recent_profile_bonus", 1.0)
-            matched_families = candidate["recent_profile_families"]
-            if matched_families and recent_family_counts:
-                max_count = max(recent_family_counts.values())
-                average_count = sum(
-                    recent_family_counts[family]
-                    for family in matched_families
-                ) / len(matched_families)
-                new_profile_bonus = 1.0 + 0.25 * average_count / max_count
-            else:
-                new_profile_bonus = 1.0
-            candidate["discovery_score"] = (
-                candidate["discovery_score"]
-                / old_profile_bonus
-                * new_profile_bonus
-            )
-            candidate["recent_profile_bonus"] = new_profile_bonus
-
-        checked += 1
-        listener_signal = min(
-            1.0, math.log10(stats["listeners"] + 1) / 6.0
-        )
-        playcount_signal = min(
-            1.0, math.log10(stats["playcount"] + 1) / 7.0
-        )
-        candidate["lastfm_popularity_bonus"] = (
-            1.0 + 0.08 * listener_signal + 0.04 * playcount_signal
-        )
-        candidate["discovery_score"] *= candidate["lastfm_popularity_bonus"]
-    return checked
+apply_lastfm_popularity_bonus = apply_popularity_bonus
 
 def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) -> str:
     """Style slot for diversification and display: the candidate's primary family.
@@ -420,8 +353,10 @@ def rank_and_diversify_deep_dive_candidates(
 
     output = list(candidates)
     for item in output:
-        popularity = math.log10(max(0, int(item.get("lastfm_listeners") or 0)) + 1)
-        playcount = math.log10(max(0, int(item.get("lastfm_playcount") or 0)) + 1)
+        raw_listeners = item.get("listeners") if item.get("listeners") is not None else item.get("lastfm_listeners")
+        raw_playcount = item.get("playcount") if item.get("playcount") is not None else item.get("lastfm_playcount")
+        popularity = math.log10(max(0, int(raw_listeners or 0)) + 1)
+        playcount = math.log10(max(0, int(raw_playcount or 0)) + 1)
         candidate_score = float(item.get("candidate_pool_score", 0) or 0)
         candidate_bonus = candidate_score * 2.5
         anchor_bonus = (
@@ -435,7 +370,8 @@ def rank_and_diversify_deep_dive_candidates(
             4,
         )
     for item in output:
-        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        raw_listeners = item.get("listeners") if item.get("listeners") is not None else item.get("lastfm_listeners")
+        listeners = max(0, int(raw_listeners or 0))
         magnitude = math.log10(listeners + 1)
         item["exploration_score"] = round(
             item["discovery_score"] - magnitude * 0.65

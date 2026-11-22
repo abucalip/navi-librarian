@@ -33,6 +33,20 @@ def build_personal_recommendation_payload(
             " Genre metadata was unavailable, so this classification has low confidence."
         )
 
+    listeners = candidate.get("listeners")
+    if listeners is None:
+        listeners = candidate.get("lastfm_listeners")
+    playcount = candidate.get("playcount")
+    if playcount is None:
+        playcount = candidate.get("lastfm_playcount")
+    popularity_tags = candidate.get("popularity_tags")
+    if popularity_tags is None:
+        popularity_tags = candidate.get("lastfm_tags", [])
+    raw_bonus = candidate.get("popularity_bonus")
+    if raw_bonus is None:
+        raw_bonus = candidate.get("lastfm_popularity_bonus", 1.0)
+    popularity_bonus = round(raw_bonus, 3)
+
     return {
         "artist": candidate["artist"],
         "album": candidate["album"],
@@ -52,12 +66,14 @@ def build_personal_recommendation_payload(
         "discovery_source": candidate.get("discovery_source", "listenbrainz"),
         "discovery_score": round(candidate["discovery_score"], 6),
         "recent_artist_listens": recent_artist_listens,
-        "lastfm_listeners": candidate.get("lastfm_listeners"),
-        "lastfm_playcount": candidate.get("lastfm_playcount"),
-        "lastfm_tags": candidate.get("lastfm_tags", []),
-        "lastfm_popularity_bonus": round(
-            candidate.get("lastfm_popularity_bonus", 1.0), 3
-        ),
+        "listeners": listeners,
+        "playcount": playcount,
+        "popularity_tags": popularity_tags,
+        "popularity_bonus": popularity_bonus,
+        "lastfm_listeners": listeners,
+        "lastfm_playcount": playcount,
+        "lastfm_tags": popularity_tags,
+        "lastfm_popularity_bonus": popularity_bonus,
         "suggested_tracks": candidate["tracks"][:3],
         "reason": reason,
     }

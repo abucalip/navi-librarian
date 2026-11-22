@@ -48,19 +48,25 @@ class LegacyServerWiringTests(unittest.TestCase):
             navidrome_server.recent_listening_profile, navidrome_server._discovery_write_list,
         )
 
-    def test_deep_dive_similar_artists_use_the_lastfm_client(self):
+    def test_deep_dive_similar_artists_use_discovery_lookups(self):
+        from discovery.popularity import DiscoveryProviderLookups
         snapshot = {"artists": [{"name": "Anchor", "album_count": 3}], "albums": []}
         collect = Mock(side_effect=_Stop)
+        fake_similar = Mock()
+        fake_lookups = DiscoveryProviderLookups(
+            top_albums=Mock(return_value=[]),
+            similar_artists=fake_similar,
+            artist_genres=Mock(return_value=[]),
+        )
         with patch.object(navidrome_server, "_discovery_library_snapshot", return_value=snapshot), \
                 patch.object(navidrome_server, "_discovery_read_list", return_value=None), \
+                patch("discovery.popularity.build_discovery_lookups", return_value=fake_lookups), \
                 patch("discovery.deep_dive_candidates.collect_missing_album_candidates"), \
                 patch("discovery.deep_dive_candidates.merge_resolved_pool_candidates"), \
                 patch("discovery.deep_dive_candidates.collect_similar_artist_candidates", collect), \
                 self.assertRaises(_Stop):
             navidrome_server._build_artist_deep_dive_list()
-        # A bound method is a new object on each access, so compare by equality.
-        self.assertEqual(collect.call_args.kwargs["similar_artists_lookup"],
-                         navidrome_server._lastfm_client.similar_artists)
+        self.assertIs(collect.call_args.kwargs["similar_artists_lookup"], fake_similar)
 
     def test_new_releases_use_exact_artist_credit_matches(self):
         from discovery.recommendations import exact_artist_credit_matches
