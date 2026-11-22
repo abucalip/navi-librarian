@@ -8,11 +8,13 @@ import SwiftUI
 struct AtlasView: View {
     let state: AppState
     let style: GraphStyle
+    var showsInspector = true
     private var atlas: AtlasModel { state.atlas }
     @State private var camera: MapCameraPosition = .automatic
 
     /// Shared Cupertino page horizontal inset (`CU.Space.xl`, D4.4) so the title and map/list align with other pages.
     static let horizontalPadding: CGFloat = CU.Space.xl
+    static let inspectorWidth: CGFloat = 290
 
     var body: some View {
         HStack(spacing: 0) {
@@ -23,7 +25,9 @@ struct AtlasView: View {
                 footer
             }
             .padding(.horizontal, Self.horizontalPadding)
-            inspector.frame(width: 290)
+            if showsInspector {
+                AtlasInspector(state: state, style: style)
+            }
         }
         .task { await state.loadAtlas(); camera = .region(atlas.region) }
         .onChange(of: atlas.places.count) { _, _ in camera = .region(atlas.region) }
@@ -111,16 +115,34 @@ struct AtlasView: View {
         .frame(maxWidth: .infinity, minHeight: 420, maxHeight: .infinity)
     }
 
-    // MARK: Inspector
+    fileprivate static func coordinates(_ p: AtlasPlace) -> String {
+        String(format: "%.2f°%@ %.2f°%@", abs(p.latitude), p.latitude >= 0 ? "N" : "S", abs(p.longitude), p.longitude >= 0 ? "E" : "W")
+    }
+}
 
-    private var inspector: some View {
+/// Full-height trailing inspector for Atlas, matching the queue panel's glass chrome and toolbar centre line (D5.7).
+struct AtlasInspector: View {
+    let state: AppState
+    let style: GraphStyle
+    private var atlas: AtlasModel { state.atlas }
+
+    /// Aligns the single-line 18 pt bold panel title's vertical centre (~11 pt half-height) with `CupertinoToolbar.centreY`.
+    static let topPadding: CGFloat = CupertinoToolbar.centreY - 11
+
+    var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 if let p = atlas.selected { selectedPanel(p) } else { idlePanel }
             }
-            .padding(18)
+            .padding(.top, Self.topPadding)
+            .padding([.horizontal, .bottom], 18)
         }
-        .background(style.card)
+        .frame(width: AtlasView.inspectorWidth)
+        .frame(maxHeight: .infinity)
+        .glassEffect(CU.glass, in: Rectangle())
+        .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Atlas inspector")
     }
 
     private var idlePanel: some View {
@@ -136,7 +158,7 @@ struct AtlasView: View {
     @ViewBuilder private func selectedPanel(_ p: AtlasPlace) -> some View {
         Text(p.entity.name).font(.system(size: 18, weight: .bold))
         Text([p.kind, "coordinates stated"].compactMap { $0 }.joined(separator: " · ")).font(.system(size: 12)).foregroundStyle(style.muted)
-        Text("\(Self.coordinates(p)) · \(p.ownedRecordings) of \(p.recordings) recordings owned").font(.system(size: 11)).foregroundStyle(style.muted)
+        Text("\(AtlasView.coordinates(p)) · \(p.ownedRecordings) of \(p.recordings) recordings owned").font(.system(size: 11)).foregroundStyle(style.muted)
         if atlas.detailLoading { ProgressView().controlSize(.small) }
         if let note = atlas.detailNote { Text(note).font(.system(size: 12)).foregroundStyle(style.muted) }
         if let d = atlas.detail, d.place.mbid == p.id { detailPanel(d) }
@@ -187,9 +209,5 @@ struct AtlasView: View {
         }
         .padding(10).frame(maxWidth: .infinity, alignment: .leading)
         .background(.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private static func coordinates(_ p: AtlasPlace) -> String {
-        String(format: "%.2f°%@ %.2f°%@", abs(p.latitude), p.latitude >= 0 ? "N" : "S", abs(p.longitude), p.longitude >= 0 ? "E" : "W")
     }
 }

@@ -222,11 +222,12 @@ struct CupertinoWindow: View {
     }
 
     private var library: some View {
-        VStack(spacing: 0) {
+        let panelWidth = Self.trailingPanelWidth(for: state)
+        return VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
                 // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
                 content
-                    .padding(.trailing, state.queueOpen && state.screen != .artist && state.screen != .album ? CupertinoQueueInspector.width : 0)
+                    .padding(.trailing, state.screen != .artist && state.screen != .album ? panelWidth : 0)
                     .padding(.leading, CU.Shell.contentLeading)
                     .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.compactHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -242,10 +243,8 @@ struct CupertinoWindow: View {
                 CupertinoSidebar(state: state)
                     .padding(.bottom, state.player.current != nil ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0)
                 CupertinoToolbar(state: state)
-                    .padding(.leading, CU.Shell.toolbarLeading).padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
-                if state.queueOpen {
-                    CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
-                }
+                    .padding(.leading, CU.Shell.toolbarLeading).padding(.trailing, panelWidth > 0 ? panelWidth + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
+                trailingInspector
             }
             .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, CU.Space.l) }
             // The player runs along the bottom of the window (owner decision; Apple's guidance puts it at the top).
@@ -256,7 +255,30 @@ struct CupertinoWindow: View {
         .background(CU.backdrop)
         .foregroundStyle(CU.text)
         .onChange(of: state.screen) { _, _ in heroOffset = 0 }
-        .background(WindowConfigurator(canDragAt: { [state] p, size in !(state.queueOpen && p.x > size.width - CupertinoQueueInspector.width && p.y < size.height - CupertinoPlayerBar.height) }))
+        .background(WindowConfigurator(canDragAt: { [state] p, size in
+            let w = Self.trailingPanelWidth(for: state)
+            return !(w > 0 && p.x > size.width - w && p.y < size.height - CupertinoPlayerBar.height)
+        }))
+    }
+
+    /// Width of the active full-height trailing inspector (Queue, or Timeline/Atlas inspector when Queue is closed).
+    static func trailingPanelWidth(for state: AppState) -> CGFloat {
+        if state.queueOpen { return CupertinoQueueInspector.width }
+        switch state.screen {
+        case .timeline: return TimelineView.inspectorWidth
+        case .atlas: return AtlasView.inspectorWidth
+        default: return 0
+        }
+    }
+
+    @ViewBuilder private var trailingInspector: some View {
+        if state.queueOpen {
+            CupertinoQueueInspector(state: state).frame(maxWidth: .infinity, alignment: .trailing)
+        } else if state.screen == .timeline {
+            TimelineInspector(state: state, style: .cupertino).frame(maxWidth: .infinity, alignment: .trailing)
+        } else if state.screen == .atlas {
+            AtlasInspector(state: state, style: .cupertino).frame(maxWidth: .infinity, alignment: .trailing)
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -271,8 +293,8 @@ struct CupertinoWindow: View {
         case .equalizer: CupertinoEQ(state: state)
         case .gapRadar: CupertinoGapRadar(state: state)
         case .connections: GraphExplorerView(state: state, style: .cupertino)
-        case .atlas: AtlasView(state: state, style: .cupertino)
-        case .timeline: TimelineView(state: state, style: .cupertino)
+        case .atlas: AtlasView(state: state, style: .cupertino, showsInspector: false)
+        case .timeline: TimelineView(state: state, style: .cupertino, showsInspector: false)
         case .smartPlaylists: CupertinoSmartPlaylists(state: state)
         case .history: CupertinoHistory(state: state)
         case .insights: CupertinoInsights(state: state)
@@ -399,6 +421,8 @@ struct CupertinoSidebar: View {
 struct CupertinoToolbar: View {
     let state: AppState
     static let height: CGFloat = 44
+    static let centreY: CGFloat = CU.Shell.toolbarTop + height / 2
+
     var body: some View {
         HStack(spacing: CU.Space.s) {
             Spacer(minLength: 0)

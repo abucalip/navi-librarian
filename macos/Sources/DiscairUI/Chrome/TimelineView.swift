@@ -7,10 +7,12 @@ import SwiftUI
 struct TimelineView: View {
     let state: AppState
     let style: GraphStyle
+    var showsInspector = true
     private var timeline: TimelineModel { state.timeline }
 
     /// Shared Cupertino page horizontal inset (`CU.Space.xl`, D4.4) so the title, search field and rail align with other pages.
     static let horizontalPadding: CGFloat = CU.Space.xl
+    static let inspectorWidth: CGFloat = 290
 
     /// Year labels align to the card title's first baseline rather than the card's padded top edge (D5.6).
     static let rowAlignment: VerticalAlignment = .firstTextBaseline
@@ -28,7 +30,9 @@ struct TimelineView: View {
                 footer
             }
             .padding(.horizontal, Self.horizontalPadding)
-            inspector.frame(width: 290)
+            if showsInspector {
+                TimelineInspector(state: state, style: style)
+            }
         }
     }
 
@@ -119,16 +123,31 @@ struct TimelineView: View {
         }
     }
 
-    // MARK: Inspector
+}
 
-    private var inspector: some View {
+/// Full-height trailing inspector for Timeline, matching the queue panel's glass chrome and toolbar centre line (D5.7).
+struct TimelineInspector: View {
+    let state: AppState
+    let style: GraphStyle
+    private var timeline: TimelineModel { state.timeline }
+
+    /// Aligns the single-line 18 pt bold panel title's vertical centre (~11 pt half-height) with `CupertinoToolbar.centreY`.
+    static let topPadding: CGFloat = CupertinoToolbar.centreY - 11
+
+    var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 if let item = timeline.selected { selectedPanel(item) } else { idlePanel }
             }
-            .padding(18)
+            .padding(.top, Self.topPadding)
+            .padding([.horizontal, .bottom], 18)
         }
-        .background(style.card)
+        .frame(width: TimelineView.inspectorWidth)
+        .frame(maxHeight: .infinity)
+        .glassEffect(CU.glass, in: Rectangle())
+        .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Timeline inspector")
     }
 
     private var idlePanel: some View {
