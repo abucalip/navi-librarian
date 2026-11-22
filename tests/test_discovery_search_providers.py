@@ -7,7 +7,7 @@ from gate_fakes import FreeLane
 
 from discovery.search.cache import NEGATIVE_TTL_SECONDS, POSITIVE_TTL_SECONDS, provider_cache_key, read_cached, write_cached
 from discovery.search.limiter import SourceLimiter
-from discovery.search.providers import LastFmSearch, MusicBrainzSearch, ProviderError, lucene_phrase
+from discovery.search.providers import MusicBrainzSearch, ProviderError, lucene_phrase
 
 
 class FakeResponse:
@@ -145,29 +145,6 @@ class MusicBrainzTests(unittest.TestCase):
 
     def test_lucene_phrase_escapes_only_quote_and_backslash(self):
         self.assertEqual(lucene_phrase('a\\b"c'), '"a\\\\b\\"c"')
-
-
-class LastFmTests(unittest.TestCase):
-    def test_error_inside_an_http_200_body_is_a_failure_not_an_empty_answer(self):
-        get = ScriptedGet(FakeResponse(200, {"error": 10, "message": "Invalid API key"}))
-        client = LastFmSearch(get=get, limiter=open_limiter(), api_key="k")
-        with self.assertRaises(ProviderError) as raised:
-            client.artists("ash", remaining=plenty, cancelled=never_cancelled())
-        self.assertEqual(raised.exception.state, "failed")
-
-    def test_single_match_object_and_list_are_both_read(self):
-        single = {"results": {"artistmatches": {"artist": {"name": "Ash", "mbid": ""}}}}
-        client = LastFmSearch(get=ScriptedGet(FakeResponse(200, single)), limiter=open_limiter(), api_key="k")
-        [artist] = client.artists("ash", remaining=plenty, cancelled=never_cancelled())
-        self.assertEqual((artist["name"], artist["mbid"], artist["source"]), ("Ash", None, "lastfm"))
-
-    def test_api_key_is_sent_as_a_parameter_only(self):
-        get = ScriptedGet(FakeResponse(200, {"results": {"albummatches": {"album": []}}}))
-        client = LastFmSearch(get=get, limiter=open_limiter(), api_key="secret")
-        client.albums("kid a", remaining=plenty, cancelled=never_cancelled())
-        _, params = get.requests[0]
-        self.assertEqual(params["api_key"], "secret")
-        self.assertEqual(params["method"], "album.search")
 
 
 class MusicBrainzBrowseTests(unittest.TestCase):
@@ -311,19 +288,6 @@ class StoredIdentityBatchTests(unittest.TestCase):
         found = client.album_identities([("Radiohead", "OK Computer", None)], remaining=plenty, cancelled=never_cancelled())
         self.assertEqual(found, {("radiohead", "ok computer"): "rg-ok"})
         self.assertEqual([c[1]["offset"] for c in calls], [0, 100])
-
-
-class LastFmTopAlbumsTests(unittest.TestCase):
-    def test_top_albums_are_read_as_candidates_under_the_requested_artist(self):
-        get = ScriptedGet(FakeResponse(200, {"topalbums": {"album": [
-            {"name": "The Bends"}, {"name": ""}, {"name": "OK Computer"},
-        ]}}))
-        client = LastFmSearch(get=get, limiter=open_limiter(), api_key="k")
-        albums = client.top_albums("Radiohead", remaining=plenty, cancelled=never_cancelled())
-        self.assertEqual([a["name"] for a in albums], ["The Bends", "OK Computer"])
-        self.assertEqual(albums[0]["artist"], "Radiohead")
-        _, params = get.requests[0]
-        self.assertEqual(params["method"], "artist.getTopAlbums")
 
 
 class CacheTests(unittest.TestCase):

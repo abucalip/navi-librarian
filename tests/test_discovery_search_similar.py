@@ -10,7 +10,7 @@ from discovery.search.cache import SIMILAR_TTL_SECONDS
 from discovery.search.index import build_owned_data
 from discovery.search.limiter import SourceLimiter
 from discovery.search.merge import OwnedKeys
-from discovery.search.providers import DeezerSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError, artist_candidate
+from discovery.search.providers import DeezerSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError, artist_candidate
 from discovery.search.similar import OWNER_BOOST_WEIGHT, SIMILAR_LIMIT, TAG_WEIGHT, fuse_similar, owner_boost
 
 
@@ -304,27 +304,6 @@ class DeezerSimilarTests(unittest.TestCase):
         again = deezer.similar("Radiohead", remaining=lambda: 10.0, cancelled=never_cancelled())
         self.assertEqual(again, result)
         self.assertEqual(len(calls), 2)
-
-
-class LastFmSimilarTests(unittest.TestCase):
-    def test_parses_names_mbids_and_clamped_match_scores(self):
-        payload = {"similarartists": {"artist": [
-            {"name": "Thom Yorke", "mbid": "", "match": "0.9"},
-            {"name": "Nameless", "match": "not a number"},
-            {"name": "", "match": "1"},
-            {"name": "Overshoot", "mbid": "mb-o", "match": "1.7"},
-        ]}}
-        lastfm = LastFmSearch(
-            get=lambda url, **kwargs: Response(payload),
-            limiter=SourceLimiter({}),
-            api_key="key",
-        )
-        result = lastfm.similar("Radiohead", remaining=lambda: 10.0, cancelled=never_cancelled())
-        self.assertEqual(result, [
-            {"name": "Thom Yorke", "mbid": None, "match": 0.9},
-            {"name": "Nameless", "mbid": None, "match": 0.0},
-            {"name": "Overshoot", "mbid": "mb-o", "match": 1.0},
-        ])
 
 
 class SimilarSectionTests(unittest.TestCase):

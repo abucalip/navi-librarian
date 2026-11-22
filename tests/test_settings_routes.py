@@ -26,9 +26,6 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/navidrome", "GET"),
             ("/api/settings/navidrome", "PUT"),
             ("/api/settings/navidrome/test", "POST"),
-            ("/api/settings/lastfm", "GET"),
-            ("/api/settings/lastfm", "PUT"),
-            ("/api/settings/lastfm/test", "POST"),
             ("/api/settings/listenbrainz", "GET"),
             ("/api/settings/listenbrainz", "PUT"),
             ("/api/settings/listenbrainz/test", "POST"),
@@ -96,9 +93,6 @@ class SettingsRoutesTests(unittest.TestCase):
         with patch.object(settings, "_test_navidrome_connection", return_value='{"ok": true}') as call:
             self.assertEqual(settings.test_navidrome_settings(librarian=self.librarian), {"ok": True})
         call.assert_called_once_with(self.librarian.api_call, json.dumps)
-        with patch.object(settings, "_test_lastfm_connection", return_value='{"ok": true}') as call:
-            settings.test_lastfm_settings(librarian=self.librarian)
-        call.assert_called_once_with(self.librarian._discovery_settings_read, httpx.get, json.dumps)
         with patch.object(settings, "_test_listenbrainz_connection", return_value='{"ok": true}') as call:
             settings.test_listenbrainz_settings(librarian=self.librarian)
         call.assert_called_once_with(self.librarian._listenbrainz_username, httpx.get, json.dumps)
@@ -106,14 +100,11 @@ class SettingsRoutesTests(unittest.TestCase):
             settings.test_slskd_settings(librarian=self.librarian)
         call.assert_called_once_with(self.librarian._slskd_config)
 
-    def test_get_lastfm_listenbrainz_and_slskd_settings_use_the_librarian_store(self):
+    def test_get_listenbrainz_and_slskd_settings_use_the_librarian_store(self):
         self.librarian._discovery_settings_read.return_value = {"listenbrainz_token": "t"}
         self.librarian._listenbrainz_username.return_value = "lb_user"
         self.assertEqual(settings.get_listenbrainz_settings(librarian=self.librarian),
                          {"username": "lb_user", "token_configured": True})
-        with patch.object(settings, "_get_lastfm_settings", return_value='{"ok": true}') as call:
-            settings.get_lastfm_settings(librarian=self.librarian)
-        call.assert_called_once_with(self.librarian._discovery_settings_read)
         with patch.object(settings, "_get_slskd_settings", return_value='{"ok": true}') as call:
             settings.get_slskd_settings(librarian=self.librarian)
         call.assert_called_once_with(
@@ -127,30 +118,6 @@ class SettingsRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 400)
         self.assertIn("valid ListenBrainz username", raised.exception.detail)
         self.librarian._discovery_settings_write.assert_not_called()
-
-    def test_set_lastfm_returns_400_with_message_for_invalid_username(self):
-        with self.assertRaises(HTTPException) as raised:
-            settings.set_lastfm_settings({"api_key": "", "username": "bad user"}, librarian=self.librarian)
-        self.assertEqual(raised.exception.status_code, 400)
-        self.assertEqual(
-            raised.exception.detail,
-            "Enter a valid Last.fm username (letters, numbers, hyphen or underscore).",
-        )
-
-    def test_set_lastfm_returns_saved_username_and_forwards_it(self):
-        with patch.object(settings, "_set_lastfm_settings",
-                          return_value='{"ok": true, "username": "listener_fm"}') as call:
-            result = settings.set_lastfm_settings({"api_key": "", "username": "listener_fm"}, librarian=self.librarian)
-        self.assertEqual(result, {"ok": True, "username": "listener_fm"})
-        call.assert_called_once_with(
-            self.librarian._discovery_settings_read, self.librarian._discovery_settings_write,
-            api_key="", username="listener_fm",
-        )
-
-    def test_set_lastfm_without_username_leaves_it_unchanged(self):
-        with patch.object(settings, "_set_lastfm_settings", return_value='{"ok": true}') as call:
-            settings.set_lastfm_settings({"api_key": "k"}, librarian=self.librarian)
-        self.assertEqual(call.call_args.kwargs, {"api_key": "k", "username": None})
 
     def test_set_listenbrainz_forwards_token_to_the_store(self):
         with patch.object(settings, "_set_listenbrainz_settings", return_value='{"ok": true}') as call:

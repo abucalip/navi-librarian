@@ -36,8 +36,6 @@ _HOSTS = {
     "itunes.apple.com": "apple",
     "qobuz.com": "qobuz",
     "discogs.com": "discogs",
-    "last.fm": "lastfm",
-    "audioscrobbler.com": "lastfm",   # Last.fm's API host (ws.audioscrobbler.com)
     "listenbrainz.org": "listenbrainz",
     # Album review outlets (``app/services/album_review_sources.py``), one label so the owned prefetch can cap
     # them together (efficiency K3, ``reviews``).

@@ -792,7 +792,7 @@ def _build_classics_list():
     from discovery.classics_candidates import collect_classic_candidates
     from discovery.popularity import build_discovery_lookups
     lookups = build_discovery_lookups(
-        settings_reader=_discovery_settings_read, cache_get=_metadata_cache_get,
+        cache_get=_metadata_cache_get,
         cache_set=_metadata_cache_set, is_album_candidate=_discovery_is_album_candidate,
     )
     candidates = collect_classic_candidates(
@@ -880,7 +880,7 @@ def _build_artist_deep_dive_list():
     )
     from discovery.popularity import build_discovery_lookups
     lookups = build_discovery_lookups(
-        settings_reader=_discovery_settings_read, cache_get=_metadata_cache_get,
+        cache_get=_metadata_cache_get,
         cache_set=_metadata_cache_set, is_album_candidate=_discovery_is_album_candidate,
     )
     pause = lambda: time.sleep(0.15)
@@ -965,7 +965,6 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
     "navidrome_url": os.environ.get("NAVIDROME_URL", "").strip().rstrip("/"),
     "navidrome_user": os.environ.get("NAVIDROME_USER", ""),
     "navidrome_password": os.environ.get("NAVIDROME_PASSWORD", ""),
-    "lastfm_api_key": os.environ.get("LASTFM_API_KEY", ""),
     "listenbrainz_username": os.environ.get("LISTENBRAINZ_USERNAME", "").strip(),
     "music_library_path": str(MUSIC_DIR),
     "slskd_url": os.environ.get("SLSKD_URL", "").strip().rstrip("/"),

@@ -14,15 +14,12 @@ from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from integrations.slskd.client import test_connection as _test_slskd_connection
 from settings.service import (
-    get_lastfm_settings as _get_lastfm_settings,
     get_listenbrainz_settings as _get_listenbrainz_settings,
     get_navidrome_settings as _get_navidrome_settings,
     get_slskd_settings as _get_slskd_settings,
-    set_lastfm_settings as _set_lastfm_settings,
     set_listenbrainz_settings as _set_listenbrainz_settings,
     set_navidrome_settings as _set_navidrome_settings,
     set_slskd_settings as _set_slskd_settings,
-    test_lastfm_connection as _test_lastfm_connection,
     test_listenbrainz_connection as _test_listenbrainz_connection,
     test_navidrome_connection as _test_navidrome_connection,
     discogs_token_and_source as _discogs_token_and_source,
@@ -214,41 +211,6 @@ def test_navidrome_settings(librarian=Depends(get_librarian)):
         return parse_result(_test_navidrome_connection(librarian.api_call, json.dumps))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the Navidrome connection.")
-
-
-@router.get("/api/settings/lastfm")
-def get_lastfm_settings(librarian=Depends(get_librarian)):
-    try:
-        return parse_result(_get_lastfm_settings(librarian._discovery_settings_read))
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not read Last.fm settings.")
-
-
-@router.put("/api/settings/lastfm")
-def set_lastfm_settings(payload: dict, librarian=Depends(get_librarian)):
-    try:
-        username = payload.get("username")
-        result = parse_result(_set_lastfm_settings(
-            librarian._discovery_settings_read,
-            librarian._discovery_settings_write,
-            api_key=str(payload.get("api_key") or ""),
-            username=None if username is None else str(username),
-        ))
-        if isinstance(result, dict) and not result.get("ok"):
-            raise HTTPException(status_code=400, detail=result.get("error", "Invalid Last.fm settings."))
-        return result
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not save Last.fm settings.")
-
-
-@router.post("/api/settings/lastfm/test")
-def test_lastfm_settings(librarian=Depends(get_librarian)):
-    try:
-        return parse_result(_test_lastfm_connection(librarian._discovery_settings_read, httpx.get, json.dumps))
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not test the Last.fm connection.")
 
 
 @router.get("/api/settings/listenbrainz")
