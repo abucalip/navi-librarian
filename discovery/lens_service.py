@@ -182,10 +182,11 @@ def build(librarian: Any) -> dict[str, Any]:
         feedback_rows=librarian._discovery_feedback_rows,
     )
     listens = _fetch_history(librarian, settings_read, str(settings_read().get("lastfm_api_key") or ""))
+    discogs_token, _ = settings_service.discogs_token_and_source(settings_read, os.environ)
     gathered = gather_lens_pools(
         listens, day=day, providers=providers,
         headers={"User-Agent": MUSICBRAINZ_USER_AGENT},
-        lastfm_api_key=str(settings_read().get("lastfm_api_key") or ""),
+        discogs_token=discogs_token,
         settings_read=settings_read,
     )
     if gathered.get("status") != "gathered":

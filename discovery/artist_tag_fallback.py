@@ -2,34 +2,34 @@
 
 The ListenBrainz artist batch returns only MusicBrainz genre tags, so many artists (about a
 sixth of one measured history, including niche genres such as desert blues) have none, and the
-Deep cuts gates reject their albums. Last.fm top tags cover most of them but are noisy
-("female vocalists", "seen live"), so they are kept only when they name a MusicBrainz genre.
+Deep cuts gates reject their albums. Discogs master-release styles cover many of them and are
+kept only when they name a MusicBrainz genre.
 
 Pure functions over injected HTTP and cache callables, so tests use stubs and never touch the
 network. Everything is best-effort and bounded: a failed call leaves an artist without extra
-tags and never raises. Unwired; see docs/plans/engine2.md.
+tags and never raises.
 """
 from concurrent.futures import ThreadPoolExecutor
+import re
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
+from discovery.search.normalize import normalize_key
 from integrations.provider_gate import musicbrainz_lane
 
-LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/"
+DISCOGS_SEARCH_URL = "https://api.discogs.com/database/search"
 MUSICBRAINZ_GENRE_URL = "https://musicbrainz.org/ws/2/genre/all"
 GENRE_LIST_CACHE_KEY = "mb:genre-list"
 GENRE_LIST_TTL_SECONDS = 90 * 24 * 60 * 60
-LASTFM_TAGS_CACHE_PREFIX = "lfm:artist-tags:"
-LASTFM_TAGS_TTL_SECONDS = 90 * 24 * 60 * 60
+DISCOGS_TAGS_CACHE_PREFIX = "discogs:artist-tags:"
+DISCOGS_TAGS_TTL_SECONDS = 90 * 24 * 60 * 60
 GENRE_PAGE_SIZE = 100
 MAX_GENRE_PAGES = 40
 # A page is tried this many times, waiting between tries; a page that never answers discards the list.
 GENRE_PAGE_ATTEMPTS = 3
 GENRE_RETRY_SECONDS = 5.0
-# Last.fm allows about four calls a second; each worker waits this long after a call.
-LASTFM_WORKER_SPACING_SECONDS = 0.9
-# Last.fm error 6: the artist is definitively unknown (not a transient failure).
-LASTFM_NOT_FOUND = 6
-DEFAULT_MIN_COUNT = 10
+# Discogs allows 60 authenticated requests per minute; keep at least 1 s between calls.
+DISCOGS_SPACING_SECONDS = 1.0
+DISCOGS_PER_PAGE = 25
 DEFAULT_TAG_LIMIT = 5
 DEFAULT_MAX_CALLS = 40
 
@@ -90,38 +90,61 @@ def load_genre_vocabulary(
     return genres
 
 
-def _lastfm_top_tags(
-    get: Callable[..., Any], artist_mbid: str, api_key: str, timeout: float,
-) -> list[list]:
-    """[[tag, count], ...] for one artist; [] when Last.fm does not know it. Raises on any
-    transient failure so the caller leaves the value uncached."""
+def _discogs_name(name: str) -> str:
+    """An artist name without Discogs' disambiguation suffix, so 'Ash (2)' reads 'Ash'."""
+    return re.sub(r"\s+\(\d+\)$", "", name.strip())
+
+
+def _discogs_artist_styles(
+    get: Callable[..., Any],
+    artist_name: str,
+    token: str,
+    headers: Mapping[str, str] | None,
+    timeout: float,
+) -> list[str]:
+    """Lower-cased Discogs styles for one artist, most frequent first; [] on no match.
+
+    Raises on any transient or auth failure so the caller leaves the value uncached.
+    """
     from recommendation_run_metrics import record_provider_call
 
-    record_provider_call("lastfm", "artist.getTopTags")
-    response = get(LASTFM_API_URL, params={
-        "method": "artist.gettoptags", "mbid": artist_mbid, "api_key": api_key, "format": "json",
-    }, timeout=timeout)
+    record_provider_call("discogs", "database.search")
+    req_headers = dict(headers) if headers else {}
+    req_headers["Authorization"] = f"Discogs token={token}"
+    response = get(
+        DISCOGS_SEARCH_URL,
+        params={"type": "master", "artist": artist_name, "per_page": DISCOGS_PER_PAGE},
+        headers=req_headers,
+        timeout=timeout,
+    )
+    if response.status_code == 404:
+        return []
+    if response.status_code != 200:
+        raise RuntimeError(f"Discogs returned {response.status_code}")
     body = response.json()
     if not isinstance(body, dict):
-        raise RuntimeError("Last.fm returned a non-object body")
-    if "error" in body:
-        if body["error"] == LASTFM_NOT_FOUND:
-            return []
-        raise RuntimeError(f"Last.fm error {body['error']}")
-    if response.status_code != 200:
-        raise RuntimeError(f"Last.fm returned {response.status_code}")
-    tags = (body.get("toptags") or {}).get("tag")
-    if isinstance(tags, dict):
-        tags = [tags]
-    if not isinstance(tags, list):
-        raise RuntimeError("Last.fm body has no tags")
-    out = []
-    for item in tags:
-        try:
-            out.append([str(item["name"]).strip().casefold(), int(item["count"])])
-        except (KeyError, TypeError, ValueError):
+        raise RuntimeError("Discogs returned a non-object body")
+    results = body.get("results")
+    if not isinstance(results, list):
+        raise RuntimeError("Discogs body has no results")
+    key = normalize_key(artist_name)
+    if not key:
+        return []
+    counts: dict[str, int] = {}
+    for item in results:
+        if not isinstance(item, dict):
             continue
-    return out
+        artist, separator, _ = str(item.get("title") or "").partition(" - ")
+        if not separator or normalize_key(_discogs_name(artist)) != key:
+            continue
+        styles = item.get("style")
+        if not isinstance(styles, list):
+            continue
+        for style in styles:
+            folded = str(style).strip().casefold()
+            if folded:
+                counts[folded] = counts.get(folded, 0) + 1
+    return sorted(counts, key=lambda s: (-counts[s], s))
 
 
 def fallback_artist_tags(
@@ -129,75 +152,77 @@ def fallback_artist_tags(
     existing_tags: Mapping[str, Sequence[str]],
     *,
     get: Callable[..., Any],
-    api_key: str,
+    discogs_token: str,
+    artist_names: Mapping[str, str],
     vocabulary: Iterable[str],
     cache_get: Callable[..., Any],
     cache_set: Callable[..., Any],
+    headers: Mapping[str, str] | None = None,
     sleep: Callable[[float], Any] | None = None,
     min_existing: int = 2,
-    min_count: int = DEFAULT_MIN_COUNT,
     limit: int = DEFAULT_TAG_LIMIT,
     max_calls: int = DEFAULT_MAX_CALLS,
-    workers: int = 4,
+    workers: int = 1,
     timeout: float = 15,
 ) -> dict[str, list[str]]:
     """Extend the tags of artists that have fewer than ``min_existing``.
 
     Returns {artist MBID: tags} only for artists whose tag list grew: the existing tags first,
-    then Last.fm top tags with a count of at least ``min_count`` that name a genre in
-    ``vocabulary``, up to ``limit`` in all. Cached artists cost no call; at most ``max_calls``
-    uncached artists are fetched, in the order given. Never raises."""
-    for name, value in (("min_existing", min_existing), ("min_count", min_count),
+    then Discogs styles that name a genre in ``vocabulary``, up to ``limit`` in all. Cached
+    artists cost no call; at most ``max_calls`` uncached artists with a known name are fetched,
+    in the order given. Never raises."""
+    for name, value in (("min_existing", min_existing),
                         ("limit", limit), ("max_calls", max_calls), ("workers", workers)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 0 or (name == "workers" and value < 1):
             raise ValueError(f"{name} must be a non-negative integer (workers at least 1)")
     genres = {str(name).casefold() for name in vocabulary}
     if not genres:
         return {}
+    token = str(discogs_token or "").strip()
     wanted = [
         mbid for mbid in dict.fromkeys(str(m) for m in artist_mbids if m)
         if len(existing_tags.get(mbid, ())) < min_existing
     ]
-    cached: dict[str, list[list]] = {}
+    cached: dict[str, list[str]] = {}
     pending: list[str] = []
     for mbid in wanted:
         try:
-            value = cache_get(f"{LASTFM_TAGS_CACHE_PREFIX}{mbid}", ttl_seconds=LASTFM_TAGS_TTL_SECONDS)
+            value = cache_get(f"{DISCOGS_TAGS_CACHE_PREFIX}{mbid}", ttl_seconds=DISCOGS_TAGS_TTL_SECONDS)
         except Exception:
             value = None
         if isinstance(value, list):
-            cached[mbid] = value
-        else:
+            cached[mbid] = [str(tag) for tag in value if tag]
+        elif token and str(artist_names.get(mbid) or "").strip():
             pending.append(mbid)
     pending = pending[:max_calls]
 
     def fetch(mbid: str):
         try:
-            tags = _lastfm_top_tags(get, mbid, api_key, timeout)
+            styles = _discogs_artist_styles(get, str(artist_names[mbid]).strip(), token, headers, timeout)
         except Exception:
             return mbid, None
         if sleep is not None:
-            sleep(LASTFM_WORKER_SPACING_SECONDS)
-        return mbid, tags
+            sleep(DISCOGS_SPACING_SECONDS)
+        return mbid, styles
 
     if pending:
         with ThreadPoolExecutor(max_workers=min(workers, len(pending))) as pool:
-            for mbid, tags in pool.map(fetch, pending):
-                if tags is None:
+            for mbid, styles in pool.map(fetch, pending):
+                if styles is None:
                     continue
-                cached[mbid] = tags
+                cached[mbid] = styles
                 try:
-                    cache_set(f"{LASTFM_TAGS_CACHE_PREFIX}{mbid}", tags)
+                    cache_set(f"{DISCOGS_TAGS_CACHE_PREFIX}{mbid}", styles)
                 except Exception:
                     pass
 
     result: dict[str, list[str]] = {}
     for mbid in wanted:
         merged = list(existing_tags.get(mbid, ()))
-        for name, count in cached.get(mbid, ()):
+        for name in cached.get(mbid, ()):
             if len(merged) >= limit:
                 break
-            if count >= min_count and name in genres and name not in merged:
+            if name in genres and name not in merged:
                 merged.append(name)
         if len(merged) > len(existing_tags.get(mbid, ())):
             result[mbid] = merged

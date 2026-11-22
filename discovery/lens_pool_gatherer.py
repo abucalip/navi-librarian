@@ -27,8 +27,8 @@ from discovery.lens_lists import LENS_LIST_ORDER, history_artist_mbids, lens_see
 from discovery.mbid_popularity import resolve_popularity
 from settings.service import engine2_lens_lists_enabled_value
 
-# Last.fm top-tag calls per lens for pool artists with fewer than two genre tags. Each answer is
-# cached for 90 days, so a repeat run costs nothing for artists already answered.
+# Discogs artist-style calls per lens for pool artists with fewer than two genre tags. Each answer
+# is cached for 90 days, so a repeat run costs nothing for artists already answered.
 LENS_FALLBACK_CALL_BUDGET = 40
 
 
@@ -63,7 +63,7 @@ def gather_lens_pools(
     day: str,
     providers: Any,
     headers: Mapping[str, str],
-    lastfm_api_key: str,
+    discogs_token: str = "",
     settings_read: Callable[[], Mapping[str, Any]],
 ) -> dict[str, Any]:
     """Gather one pool per lens for ``day`` and the popularity and genre inputs of the builder.
@@ -126,6 +126,12 @@ def gather_lens_pools(
         popularity.update(found)
 
         mbids = list(dict.fromkeys(str(a["artist_mbid"]) for a in pool if a.get("artist_mbid")))
+        artist_names: dict[str, str] = {}
+        for album in pool:
+            mbid = str(album.get("artist_mbid") or "")
+            name = str(album.get("primary_artist") or album.get("artist") or "").strip()
+            if mbid and name and mbid not in artist_names:
+                artist_names[mbid] = name
         prefetch_artist_genres(get, mbids, headers=headers, cache_get=cache_get, cache_set=cache_set)
         tags = _genres_from_cache(providers, mbids)
         artist_tags.update(tags)
@@ -136,9 +142,9 @@ def gather_lens_pools(
                 # Loaded once per run; an empty result is kept, so a failed list is not retried per lens.
                 vocabulary = load_genre_vocabulary(get, headers, cache_get, cache_set)
             fallback = fallback_artist_tags(
-                mbids, tags, get=get, api_key=lastfm_api_key, vocabulary=vocabulary,
-                cache_get=cache_get, cache_set=cache_set, sleep=sleep,
-                max_calls=LENS_FALLBACK_CALL_BUDGET,
+                mbids, tags, get=get, discogs_token=discogs_token, artist_names=artist_names,
+                vocabulary=vocabulary, cache_get=cache_get, cache_set=cache_set, headers=headers,
+                sleep=sleep, max_calls=LENS_FALLBACK_CALL_BUDGET,
             )
             fallback_tags.update(fallback)
 
