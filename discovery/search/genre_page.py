@@ -80,7 +80,7 @@ def owned_items(view: IndexView, tag: str) -> tuple[list[dict[str, Any]], list[d
     artists = [a for a in view.data.artists if a["id"] in artist_ids]
     artist_items = [
         {"owned": True, "id": a["id"], "key": a["key"], "name": a["name"], "mbid": a.get("mbid"),
-         "sources": ["navidrome"]}
+         "album_count": a.get("album_count"), "sources": ["navidrome"]}
         for a in sorted(artists, key=lambda a: a["name"].casefold())
     ]
     album_items = [

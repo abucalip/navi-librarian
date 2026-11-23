@@ -125,6 +125,8 @@ def fuse_similar(
     for entry in ranked[:limit]:
         owned_artist = entry["owned_artist"]
         extra = {"attribution": DISCOGS_ATTRIBUTION} if entry.get("discogs") else {}
+        if owned_artist is not None:
+            extra["album_count"] = owned_artist.get("album_count")
         items.append({
             **extra,
             "name": entry["candidate"]["name"],

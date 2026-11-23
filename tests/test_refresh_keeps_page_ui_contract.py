@@ -58,6 +58,7 @@ class RefreshKeepsPageSourceTests(unittest.TestCase):
             "document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});",
             startup,
         )
+        self.assertIn(r"/^#library\/(artist|album|genre)\?/.test(window.location.hash)", startup)
         self.assertIn("} else if (window.location.hash) {\n  applyHash(window.location.hash);", startup)
         apply_hash = _function_source(self.js, "applyHash")
         self.assertIn("classList.contains('page')", apply_hash)
