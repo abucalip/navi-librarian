@@ -326,14 +326,17 @@ class AlbumDetailsTests(_Case):
 class ArtistBioTests(_Case):
     def test_a_found_bio_is_kept_a_day_and_stored_under_its_key(self):
         with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
-             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("A band.", True, "wikipedia")):
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("A band.", True, "wikipedia")) as wikipedia:
             metadata.artist_bio("Portishead")
             expected = {"bio": "A band.", "source": "wikipedia"}
             self.assertEqual(self.store.data, {"artist-bio:v2:portishead": expected})
+            self.store.data.clear()  # Isolate the one-day memory TTL from the longer persistent TTL.
             self.clock.now += DAY - 1
             self.assertEqual(metadata.artist_bio("Portishead")["bio"], "A band.")
+            wikipedia.assert_called_once()
             self.clock.now += 2
             metadata.artist_bio("Portishead")
+            self.assertEqual(wikipedia.call_count, 2)
         self.assertEqual(self.store.reads[-1], ("artist-bio:v2:portishead", persistent_metadata.FOUND_TTL))
 
     def test_the_route_keeps_a_navidrome_bio_in_memory_only_after_external_misses(self):
