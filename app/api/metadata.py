@@ -80,8 +80,11 @@ def artist_bio(artist: str, librarian=None):
     if not name or len(name) > 180:
         raise HTTPException(status_code=400, detail="A valid artist name is required.")
     key = name.casefold()
+    # A no-library request must not cache an empty result over a later owned-artist
+    # request that can still use Navidrome as its final fallback (or vice versa).
+    cache_key = key if librarian is None else key + ":library"
     value = _artist_bio_cache.get_or_load(
-        key,
+        cache_key,
         lambda: _load_artist_bio(name, librarian),
         store_key="artist-bio:v2:" + key,
         stored_ttl=_ARTIST_BIO_CACHE_TTL,

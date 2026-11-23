@@ -112,6 +112,8 @@ class MetadataRoutesTests(unittest.TestCase):
         library = Library()
         with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
              patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")):
+            # A previous unowned lookup's negative result must not suppress this library fallback.
+            metadata.artist_bio("Artist", librarian=None)
             result = metadata.artist_bio_route("Artist", library)
         self.assertEqual(result, {"artist": "Artist", "bio": "A musician.", "source": "navidrome"})
         self.assertEqual(library.calls, [("getArtistInfo2", {"id": "ar-1"})])
