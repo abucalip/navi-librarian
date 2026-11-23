@@ -522,8 +522,7 @@ function showAcquisitionSkeleton() {
 // The stream resends the whole list every second, and the server orders it by last update, so an
 // active download kept moving to the top. Rows are ordered by when they were requested instead,
 // which never changes, and render in place: a row whose data is unchanged is kept as the same
-// element (so its artwork does not reload and focus is not lost), and a changed row takes over
-// the artwork element of the row it replaces.
+// element. Changed rows retain their artwork, disclosure and controls wherever possible.
 function acquisitionRowKey(job) {
   return [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
 }
@@ -556,8 +555,9 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
     const jobs = orderAcquisitions(Array.isArray(data.acquisitions) ? data.acquisitions : []);
     updateActiveDownloadBadge(data);
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+    const activeCount = jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(job.status)).length;
     status.textContent = jobs.length
-      ? pluralize(jobs.length, 'acquisition record', 'acquisition records') + '.'
+      ? pluralize(jobs.length, 'acquisition record', 'acquisition records') + ' · ' + activeCount + ' active'
       : 'No acquisition records yet. Requests you make from a discovery page appear here.';
     // renderAcquisitions used to set only the text, so the element kept the is-loading class
     // applied by loadAcquisitions and an empty list rendered with the loading ellipsis: the
@@ -567,12 +567,16 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
     if (status === $('acquisitionsStatus')) {
       setStatusState(status, jobs.length ? 'progress' : 'empty');
     }
+    let hasFeaturedRow = false;
     for (const job of jobs) {
       if (onlyIdentity && [job.artist || '', job.album || ''].join('::').toLocaleLowerCase() !== onlyIdentity) continue;
       const dismissalKey = acquisitionRowKey(job);
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const signature = acquisitionRowSignature(job);
       const existing = existingRows.get(dismissalKey);
+      const featured = !hasFeaturedRow && ACTIVE_DOWNLOAD_STATUSES.has(job.status);
+      hasFeaturedRow ||= featured;
+      existing?.classList.toggle('lr-acq-big', featured);
       if (existing && existing.dataset.sig === signature) {
         orderedRows.push(existing);
         existingRows.delete(dismissalKey);
@@ -585,34 +589,48 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       // A song's row is named after the song; its album is the one it belongs to.
       const isSong = details.kind === 'track';
       const album = (isSong ? details.album_name : job.album) || 'Unknown album';
-      const row = document.createElement('article');
-      row.className = 'acq-row';
+      const row = existing || document.createElement('article');
+      row.classList.add('acq-row', 'lr-acq');
+      row.classList.toggle('lr-acq-big', featured);
       row.dataset.status = String(job.status || 'unknown');
-      makeAlbumCardInteractive(row, artist, album, details, true);
-      applyAlbumYear(row, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
-      attachArtwork(row, artist, album);
+      const mainSignature = JSON.stringify([artist, album, isSong, job.album, details.track_title,
+        metadata, details.year, job.year, details.quality_summary]);
+      let main = row.querySelector('.acq-main');
+      if (!main || row.dataset.mainSig !== mainSignature) {
+        const previousMain = main;
+        if (!existing || row.dataset.albumTitle !== album || row.dataset.albumArtist !== artist) {
+          row.querySelector('.card-art')?.remove();
+          delete row.dataset.releaseYear;
+          attachArtwork(row, artist, album);
+          makeAlbumCardInteractive(row, artist, album, details, true);
+        }
+        applyAlbumYear(row, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
 
-      const main = document.createElement('div');
-      main.className = 'acq-main';
-      row.append(main);
-      if (isSong) addTextElement(main, 'h3', '', details.track_title || job.album || 'Unknown song');
-      else linkAlbumName(addTextElement(main, 'h3', '', ''), artist, album, details);
-      ensureAlbumYearBadge(row);
-      linkArtistName(addTextElement(main, 'p', 'acq-artist', ''), artist);
-      if (isSong) linkAlbumName(addTextElement(main, 'p', 'acq-artist', 'Song on '), artist, album, details);
-      const qualityLabels = {
-        mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
-        mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
-        flac_16_44: 'FLAC 16-bit / 44.1 kHz',
-      };
-      const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
-      addTextElement(main, 'p', 'acq-profile',
-        'Quality profile: ' + (quality.length
-          ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
-          : 'Not reported'));
+        main = document.createElement('div');
+        main.className = 'acq-main';
+        if (previousMain) previousMain.replaceWith(main);
+        else row.append(main);
+        if (isSong) addTextElement(main, 'h3', '', details.track_title || job.album || 'Unknown song');
+        else linkAlbumName(addTextElement(main, 'h3', '', ''), artist, album, details);
+        ensureAlbumYearBadge(row);
+        linkArtistName(addTextElement(main, 'p', 'acq-artist', ''), artist);
+        if (isSong) linkAlbumName(addTextElement(main, 'p', 'acq-artist', 'Song on '), artist, album, details);
+        const qualityLabels = {
+          mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
+          mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
+          flac_16_44: 'FLAC 16-bit / 44.1 kHz',
+        };
+        const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
+        addTextElement(main, 'p', 'acq-profile',
+          'Quality profile: ' + (quality.length
+            ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
+            : 'Not reported'));
+        const disclosure = previousMain?.querySelector('.lr-details');
+        if (disclosure) main.append(disclosure);
+        row.dataset.mainSig = mainSignature;
+      }
+      albumCardMetadata.set(row, details);
       const lines = [
-        details.message,
-        details.error,
         details.source_folder ? 'Source: ' + details.source_folder : '',
         details.destination ? 'Destination: ' + details.destination : '',
         details.downloads_path ? 'Downloads: ' + details.downloads_path : '',
@@ -626,22 +644,48 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
         details.completion_evidence ? 'Completion evidence: ' + details.completion_evidence : '',
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
-      if (lines.length) {
-        const transport = document.createElement('div');
-        transport.className = 'acq-transport';
-        for (const line of lines) addTextElement(transport, 'p', 'acq-line', line);
-        main.append(transport);
+      let disclosure = main.querySelector('.lr-details');
+      if (!disclosure) {
+        disclosure = document.createElement('details');
+        disclosure.className = 'lr-details';
+        const summary = addTextElement(disclosure, 'summary', '', 'Details');
+        summary.prepend(listeningRoomIcon('chev-down'));
+        addTextElement(disclosure, 'div', 'acq-transport', '');
+        main.append(disclosure);
       }
-      if (details.status && details.status !== job.status) {
-        addTextElement(main, 'pre', 'debug', pretty(details));
+      const legacyMessages = [details.message, details.error].filter(Boolean);
+      const hasDebug = details.status && details.status !== job.status;
+      disclosure.hidden = !lines.length && !hasDebug;
+      const transport = disclosure.querySelector('.acq-transport');
+      transport.replaceChildren();
+      for (const line of lines) addTextElement(transport, 'p', 'acq-line', line);
+      if (hasDebug) addTextElement(transport, 'pre', 'debug', pretty(details));
+      main.querySelector('.acq-legacy-transport')?.remove();
+      if (legacyMessages.length || transport.childElementCount) {
+        const legacyTransport = transport.cloneNode(true);
+        legacyTransport.classList.add('acq-legacy-transport');
+        for (const message of [...legacyMessages].reverse()) {
+          const line = document.createElement('p');
+          line.className = 'acq-line';
+          line.textContent = message;
+          legacyTransport.prepend(line);
+        }
+        main.append(legacyTransport);
       }
 
-      // State: the glyph and label are the status; the bar and figures only add detail.
-      const state = document.createElement('div');
-      state.className = 'acq-state';
-      row.append(state);
+      // Keep the state container mounted while refreshing its text and progress.
+      let state = row.querySelector('.acq-state');
+      if (!state) {
+        state = document.createElement('div');
+        state.className = 'acq-state';
+        row.append(state);
+      }
+      const previousMeter = state.querySelector('.acq-progress');
+      for (const child of Array.from(state.children)) {
+        if (child !== previousMeter) child.remove();
+      }
       const statusLine = document.createElement('p');
-      statusLine.className = 'acq-status is-' + info.tone;
+      statusLine.className = 'acq-status lr-state is-' + info.tone;
       const glyph = document.createElement('span');
       glyph.className = 'acq-glyph';
       glyph.setAttribute('aria-hidden', 'true');
@@ -649,7 +693,15 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       const statusLabel = document.createElement('span');
       statusLabel.textContent = info.label;
       statusLine.append(glyph, statusLabel);
-      state.append(statusLine);
+      const stateIcons = {caution: 'alert', error: 'alert', ok: 'check', muted: 'close'};
+      statusLine.prepend(listeningRoomIcon(stateIcons[info.tone] ||
+        (job.status === 'downloading' || job.status === 'importing' ? 'acquisitions' : 'clock')));
+      state.prepend(statusLine);
+      const message = details.message || details.error;
+      if (message) {
+        const messageLine = addTextElement(state, 'p', 'acq-stat acq-message', message);
+        statusLine.after(messageLine);
+      }
 
       const progress = details.live_progress;
       if (['downloading', 'download_complete_waiting_for_folder'].includes(job.status) && progress) {
@@ -657,22 +709,24 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
           ? Math.max(0, Math.min(100, Number(progress.percent))) : null;
         // The bar is scaled with transform only (DESIGN_SYSTEM.md 11). Its value is also written as
         // text, so the percentage never depends on the bar being seen.
-        const meter = document.createElement('div');
+        const meter = previousMeter || document.createElement('div');
         meter.className = 'acq-progress';
         meter.setAttribute('role', 'progressbar');
         meter.setAttribute('aria-label', 'Download progress');
         meter.setAttribute('aria-valuemin', '0');
         meter.setAttribute('aria-valuemax', '100');
-        const fill = document.createElement('span');
+        const fill = meter.firstElementChild || document.createElement('span');
         fill.className = 'acq-progress-fill';
         if (percent === null) {
+          meter.removeAttribute('aria-valuenow');
           meter.setAttribute('aria-valuetext', 'Progress unavailable');
           fill.style.setProperty('--progress', '0');
         } else {
+          meter.removeAttribute('aria-valuetext');
           meter.setAttribute('aria-valuenow', String(Math.round(percent)));
           fill.style.setProperty('--progress', String(percent / 100));
         }
-        meter.append(fill);
+        if (!previousMeter) meter.append(fill);
         const percentText = document.createElement('p');
         percentText.className = 'acq-percent';
         percentText.textContent = percent === null ? 'Progress unavailable' : Math.round(percent) + '% complete';
@@ -684,11 +738,12 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             ? (value / (1024 * 1024)).toFixed(1) + ' MB/s'
             : value >= 1024 ? (value / 1024).toFixed(0) + ' KB/s' : Math.round(value) + ' B/s';
         }
-        const remaining = Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
-        const totalTracks = Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
+        const remaining = progress.remaining_tracks != null && Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
+        const totalTracks = progress.total_tracks != null && Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
         const totalSize = formatDownloadBytes(progress.total_size_bytes);
         const remainingSize = formatDownloadBytes(progress.remaining_size_bytes);
-        state.append(meter, percentText);
+        if (!previousMeter) state.append(meter);
+        state.append(percentText);
         addTextElement(state, 'p', 'acq-stat', speedText);
         if (totalSize !== null && remainingSize !== null) {
           addTextElement(state, 'p', 'acq-stat', 'Total ' + totalSize + ' · ' + remainingSize + ' remaining');
@@ -696,121 +751,147 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
         addTextElement(state, 'p', 'acq-stat',
           remaining === null ? 'Tracks remaining unavailable' :
           String(remaining) + ' of ' + (totalTracks === null ? '?' : totalTracks) + ' tracks remaining');
+      } else {
+        previousMeter?.remove();
       }
 
-      const actions = document.createElement('div');
-      actions.className = 'acq-actions';
-      // The row's controls share one icon group, the frame the Get, Save and Not for me controls use.
-      const group = document.createElement('div');
-      group.className = 'action-group';
-      group.setAttribute('role', 'group');
-      group.setAttribute('aria-label', 'Actions for ' + (job.album || job.artist || 'acquisition'));
-      if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
-        const secondsLeft = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
-        const stallButton = buildAcquisitionIconButton('skip-forward', 'skip-source-button', secondsLeft > 0
-          ? 'Use next source (' + secondsLeft + 's)'
-          : 'Switching source…');
-        stallButton.disabled = secondsLeft <= 0;
-        stallButton.addEventListener('click', async () => {
-          stallButton.disabled = true;
-          setAcquisitionButtonLabel(stallButton, 'Requesting source switch…');
-          try {
-            const result = await sendJSON('/api/acquisitions/skip', 'POST', {
-              artist: job.artist, album: job.album
-            });
-            status.textContent = result.message || 'Source switch requested.';
-          } catch (error) {
-            status.textContent = error.message;
-            stallButton.disabled = false;
-          }
-        });
-        group.append(stallButton);
-      }
-      if (job.status !== 'dismissed') {
-        const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
-        if (retryableStatuses.has(job.status)) {
-          const retry = buildAcquisitionIconButton('rotate-cw', 'retry-acquisition', 'Try again');
-          retry.addEventListener('click', async () => {
-            retry.disabled = true;
-            setAcquisitionButtonLabel(retry, 'Retrying…');
-            try {
-              await sendJSON(isSong ? '/api/acquire/track' : '/api/acquire', 'POST', isSong ? {
-                artist: job.artist, album, title: details.track_title,
-                track_number: details.track_number || undefined, year: details.year || undefined,
-                metadata: details.metadata || {}
-              } : {
-                artist: job.artist, album: job.album,
-                metadata: details.metadata || {}, auto_queue: true
-              });
-              await loadAcquisitions();
-            } catch (error) {
-              status.textContent = error.message;
-              retry.disabled = false;
-              setAcquisitionButtonLabel(retry, 'Try again');
-            }
-          });
-          group.append(retry);
+      const stalled = job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0;
+      const secondsLeft = stalled ? Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at))) : 0;
+      const stallLabel = secondsLeft > 0 ? 'Use next source (' + secondsLeft + 's)' : 'Switching source…';
+      const actionSignature = JSON.stringify([job.status, job.artist, job.album, album, details.kind,
+        details.stall_detected_at, Boolean(stalled), details.track_title, details.track_number, details.year, metadata]);
+      if (row.dataset.actionSig !== actionSignature) {
+        const previousActions = row.querySelector('.acq-actions');
+        const focus = previousActions?.contains(document.activeElement) ? document.activeElement.className : '';
+        previousActions?.remove();
+        renderAcquisitionActions(row, job, details, isSong, album, status, target, dismissalKey, stalled, stallLabel);
+        row.dataset.actionSig = actionSignature;
+        if (focus) {
+          const nextControl = [...row.querySelectorAll('.acq-actions button')].find(button => button.className === focus);
+          (nextControl || row).focus();
         }
-        // Repeated on every row, so the name says which acquisition it dismisses.
-        const dismiss = buildAcquisitionIconButton('trash-2', 'dismiss-album',
-          'Dismiss ' + (job.album || job.artist || 'acquisition'), 'Dismiss');
-        dismiss.addEventListener('click', async () => {
-          // A disabled control drops focus, so remember it and hand focus to a neighbour on success
-          // (or back to this control on failure) instead of leaving the keyboard user on <body>.
-          const hadFocus = document.activeElement === dismiss;
-          dismiss.disabled = true;
-          try {
-            await sendJSON('/api/acquisitions/dismiss', 'POST', {
-              artist: job.artist, album: job.album
-            });
-            const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
-            stored.add(dismissalKey);
-            localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
-            const neighbour = row.nextElementSibling || row.previousElementSibling;
-            row.remove();
-            if (hadFocus) {
-              const nextControl = neighbour && neighbour.querySelector('button');
-              if (nextControl) nextControl.focus();
-              else { status.tabIndex = -1; status.focus(); }
-            }
-            const visibleRows = target.querySelectorAll('.acq-row').length;
-            status.textContent = visibleRows
-              ? pluralize(visibleRows, 'acquisition record', 'acquisition records') + '.'
-              : 'No acquisition records to show.';
-            if (status === $('acquisitionsStatus')) {
-              setStatusState(status, visibleRows ? 'progress' : 'empty');
-            }
-          } catch (error) {
-            status.textContent = error.message;
-            if (status === $('acquisitionsStatus')) setStatusState(status, 'error');
-            dismiss.disabled = false;
-            if (hadFocus) dismiss.focus();
-          }
-        });
-        group.append(dismiss);
       }
-      if (group.childElementCount) actions.append(group);
-      if (actions.childElementCount) row.append(actions);
+      const stallButton = row.querySelector('.skip-source-button');
+      if (stallButton && !stallButton.dataset.pending) {
+        stallButton.disabled = secondsLeft <= 0;
+        setAcquisitionButtonLabel(stallButton, stallLabel);
+      }
       row.dataset.acqKey = dismissalKey;
       row.dataset.acqArtist = job.artist || '';
       row.dataset.acqAlbum = job.album || '';
       row.dataset.sig = signature;
-      const oldArt = existing && existing.querySelector('.card-art');
-      const newArt = row.querySelector('.card-art');
-      if (oldArt && newArt) newArt.replaceWith(oldArt);
-      if (existing) {
-        existing.replaceWith(row);
-        existingRows.delete(dismissalKey);
-      }
+      existingRows.delete(dismissalKey);
       orderedRows.push(row);
     }
     for (const stale of existingRows.values()) stale.remove();
     orderedRows.forEach((node, index) => {
       if (target.children[index] !== node) target.insertBefore(node, target.children[index] || null);
     });
+    if (target === $('acquisitionCards')) updateDismissImportedBar();
   } catch (error) {
     status.textContent = error.message;
   }
+}
+
+function renderAcquisitionActions(row, job, details, isSong, album, status, target, dismissalKey, stalled, stallLabel) {
+  const actions = document.createElement('div');
+  actions.className = 'acq-actions';
+  // The row's controls share one icon group, the frame the Get, Save and Not for me controls use.
+  const group = document.createElement('div');
+  group.className = 'action-group';
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Actions for ' + (job.album || job.artist || 'acquisition'));
+  if (stalled) {
+    const stallButton = buildAcquisitionIconButton('skip-forward', 'skip-source-button', stallLabel);
+    stallButton.addEventListener('click', async () => {
+      stallButton.dataset.pending = 'true';
+      stallButton.disabled = true;
+      setAcquisitionButtonLabel(stallButton, 'Requesting source switch…');
+      try {
+        const result = await sendJSON('/api/acquisitions/skip', 'POST', {
+          artist: job.artist, album: job.album
+        });
+        status.textContent = result.message || 'Source switch requested.';
+      } catch (error) {
+        status.textContent = error.message;
+        delete stallButton.dataset.pending;
+        const seconds = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
+        stallButton.disabled = seconds <= 0;
+        setAcquisitionButtonLabel(stallButton, seconds > 0 ? 'Use next source (' + seconds + 's)' : 'Switching source…');
+      }
+    });
+    group.append(stallButton);
+  }
+  if (job.status === 'review_required') {
+    const refresh = buildAcquisitionIconButton('rotate-cw', 'lr-l12-only', 'Refresh status');
+    refresh.addEventListener('click', loadAcquisitions);
+    group.append(refresh);
+  }
+  if (job.status !== 'dismissed') {
+    const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
+    if (retryableStatuses.has(job.status)) {
+      const retry = buildAcquisitionIconButton('rotate-cw', 'retry-acquisition', 'Try again');
+      retry.addEventListener('click', async () => {
+        retry.disabled = true;
+        setAcquisitionButtonLabel(retry, 'Retrying…');
+        try {
+          await sendJSON(isSong ? '/api/acquire/track' : '/api/acquire', 'POST', isSong ? {
+            artist: job.artist, album, title: details.track_title,
+            track_number: details.track_number || undefined, year: details.year || undefined,
+            metadata: details.metadata || {}
+          } : {
+            artist: job.artist, album: job.album,
+            metadata: details.metadata || {}, auto_queue: true
+          });
+          await loadAcquisitions();
+        } catch (error) {
+          status.textContent = error.message;
+          retry.disabled = false;
+          setAcquisitionButtonLabel(retry, 'Try again');
+        }
+      });
+      group.append(retry);
+    }
+    // Repeated on every row, so the name says which acquisition it dismisses.
+    const dismiss = buildAcquisitionIconButton('trash-2', 'dismiss-album',
+      'Dismiss ' + (job.album || job.artist || 'acquisition'), 'Dismiss');
+    dismiss.addEventListener('click', async () => {
+      // A disabled control drops focus, so remember it and hand focus to a neighbour on success
+      // (or back to this control on failure) instead of leaving the keyboard user on <body>.
+      const hadFocus = document.activeElement === dismiss;
+      dismiss.disabled = true;
+      try {
+        await sendJSON('/api/acquisitions/dismiss', 'POST', {
+          artist: job.artist, album: job.album
+        });
+        const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+        stored.add(dismissalKey);
+        localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+        const neighbour = row.nextElementSibling || row.previousElementSibling;
+        row.remove();
+        if (hadFocus) {
+          const nextControl = neighbour && neighbour.querySelector('button');
+          if (nextControl) nextControl.focus();
+          else { status.tabIndex = -1; status.focus(); }
+        }
+        const visibleRows = target.querySelectorAll('.acq-row').length;
+        status.textContent = visibleRows
+          ? pluralize(visibleRows, 'acquisition record', 'acquisition records') + '.'
+          : 'No acquisition records to show.';
+        if (status === $('acquisitionsStatus')) {
+          setStatusState(status, visibleRows ? 'progress' : 'empty');
+        }
+      } catch (error) {
+        status.textContent = error.message;
+        if (status === $('acquisitionsStatus')) setStatusState(status, 'error');
+        dismiss.disabled = false;
+        if (hadFocus) dismiss.focus();
+      }
+    });
+    group.append(dismiss);
+  }
+  if (group.childElementCount) actions.append(group);
+  if (actions.childElementCount) row.append(actions);
 }
 
 // "Dismiss all successful imports": the bar above the rows shows only while an imported row is on the
@@ -997,7 +1078,13 @@ function buildAcquisitionIconButton(icon, className, label, title = label) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = className;
-  button.append(spriteIcon(icon));
+  const legacyIcon = spriteIcon(icon);
+  legacyIcon.classList.add('lr-l12-legacy');
+  const icons = {'skip-forward': 'skip', 'rotate-cw': 'refresh', 'trash-2': 'close'};
+  button.append(legacyIcon, listeningRoomIcon(icons[icon]));
+  if (className === 'skip-source-button' || className === 'retry-acquisition') {
+    addTextElement(button, 'span', 'lr-acq-action-label', label);
+  }
   button.setAttribute('aria-label', label);
   button.title = title;
   return button;
@@ -1006,6 +1093,8 @@ function buildAcquisitionIconButton(icon, className, label, title = label) {
 function setAcquisitionButtonLabel(button, label) {
   button.setAttribute('aria-label', label);
   button.title = label;
+  const visibleLabel = button.querySelector('.lr-acq-action-label');
+  if (visibleLabel) visibleLabel.textContent = label;
 }
 
 async function loadAcquisitions() {
@@ -1676,7 +1765,7 @@ async function openAlbumModal(card, returnFocus = card) {
 
 document.addEventListener('click', event => {
   const card = event.target.closest && event.target.closest('.card[data-album-title], .ranked-row[data-album-title], .acq-row[data-album-title]');
-  if (!card || event.target.closest('button, a, input, select, textarea')) return;
+  if (!card || event.target.closest('button, a, input, select, textarea, details')) return;
   openAlbumModal(card);
 });
 // Layout themes only (Tape Deck, Ledger Room, Crate Wall): Ctrl+K (Cmd+K on a Mac) jumps to the header search. The page takes the key
@@ -3313,6 +3402,13 @@ function spriteIcon(name) {
   use.setAttribute('href', '/static/icons.svg#' + name);
   svg.append(use);
   return svg;
+}
+
+function listeningRoomIcon(name) {
+  const icon = spriteIcon(name);
+  icon.setAttribute('class', 'lr-icon');
+  icon.firstElementChild.setAttribute('href', '#lr-' + name);
+  return icon;
 }
 
 /** ResizeObservers watching genre-row overflow, disconnected on every re-render. */

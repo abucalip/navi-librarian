@@ -45,11 +45,25 @@ function renderRadioStations(items) {
     return;
   }
   for (const station of items) {
-    const row = radioElement('div', 'radio-row');
+    const row = radioElement('div', 'radio-row lr-station-row');
+    const logo = radioElement('span', 'lr-l12-only lr-radio-logo');
+    logo.setAttribute('aria-hidden', 'true');
+    logo.append(listeningRoomIcon('signal'));
+    if (station.logo_url) {
+      const image = radioElement('img');
+      image.alt = '';
+      image.addEventListener('load', () => logo.replaceChildren(image), {once: true});
+      image.src = station.logo_url;
+    }
     const main = radioElement('div', 'radio-main');
     main.append(radioElement('p', 'radio-title', station.name),
-      radioElement('p', 'radio-meta', station.proxied ? 'On: relayed through this app' : 'Off: plays directly'));
-    const toggle = radioElement('button', 'radio-switch');
+      radioElement('p', 'radio-meta lr-l12-legacy', station.proxied ? 'On: relayed through this app' : 'Off: plays directly'));
+    if (Array.isArray(station.tags) && station.tags.length) {
+      main.append(radioElement('p', 'radio-meta lr-l12-only', station.tags.join(' · ')));
+    }
+    const toggle = radioElement('button', 'radio-switch lr-switch');
+    toggle.append(radioElement('span', 'lr-l12-only lr-switch-track'),
+      radioElement('span', 'lr-l12-only', station.proxied ? 'Grabbing' : 'Grab'));
     toggle.type = 'button';
     toggle.setAttribute('role', 'switch');
     toggle.setAttribute('aria-checked', String(station.proxied));
@@ -66,7 +80,7 @@ function renderRadioStations(items) {
         toggle.disabled = false;
       }
     });
-    row.append(main, toggle);
+    row.append(logo, main, toggle);
     list.append(row);
   }
 }
@@ -78,6 +92,9 @@ function createRadioGetButton(play) {
   button.className = 'get-album get-track';
   button.dataset.noun = 'song';
   decorateGetButton(button);
+  const getIcon = listeningRoomIcon('get');
+  getIcon.classList.add('lr-l12-only', 'radio-get-icon');
+  button.append(getIcon, radioElement('span', 'lr-l12-only radio-requested-label', 'Requested'));
   setGetButtonState(button, play.grabbed ? 'requested' : 'idle', play.artist, play.title);
   if (!play.artist) {
     button.disabled = true;
@@ -113,7 +130,15 @@ function renderRadioPlays(items) {
     return;
   }
   for (const play of items) {
-    const row = radioElement('div', 'radio-row');
+    const row = radioElement('div', 'radio-row lr-heard');
+    const heardAt = new Date(play.heard_at * 1000);
+    const time = radioElement('time', 'lr-l12-only lr-time',
+      heardAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
+    if (Number.isFinite(heardAt.getTime())) time.dateTime = heardAt.toISOString();
+    time.title = radioWhen(play.heard_at);
+    row.append(time);
+    attachArtwork(row, play.artist, play.album || play.title, play.cover_url);
+    row.querySelector('.card-art').classList.add('lr-l12-only');
     const main = radioElement('div', 'radio-main');
     // The song opens its album's page (or the artist's, when the station named no album); the
     // artist and album in the meta line open theirs.
@@ -130,13 +155,14 @@ function renderRadioPlays(items) {
       meta.append(document.createTextNode(' · '));
       linkAlbumName(meta, play.artist, play.album);
     }
+    meta.append(radioElement('span', 'lr-l12-only', ' · ' + play.station_name));
     main.append(title, meta,
-      radioElement('p', 'radio-meta', play.station_name + ' · ' + radioWhen(play.heard_at) + ' · heard ' + radioHeard(play.listened_seconds)));
+      radioElement('p', 'radio-meta lr-l12-legacy', play.station_name + ' · ' + radioWhen(play.heard_at) + ' · heard ' + radioHeard(play.listened_seconds)));
     const actions = radioElement('div', 'radio-actions');
     // The app's action group: this song's own Get, Save, and Remove, which takes the song out of
     // the log. A song the station gave no album for is saved under its own title.
     const saveAlbum = play.album || play.title;
-    actions.append(createActionGroup(play.artist, saveAlbum, {artist: play.artist, album: saveAlbum}, {
+    const group = createActionGroup(play.artist, saveAlbum, {artist: play.artist, album: saveAlbum}, {
       getButton: createRadioGetButton(play),
       listName: play.artist ? 'radio' : null,
       dismissTitle: 'Remove from the log',
@@ -152,7 +178,11 @@ function renderRadioPlays(items) {
           remove.disabled = false;
         }
       }
-    }));
+    });
+    const removeIcon = listeningRoomIcon('close');
+    removeIcon.classList.add('lr-l12-only');
+    group.querySelector('.dismiss-album').append(removeIcon);
+    actions.append(group);
     row.append(main, actions);
     list.append(row);
   }
