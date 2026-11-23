@@ -46,6 +46,7 @@ _HOSTS = {
     "thequietus.com": "reviews",
     "treblezine.com": "reviews",
     "angrymetalguy.com": "reviews",
+    "critiquebrainz.org": "reviews",
 }
 
 PROVIDER_EXTENSION = "metrics_provider"
