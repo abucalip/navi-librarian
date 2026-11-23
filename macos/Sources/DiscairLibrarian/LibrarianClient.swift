@@ -107,7 +107,52 @@ public struct AlbumReview: Decodable, Equatable, Sendable {
     public init(source: String, quote: String, url: String) { self.source = source; self.quote = quote; self.url = url }
 }
 
+public struct CritiqueBrainzReview: Decodable, Equatable, Sendable {
+    public let id: String
+    public let source: String
+    public let origin: String?
+    public let fullText: String?
+    public let paragraphs: [String]
+    public let quote: String?
+    public let url: String
+    public let language: String
+    public let author: String
+    public let rating: Int?
+    public let license: String
+    public let licenseUrl: String
+    public let publishedOn: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, source, origin, paragraphs, quote, url, language, author, rating, license
+        case fullText = "full_text"
+        case licenseUrl = "license_url"
+        case publishedOn = "published_on"
+    }
+
+    public init(
+        id: String,
+        source: String = "CritiqueBrainz",
+        origin: String? = nil,
+        fullText: String? = nil,
+        paragraphs: [String],
+        quote: String? = nil,
+        url: String,
+        language: String,
+        author: String,
+        rating: Int? = nil,
+        license: String,
+        licenseUrl: String,
+        publishedOn: String? = nil
+    ) {
+        self.id = id; self.source = source; self.origin = origin; self.fullText = fullText
+        self.paragraphs = paragraphs; self.quote = quote; self.url = url; self.language = language
+        self.author = author; self.rating = rating; self.license = license; self.licenseUrl = licenseUrl
+        self.publishedOn = publishedOn
+    }
+}
+
 public struct AlbumReviews: Decodable, Equatable, Sendable {
+    public let critiquebrainz: [CritiqueBrainzReview]?
     public let reviews: [AlbumReview]
     public let retryable: Bool?
 }
@@ -253,8 +298,10 @@ public struct LibrarianClient: Sendable {
     }
 
     /// Up to three outlets' summary lines with links. `retryable` means an outlet failed or was slow.
-    public func albumReviews(artist: String, album: String) async throws -> AlbumReviews {
-        let (data, http) = try await authedSend("GET", "api/album-reviews?" + Self.query(artist, album), body: nil)
+    public func albumReviews(artist: String, album: String, mbid: String? = nil) async throws -> AlbumReviews {
+        var q = Self.query(artist, album)
+        if let mbid, !mbid.isEmpty { q += "&mbid=\(Self.enc(mbid))" }
+        let (data, http) = try await authedSend("GET", "api/album-reviews?" + q, body: nil)
         return try decode(AlbumReviews.self, data, http)
     }
 
