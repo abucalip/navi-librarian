@@ -24,6 +24,9 @@ def cache_control_for(path, payload):
     """The Cache-Control value for a successful GET answer, or None to leave it uncached."""
     if not isinstance(payload, dict) or payload.get("retryable"):
         return None
+    if path == "/api/artist-bio" and payload.get("bio") and payload.get("source") != "apple_music":
+        # Leave fallback expiry to the server, which retries quickly after an Apple failure.
+        return "no-store"
     if path == "/api/album-links":
         found = bool(payload)
     elif path in _FOUND_KEY:

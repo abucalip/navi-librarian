@@ -29,7 +29,10 @@ class AlbumModalArtistBioContractTests(unittest.TestCase):
         self.assertIn("loadAlbumModalBio(card, artist);", JS)
 
     def test_bio_request_uses_a_new_url_cache_version(self):
-        self.assertIn("'/api/artist-bio?artist=' + encodeURIComponent(artist) + '&v=3'", JS)
+        self.assertIn("'/api/artist-bio?artist=' + encodeURIComponent(artist) + '&v=4'", JS)
+
+    def test_bio_request_does_not_keep_fallback_responses_in_memory(self):
+        self.assertIn("if (data?.source !== 'apple_music') artistBioRequests.delete(key);", JS)
 
     def test_bio_resets_on_each_open_and_is_skipped_for_unknown_artist(self):
         body = re.search(r"function loadAlbumModalBio\(.*?\n\}\n", JS, re.S).group(0)

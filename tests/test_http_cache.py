@@ -15,7 +15,7 @@ class CacheControlForTests(unittest.TestCase):
             ("/api/album-details", {"tracks": [{"title": "t"}]}),
             ("/api/album-description", {"paragraphs": ["p"]}),
             ("/api/album-reviews", {"reviews": [{"source": "S"}]}),
-            ("/api/artist-bio", {"bio": "text"}),
+            ("/api/artist-bio", {"bio": "text", "source": "apple_music"}),
             ("/api/album-year", {"year": 1994}),
             ("/api/album-links", {"deezer": "https://d"}),
         ]:
@@ -42,10 +42,18 @@ class MiddlewareTests(unittest.TestCase):
         self.client = TestClient(probe)
 
     def test_found_answer_gets_the_header_and_keeps_its_body(self):
-        self.answer = {"artist": "A", "bio": "Band."}
+        self.answer = {"artist": "A", "bio": "Band.", "source": "apple_music"}
         response = self.client.get("/api/artist-bio")
         self.assertEqual(response.headers["cache-control"], "private, max-age=86400")
         self.assertEqual(response.json(), self.answer)
+
+    def test_fallback_biographies_can_be_refetched(self):
+        for source in ("wikipedia", "wikidata", "navidrome"):
+            with self.subTest(source=source):
+                self.answer = {"artist": "A", "bio": "Band.", "source": source}
+                response = self.client.get("/api/artist-bio")
+                self.assertEqual(response.headers["cache-control"], "no-store")
+                self.assertEqual(response.json(), self.answer)
 
     def test_empty_answer_and_other_paths_get_none(self):
         self.answer = {"artist": "A", "bio": ""}

@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-23. GitHub `main` is authoritative; current main is `90dbbaa259c93adfb85256c42f7b33428563b3d2` (PR #1249 merged).
+Last checked against GitHub `main` at `a32dccd68defd7ac3e1cf58cfedd598edf7f32d9` (PR #1251 merged) on 2026-11-23.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **Apple Music artist biographies (2026-11-23)** — PR #1250 invalidated old caches, but the Apple lookup still stopped at the artist URL's 301 redirect. Branch `fix/apple-artist-bio-redirect` follows that redirect and refreshes both the server and browser cache keys. A local endpoint check returned Portishead's full Apple Music bio, and 50 focused tests passed. Next action is review, followed by an installed-client check on a server running the fix.
 
 - **Artist biography cache invalidation follow-up (2026-11-23):** PRs [#1246](https://github.com/abucalip/navi-librarian/pull/1246) and [#1247](https://github.com/abucalip/navi-librarian/pull/1247) established Apple Music priority and full About biography extraction. The clients were still showing short Wikipedia text because the persistent key remained `artist-bio:v2` after #1247, and browsers also cached that endpoint URL for 24 hours. PR #1250 moves the server key to `artist-bio:v3` and adds `&v=3` to the web request URL. Its Docker packaging CI run found a persistent-cache test fixture still writing the old v2 key; the fixture now uses v3 and the focused persistence tests pass (10 tests). The earlier cache test passed (18 tests), and all 45 web-asset source test modules passed (535 tests, 61 subtests). No post-push CI check, live provider request, UI check, deployment or runtime verification.
 

@@ -185,6 +185,7 @@ def lookup_artist_biography(get, artist: str) -> tuple[str | None, bool]:
             response = get(
                 APPLE_PAGE_URL.format(country=country, artist_id=artist_id),
                 headers=APPLE_HEADERS,
+                follow_redirects=True,
                 timeout=APPLE_TIMEOUT,
             )
             response.raise_for_status()
