@@ -5803,6 +5803,10 @@ function resetAlbumTabs() {
   albumTabState.reviews = 'idle';
   albumTabState.reviewSeq++;
   albumTabState.chosen = false;
+  $('albumCritiqueBrainz').replaceChildren();
+  $('albumCritiqueBrainz').hidden = true;
+  albumTabState.critiquebrainz = [];
+  albumTabState.critiquebrainzIndex = 0;
   $('albumReviews').replaceChildren();
   $('albumReviewsRetry').hidden = true;
   setSectionNote('albumReviewsNote', '');
@@ -5825,6 +5829,91 @@ function buildAlbumReview(review) {
   return item;
 }
 
+function renderCritiqueBrainzReview() {
+  const box = $('albumCritiqueBrainz');
+  const reviews = albumTabState.critiquebrainz || [];
+  if (!reviews.length) {
+    box.replaceChildren();
+    box.hidden = true;
+    return;
+  }
+  const idx = (albumTabState.critiquebrainzIndex || 0) % reviews.length;
+  const review = reviews[idx];
+  box.hidden = false;
+
+  const header = document.createElement('div');
+  header.className = 'critiquebrainz-header';
+
+  const badges = document.createElement('div');
+  badges.className = 'critiquebrainz-badges';
+  if (review.language) {
+    addTextElement(badges, 'span', 'critiquebrainz-badge', String(review.language).toUpperCase());
+  }
+  if (review.origin) {
+    addTextElement(badges, 'span', 'critiquebrainz-origin', review.origin);
+  }
+  header.append(badges);
+
+  if (reviews.length > 1) {
+    const nav = document.createElement('div');
+    nav.className = 'critiquebrainz-nav';
+    addTextElement(nav, 'span', 'critiquebrainz-counter', `${idx + 1} / ${reviews.length}`);
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'critiquebrainz-next';
+    nextBtn.textContent = '\u203a';
+    nextBtn.setAttribute('aria-label', `Next review (${idx + 1} of ${reviews.length})`);
+    nextBtn.title = 'Next review';
+    nextBtn.addEventListener('click', () => {
+      albumTabState.critiquebrainzIndex = (idx + 1) % reviews.length;
+      renderCritiqueBrainzReview();
+    });
+    nav.append(nextBtn);
+    header.append(nav);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'critiquebrainz-body';
+  if (review.language === 'ar') {
+    body.dir = 'rtl';
+  }
+  const paragraphs = Array.isArray(review.paragraphs) && review.paragraphs.length
+    ? review.paragraphs
+    : (review.full_text ? [review.full_text] : (review.quote ? [review.quote] : []));
+  for (const p of paragraphs) {
+    addTextElement(body, 'p', '', p);
+  }
+
+  const footer = document.createElement('footer');
+  footer.className = 'critiquebrainz-footer';
+  const metaParts = [];
+  if (review.author) metaParts.push(review.author);
+  if (review.rating !== null && review.rating !== undefined) metaParts.push(`${review.rating}/5`);
+  if (metaParts.length) {
+    addTextElement(footer, 'span', 'critiquebrainz-meta', metaParts.join(' \u00b7 '));
+  }
+  if (review.license && review.license_url) {
+    const licLink = document.createElement('a');
+    licLink.className = 'critiquebrainz-link';
+    licLink.href = review.license_url;
+    licLink.target = '_blank';
+    licLink.rel = 'noopener noreferrer';
+    licLink.textContent = review.license;
+    footer.append(licLink);
+  }
+  if (review.url) {
+    const srcLink = document.createElement('a');
+    srcLink.className = 'critiquebrainz-link';
+    srcLink.href = review.url;
+    srcLink.target = '_blank';
+    srcLink.rel = 'noopener noreferrer';
+    srcLink.textContent = 'Read on CritiqueBrainz';
+    footer.append(srcLink);
+  }
+
+  box.replaceChildren(header, body, footer);
+}
+
 async function loadAlbumReviews() {
   const album = albumPage.album || albumPage.target;
   if (!album || !album.artist || !album.name) {
@@ -5836,6 +5925,7 @@ async function loadAlbumReviews() {
   $('albumReviewsRetry').hidden = true;
   setSectionNote('albumReviewsNote', 'Loading reviews\u2026');
   const params = new URLSearchParams({artist: album.artist, album: album.name});
+  if (album.mbid) params.set('mbid', album.mbid);
   let data;
   try {
     data = await requestJSON('/api/album-reviews?' + params);
@@ -5847,13 +5937,19 @@ async function loadAlbumReviews() {
     return;
   }
   if (seq !== albumTabState.reviewSeq) return;
+  const cbReviews = Array.isArray(data.critiquebrainz) ? data.critiquebrainz : [];
+  albumTabState.critiquebrainz = cbReviews;
+  albumTabState.critiquebrainzIndex = 0;
+  renderCritiqueBrainzReview();
+
   const reviews = Array.isArray(data.reviews) ? data.reviews : [];
   $('albumReviews').replaceChildren(...reviews.map(buildAlbumReview));
   // A partial answer is shown as it is; only the button asks the outlets that failed again, so
   // switching tabs never re-requests or flickers.
   albumTabState.reviews = 'loaded';
   $('albumReviewsRetry').hidden = !data.retryable;
-  setSectionNote('albumReviewsNote', reviews.length ? (data.retryable ? 'Some sources did not answer.' : '')
+  const hasAny = cbReviews.length > 0 || reviews.length > 0;
+  setSectionNote('albumReviewsNote', hasAny ? (data.retryable ? 'Some sources did not answer.' : '')
     : data.retryable ? 'No reviews found. Some sources did not answer.' : 'No reviews found for this album.');
 }
 

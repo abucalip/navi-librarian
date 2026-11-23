@@ -692,7 +692,7 @@
   :root[data-layout="zine"] .album-meta[hidden], :root[data-layout="zine"] .zine-pull[hidden] { display: none; }
   :root[data-layout="zine"] .album-head .album-about { width: auto; margin: 0 16px 0 0; }
   :root[data-layout="zine"] .album-head .album-about .album-tabs { justify-content: flex-start; width: auto; margin: 0; }
-  :root[data-layout="zine"] .album-about .section-note, :root[data-layout="zine"] .album-reviews { text-align: left; }
+  :root[data-layout="zine"] .album-about .section-note, :root[data-layout="zine"] .album-reviews, :root[data-layout="zine"] .critiquebrainz-review { text-align: left; }
   :root[data-layout="zine"] .album-tab { border-radius: 0; }
   :root[data-layout="zine"] .album-description-text { columns: 2; column-gap: 14px; font-size: var(--text-sm); text-align: justify; max-width: none; }
   :root[data-layout="zine"] .album-description-text::first-letter { float: left; padding: 2px 6px 0 0; font: 400 2.5rem/.8 var(--display); }
