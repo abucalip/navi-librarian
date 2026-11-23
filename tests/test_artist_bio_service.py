@@ -2,7 +2,7 @@
 
 import unittest
 
-from app.services.artist_bio import resolve_artist_bio
+from app.services.artist_bio import resolve_artist_bio, resolve_artist_bio_with_source
 
 
 class ArtistBioResolutionTests(unittest.TestCase):
@@ -53,6 +53,20 @@ class ArtistBioResolutionTests(unittest.TestCase):
         ]
         result = resolve_artist_bio("Artist", entities, {})
         self.assertEqual(result, "American singer")
+
+    def test_reports_wikipedia_only_when_the_matching_page_extract_is_used(self):
+        entities = [{"id": "Q42", "label": "Artist", "description": "British musician"}]
+        self.assertEqual(
+            resolve_artist_bio_with_source(
+                "Artist", entities,
+                {"wikibase_item": "Q42", "type": "standard", "extract": "Artist is a musician."},
+            ),
+            ("Artist is a musician.", "wikipedia"),
+        )
+        self.assertEqual(
+            resolve_artist_bio_with_source("Artist", entities, {}),
+            ("British musician", "wikidata"),
+        )
 
     def test_empty_payload_returns_empty_bio(self):
         self.assertEqual(resolve_artist_bio("Unknown", [], {}), "")

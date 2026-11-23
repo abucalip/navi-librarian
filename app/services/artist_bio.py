@@ -18,7 +18,7 @@ _ARTIST_DESCRIPTION_RE = re.compile(
 )
 
 
-def resolve_artist_bio(name: str, entities: Iterable[dict[str, Any]], page: dict[str, Any]) -> str:
+def resolve_artist_bio_with_source(name: str, entities: Iterable[dict[str, Any]], page: dict[str, Any]) -> tuple[str, str | None]:
     """Use a Wikipedia extract only when its Wikidata identity is a music entity.
 
     If the page is missing, a disambiguation page, or points to a different
@@ -36,6 +36,7 @@ def resolve_artist_bio(name: str, entities: Iterable[dict[str, Any]], page: dict
     ))
 
     bio = ""
+    source = None
     page_qid = str(page.get("wikibase_item") or "")
     if page_qid and page.get("type") != "disambiguation":
         matching_entity = next(
@@ -49,7 +50,14 @@ def resolve_artist_bio(name: str, entities: Iterable[dict[str, Any]], page: dict
                 bio = match.group(0) if match else extract[:240]
                 if len(bio) > 280:
                     bio = bio[:277].rsplit(" ", 1)[0] + "…"
+                source = "wikipedia"
 
     if not bio and music_entities:
         bio = str(music_entities[0].get("description") or "").strip()
-    return bio
+        source = "wikidata" if bio else None
+    return bio, source
+
+
+def resolve_artist_bio(name: str, entities: Iterable[dict[str, Any]], page: dict[str, Any]) -> str:
+    """Compatibility wrapper returning only the resolved biography text."""
+    return resolve_artist_bio_with_source(name, entities, page)[0]
