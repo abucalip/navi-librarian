@@ -44,7 +44,7 @@ BUTTONS = {
 
 class ButtonGroupContractTests(unittest.TestCase):
     def button(self, marker):
-        match = re.search(r"<button [^>]*" + re.escape(marker) + r"[^>]*>.*?</button>", HTML)
+        match = re.search(r"<button [^>]*" + re.escape(marker) + r"[^>]*>.*?</button>", HTML, re.S)
         self.assertIsNotNone(match, marker)
         return match.group(0)
 
@@ -57,6 +57,12 @@ class ButtonGroupContractTests(unittest.TestCase):
                 self.assertIn(icon, SPRITE_IDS)
                 if marker == 'id="libraryMore"':
                     self.assertIn('<span class="lr-library-only">Load more</span>', markup)
+                elif marker == 'data-refresh-saved':
+                    self.assertIn('<span class="lr-l11-only">Refresh</span>', markup)
+                    self.assertIn('href="#lr-refresh"', markup)
+                    listening_room_css = (ROOT / "static" / "listening-room" / "search.css").read_text(encoding="utf-8")
+                    self.assertIn('.lr-l11-only { display: none; }', listening_room_css)
+                    self.assertIn(':root[data-layout="listeningroom"] .lr-l11-only { display: revert; }', listening_room_css)
                 else:
                     self.assertNotRegex(markup, r">\s*[A-Za-z]")
 
