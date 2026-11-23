@@ -30,10 +30,12 @@ class AcquisitionStableRenderContractTests(unittest.TestCase):
         self.assertIn("existing.dataset.sig === signature", render)
         self.assertIn("orderedRows.push(existing);", render)
 
-    def test_changed_rows_keep_the_artwork_element_they_replace(self):
+    def test_changed_rows_keep_the_article_and_disclosure(self):
         render = between("function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
-        self.assertIn("newArt.replaceWith(oldArt);", render)
-        self.assertIn("existing.replaceWith(row);", render)
+        self.assertIn("const row = existing || document.createElement('article');", render)
+        self.assertIn("let disclosure = main.querySelector('.lr-details');", render)
+        self.assertIn("if (disclosure) main.append(disclosure);", render)
+        self.assertNotIn("existing.replaceWith(", render)
 
     def test_only_out_of_place_rows_are_moved_and_stale_rows_removed(self):
         render = between("function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")

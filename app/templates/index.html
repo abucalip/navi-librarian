@@ -24,6 +24,8 @@
 <link rel="stylesheet" href="/static/listening-room/artist.css">
 <link rel="stylesheet" href="/static/listening-room/library.css">
 <link rel="stylesheet" href="/static/listening-room/search.css">
+<link rel="stylesheet" href="/static/listening-room/acquisitions.css">
+<link rel="stylesheet" href="/static/listening-room/radio.css">
 </head>
 <body>
 <!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
@@ -835,19 +837,25 @@
 
 <section id="acquisitions" class="page hidden" aria-labelledby="acquisitionsHeading">
   <div class="panel">
-    <h2 id="acquisitionsHeading">Acquisition status</h2>
-    <p class="muted">Download and import status.</p>
-    <p id="acquisitionsStatus" class="status-line" aria-live="polite"></p>
-    <div id="acquisitionsToolbar" class="acq-toolbar" hidden>
-      <span id="dismissImportedLabel">Dismiss all successful imports</span>
-      <div class="action-group" role="group" aria-labelledby="dismissImportedLabel">
-        <button type="button" id="dismissImportedAcquisitions" class="dismiss-album" title="Dismiss all successful imports" aria-label="Dismiss all successful imports"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+    <div class="acq-pagehead">
+      <div>
+        <h2 id="acquisitionsHeading"><span class="lr-l12-legacy">Acquisition status</span><span class="lr-l12-only">Acquisitions</span></h2>
+        <p class="muted">Download and import status<span class="lr-l12-only">, in the order you asked for them</span>.</p>
+      </div>
+      <div class="acq-head-actions">
+        <div id="acquisitionsToolbar" class="acq-toolbar" hidden>
+            <span id="dismissImportedLabel">Dismiss all successful imports</span>
+            <div class="action-group" role="group" aria-labelledby="dismissImportedLabel">
+              <button type="button" id="dismissImportedAcquisitions" class="dismiss-album" title="Dismiss all successful imports" aria-label="Dismiss all successful imports"><svg class="icon lr-l12-legacy" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg><svg class="lr-icon lr-l12-only" aria-hidden="true" focusable="false"><use href="#lr-check"></use></svg><span class="lr-l12-only">Dismiss all successful imports</span></button>
+            </div>
+          </div>
+        <button type="button" id="refreshAcquisitions" class="icon-square-button" title="Refresh status" aria-label="Refresh status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
       </div>
     </div>
+    <p id="acquisitionsStatus" class="status-line" aria-live="polite"></p>
     <!-- Tape Deck layout only (static/layouts.css shows it; hidden in every other theme): the request being fetched, large. -->
     <div id="tapeAcqDeck" class="tape-deck tape-deck-large" role="region" aria-label="Acquisition deck" hidden></div>
     <div id="acquisitionCards" class="acq-list"></div>
-    <button type="button" id="refreshAcquisitions" class="icon-square-button" title="Refresh status" aria-label="Refresh status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
   </div>
 </section>
 
@@ -859,19 +867,24 @@
     <p id="radioStatus" class="status-line" aria-live="polite"></p>
     <h3 id="radioAddressHeading">App address</h3>
     <form id="radioAddressForm" class="radio-address">
-      <label for="radioAppUrl" class="muted">The address your Navidrome apps use to reach this app, for example its Tailscale address. Leave blank to use the address of this browser tab.</label>
-      <input id="radioAppUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://my-server.tailnet.ts.net:8000">
+      <label for="radioAppUrl">Address your Navidrome apps use to reach this app</label>
+      <input id="radioAppUrl" aria-describedby="radioAddressHelp" type="url" inputmode="url" autocomplete="off" placeholder="http://my-server.tailnet.ts.net:8000">
       <div class="action-group" role="group" aria-label="App address">
-        <button id="saveRadioAddress" type="submit" title="Save" aria-label="Save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="saveRadioAddress" type="submit" title="Save" aria-label="Save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg><span class="lr-l12-only">Save</span></button>
       </div>
+      <p id="radioAddressHelp" class="muted">For example its Tailscale address. Leave blank to use the address of this browser tab.</p>
     </form>
     <h3 id="radioStationsHeading">Stations</h3>
+    <p class="lr-l12-only radio-section-sub">Grab relays a station so its songs are logged.</p>
     <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
-    <h3 id="radioPlaysHeading">Heard</h3>
     <div class="radio-toolbar">
+      <div>
+        <h3 id="radioPlaysHeading">Heard</h3>
+        <p class="lr-l12-only radio-section-sub">Songs the grabbed stations played while you listened, newest first.</p>
+      </div>
       <div class="action-group" role="group" aria-label="Heard list">
-        <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
-        <button id="clearRadioPlays" type="button" title="Clear all" aria-label="Clear all"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+        <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg><span class="lr-l12-only">Refresh</span></button>
+        <button id="clearRadioPlays" type="button" title="Clear all" aria-label="Clear all"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg><span class="lr-l12-only">Clear all</span></button>
       </div>
     </div>
     <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>

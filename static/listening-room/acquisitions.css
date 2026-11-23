@@ -1,0 +1,173 @@
+.lr-l12-only, .lr-acq .lr-details, .lr-acq .acq-message,
+.lr-acq .lr-icon, .lr-acq-action-label { display: none; }
+:root:not([data-layout="listeningroom"]) .acq-actions .lr-l12-only { display: none; }
+
+:root[data-layout="listeningroom"] {
+  .lr-l12-only { display: revert; }
+  .lr-l12-legacy { display: none; }
+
+  :is(#acquisitions, #radio) > .panel {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :is(#acquisitionsHeading, #radioHeading) {
+    margin: 0;
+    color: var(--lr-text);
+    font: 700 40px/44px var(--lr-font-display);
+    letter-spacing: -0.02em;
+  }
+
+  :is(#acquisitionsHeading, #radioHeading)::after { content: none; }
+
+  .acq-pagehead, .acq-head-actions {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .acq-pagehead .muted { margin: var(--lr-space-8) 0 0; }
+  #acquisitionsStatus { margin: var(--lr-space-24) 0; color: var(--lr-text-muted); }
+  #acquisitionsStatus.is-progress::before { content: none; }
+  .acq-head-actions #dismissImportedLabel { display: none; }
+  .acq-head-actions .acq-toolbar { margin: 0; }
+
+  :is(#acquisitions, #radio) :is(button, input, a, summary):focus-visible {
+    outline: 2px solid var(--lr-focus);
+    outline-offset: 2px;
+  }
+
+  :is(#dismissImportedAcquisitions, #refreshAcquisitions, #radioAddressForm button, .radio-toolbar button,
+      .lr-acq .action-group > button, #radio .radio-actions .action-group > button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--lr-space-8);
+    min-width: var(--lr-target);
+    min-height: var(--lr-target);
+    width: auto;
+    height: auto;
+    padding: 0 12px;
+    border: 1px solid var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-surface);
+    color: var(--lr-text);
+    font: 600 14px/20px var(--lr-font-text);
+  }
+
+  :is(.acq-head-actions, .lr-acq, #radioAddressForm, .radio-toolbar) .action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lr-space-8);
+    height: auto;
+    overflow: visible;
+    margin: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  #acquisitionCards { gap: var(--lr-space-16); border: 0; }
+
+  #acquisitionCards .acq-row {
+    --acq-cover: 72px;
+    grid-template-columns: var(--acq-cover) minmax(0, 1fr) minmax(220px, 280px) auto;
+    gap: var(--lr-space-16);
+    padding: var(--lr-space-16);
+    border: 1px solid var(--lr-edge);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-surface);
+  }
+
+  #acquisitionCards .lr-acq-big {
+    --acq-cover: 160px;
+    grid-template-columns: var(--acq-cover) minmax(0, 1fr) minmax(260px, 320px) auto;
+    padding: var(--lr-space-24);
+  }
+
+  #acquisitionCards .acq-row :is(.card-art, .skeleton-art) {
+    width: var(--acq-cover);
+    height: var(--acq-cover);
+    border: 1px solid var(--lr-edge);
+    border-radius: var(--lr-radius-cover);
+    background: var(--lr-raised);
+  }
+
+  .lr-acq h3 { font: 600 14px/20px var(--lr-font-text); letter-spacing: normal; }
+  .lr-acq-big h3 { font-size: 16px; }
+  .lr-acq .dismiss-album { border-color: transparent; background: transparent; }
+  .lr-acq :is(.acq-main, .acq-state) { display: grid; gap: var(--lr-space-4); }
+  .lr-acq :is(.acq-artist, .acq-profile, .acq-stat, .acq-percent) {
+    margin: 0;
+    color: var(--lr-text-muted);
+    font: 400 13px/18px var(--lr-font-text);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .lr-acq .acq-percent { color: var(--lr-text); }
+  .lr-acq > .acq-actions { align-self: start; justify-content: flex-end; }
+
+  .lr-acq .lr-details:not([hidden]) {
+    display: block;
+    margin-top: var(--lr-space-8);
+    border: 1px solid var(--lr-edge);
+    border-radius: var(--lr-radius-control);
+  }
+  .lr-acq .lr-details > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--lr-space-8);
+    min-height: var(--lr-target);
+    padding-inline: var(--lr-space-16);
+    cursor: pointer;
+    list-style: none;
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  .lr-acq .lr-details > summary::-webkit-details-marker { display: none; }
+  .lr-acq .lr-details[open] > summary .lr-icon { transform: rotate(180deg); }
+  .lr-acq .lr-details .acq-transport {
+    margin: 0;
+    padding: 0 var(--lr-space-16) var(--lr-space-16);
+    font: 400 12px/18px var(--mono);
+  }
+
+  .lr-acq :is(.acq-glyph, .acq-legacy-transport) { display: none; }
+  .lr-acq :is(.lr-icon, .acq-message, .lr-acq-action-label) { display: block; }
+  .lr-acq .lr-state {
+    align-items: center;
+    color: var(--lr-text);
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  .lr-acq .lr-state.is-caution { color: var(--lr-text-soft); }
+  .lr-acq .lr-state.is-error { color: var(--lr-danger); }
+  .lr-acq .lr-state.is-ok { color: var(--lr-ok); }
+  .lr-acq .lr-state.is-muted { color: var(--lr-text-muted); }
+  .lr-acq .lr-icon { width: 18px; height: 18px; flex: none; }
+  .lr-acq .acq-progress { margin-top: var(--lr-space-4); height: var(--lr-progress-height); background: var(--lr-progress-track); }
+  .lr-acq .acq-progress-fill { background: var(--lr-progress); }
+
+  @media (max-width: 1199px) {
+    #acquisitionCards .acq-row {
+      --acq-cover: 72px;
+      grid-template-columns: var(--acq-cover) minmax(0, 1fr) auto;
+    }
+    #acquisitionCards .acq-state { grid-column: 2 / -1; grid-row: 2; }
+    #acquisitionCards .acq-actions { grid-column: 3; grid-row: 1; }
+  }
+
+  @media (max-width: 719px) {
+    :is(#acquisitionsHeading, #radioHeading) { font-size: 30px; line-height: 34px; }
+    #acquisitionCards .acq-row {
+      --acq-cover: 56px;
+      grid-template-columns: var(--acq-cover) minmax(0, 1fr);
+      padding: var(--lr-space-16);
+    }
+    #acquisitionCards .lr-acq-big { padding: var(--lr-space-24); }
+    #acquisitionCards :is(.acq-state, .acq-actions) { grid-column: 1 / -1; grid-row: auto; }
+    #acquisitionCards .acq-actions { justify-content: flex-start; }
+  }
+}
