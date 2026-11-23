@@ -334,7 +334,7 @@ class ArtistBioTests(_Case):
             self.assertEqual(metadata.artist_bio("Portishead")["bio"], "A band.")
             self.clock.now += 2
             metadata.artist_bio("Portishead")
-        self.assertEqual(self.store.reads[-1], ("artist-bio:v2:portishead", DAY))
+        self.assertEqual(self.store.reads[-1], ("artist-bio:v2:portishead", persistent_metadata.FOUND_TTL))
 
     def test_the_route_keeps_a_navidrome_bio_in_memory_only_after_external_misses(self):
         with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \

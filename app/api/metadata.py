@@ -155,7 +155,7 @@ def _load_artist_bio(name, librarian=None):
             persist=True,
         )
 
-    navidrome_bio = _navidrome_artist_bio(librarian, name)
+    navidrome_bio = _navidrome_artist_bio(librarian, name) if librarian is not None else ""
     if navidrome_bio:
         # Navidrome is deliberately a final, library-only fallback; keep it in memory, not the
         # persistent provider cache, so a later library-agent update can become visible.
