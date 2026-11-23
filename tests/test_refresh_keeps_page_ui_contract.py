@@ -52,7 +52,13 @@ class RefreshKeepsPageSourceTests(unittest.TestCase):
             self.assertNotIn(forbidden, fields)
 
     def test_startup_applies_the_hash_after_everything_is_defined(self):
-        self.assertTrue(self.js.rstrip().endswith("if (window.location.hash) applyHash(window.location.hash);"))
+        startup = self.js[self.js.rindex("updateLedgerCrumb(activePage);"):]
+        self.assertIn("window.location.hash === '#radio' || window.location.hash === '#radio/heard'", startup)
+        self.assertIn(
+            "document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});",
+            startup,
+        )
+        self.assertIn("} else if (window.location.hash) {\n  applyHash(window.location.hash);", startup)
         apply_hash = _function_source(self.js, "applyHash")
         self.assertIn("classList.contains('page')", apply_hash)
         self.assertIn("decodeLibraryHash(hash)", apply_hash)
