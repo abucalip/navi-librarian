@@ -34,7 +34,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `integrations/critiquebrainz/reviews.py` | CritiqueBrainz inline album reviews client (`fetch_critiquebrainz_reviews`, `reflow_paragraphs`, CB-1): paginated `release_group` fetch, `en`/`fr`/`ar` eligibility filtering, popularity/BBC/date ordering, and 90-word sentence-boundary paragraph reflow. Pure HTTP `get` callable injection. |
 | `settings/` | Configuration defaults, validation, settings persistence and generation/version helpers. `settings/persistence.py` caches decoded settings per process behind one read connection and re-reads when `PRAGMA data_version` changes, after a local write, or when the file or process changes (efficiency P1). |
 | `navidrome_server.py` | Legacy compatibility and orchestration boundary still used by existing server callers. Do not add code; new behavior belongs in the appropriate package and this module may only shrink. |
-| `static/`, `app/templates/` | Browser UI assets and HTML templates (including `static/listening-room/` for Listening Room design tokens and web redesign assets, `docs/plans/LISTENING_ROOM_WEB.md`). The browser presents server-owned results; it must not duplicate recommendation, discovery, acquisition or import rules. |
+| `static/`, `app/templates/` | Browser UI assets and HTML templates (including `static/listening-room/` for Listening Room design tokens and the responsive shell stylesheet; page, search and acquisition badge wiring stays in `static/app.js`, `docs/plans/LISTENING_ROOM_WEB.md`). The browser presents server-owned results; it must not duplicate recommendation, discovery, acquisition or import rules. |
 
 ## Clients
 
