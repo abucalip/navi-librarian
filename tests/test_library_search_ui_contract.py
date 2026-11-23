@@ -176,7 +176,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("button.inline-link {", self.css)
 
     def test_artist_page_albums_show_their_listen_count_beside_the_name(self):
-        self.assertIn("item => buildAlbumRow({...item, showListens: true})", self.new_js)
+        self.assertIn("? buildListeningRoomMissingAlbum(item, ctx) : buildAlbumRow({...item, showListens: true})", self.new_js)
         self.assertIn("compactCount(item.popularity) + ' listens'", self.new_js)
         self.assertIn(".album-row-listens, .album-row-artist {", self.css)
 
@@ -207,14 +207,14 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('<div class="artist-hero">', self.html)
         self.assertIn("$('libraryIntro').hidden = name !== 'list';", self.new_js)
         self.assertIn("buildArtwork(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), 'artist-hero-art')", self.new_js)
-        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album';", self.new_js)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album' || (name === 'genre' && isListeningRoom());", self.new_js)
         self.assertIn("'/api/artist-image?'", self.new_js)
         self.assertIn("#artistDetailHeading { margin: 0; font: var(--name-weight) calc(clamp(2.75rem, 8vw, 6.5rem) * var(--name-scale))/var(--title-leading) var(--name-face);", self.css)
 
-    def test_artist_page_has_an_icon_only_back_button_and_no_library_heading(self):
+    def test_artist_page_back_button_has_a_visible_label_only_in_listening_room(self):
         self.assertIn('<button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back">', self.html)
-        self.assertNotIn(">Back</button>\n      <div class=\"artist-hero\">", self.html)
-        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album';", self.new_js)
+        self.assertIn('<span class="lr-artist-only">Back</span></button>', self.html)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album' || (name === 'genre' && isListeningRoom());", self.new_js)
 
     def test_artist_page_top_songs_show_rank_title_listens_and_an_owned_check_without_play_buttons(self):
         self.assertIn("function buildTopSongRow(item) {", self.new_js)
@@ -229,9 +229,9 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("heading.textContent = displayAlbumName(target.name) || 'Loading album…';", self.new_js)
         self.assertIn("$('albumHeading').textContent = displayAlbumName(album.name);", self.new_js)
 
-    def test_artist_page_shows_at_most_three_genre_tags(self):
+    def test_artist_page_shows_four_genre_tags_in_listening_room_and_three_elsewhere(self):
         self.assertIn("const ARTIST_TAGS_SHOWN = 3;", self.new_js)
-        self.assertIn("}, ARTIST_TAGS_SHOWN);", self.new_js)
+        self.assertIn("}, isListeningRoom() ? 4 : ARTIST_TAGS_SHOWN);", self.new_js)
 
     def test_album_page_is_one_centered_column_in_the_owner_s_order(self):
         album = self.html[self.html.index('<div id="libraryAlbumView" class="tint-backdrop" hidden>'):self.html.index('<div id="libraryGenreView"')]

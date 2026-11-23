@@ -7205,11 +7205,11 @@ function buildShelfArrows() {
 buildLedgerFilters();
 buildShelfArrows();
 updateLedgerCrumb(activePage);
-// Radio and Listening Room Discover renderers load in deferred scripts after this one.
+// Radio and the Listening Room renderers load in deferred scripts after this one.
 if (window.location.hash === '#radio' || window.location.hash === '#radio/heard') {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
 } else if (isListeningRoom() && (lrDiscoverPages.has(window.location.hash.slice(1).split(/[/?]/)[0])
-    || window.location.hash.startsWith('#library/album?'))) {
+    || /^#library\/(artist|album|genre)\?/.test(window.location.hash))) {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
 } else if (window.location.hash) {
   applyHash(window.location.hash);
