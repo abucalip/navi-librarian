@@ -1,8 +1,8 @@
 """Direct Apple Music artist-biography lookup using its public iTunes and web endpoints.
 
 The iTunes Search API resolves an exact artist name to an Apple artist ID. The public artist page
-embeds its full About biography in serialized page data; the artist header is accepted only when its
-Apple artist ID matches. JSON-LD description is a fallback. No developer token or Navidrome plugin is required.
+contains JSON-LD metadata; its description is accepted only when the embedded artist name matches
+the requested name. No Apple developer token, Navidrome plugin, or user credential is required.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import unicodedata
 from typing import Any
 
 APPLE_SEARCH_URL = "https://itunes.apple.com/search"
-APPLE_PAGE_URL = "https://music.apple.com/{country}/artist/-/{artist_id}"
+APPLE_PAGE_URL = "https://music.apple.com/{country}/artist/x/{artist_id}"
 APPLE_COUNTRIES = ("us",)
 APPLE_TIMEOUT = 2.0
 APPLE_HEADERS = {
@@ -28,6 +28,10 @@ _JSON_LD = re.compile(
     r"<script\b(?=[^>]*\btype=[\"']application/ld\+json[\"'])[^>]*>(.*?)</script\s*>",
     re.IGNORECASE | re.DOTALL,
 )
+_SERIALIZED_SERVER_DATA = re.compile(
+    r"<script\b(?=[^>]*\bid=[\"']serialized-server-data[\"'])[^>]*>(.*?)</script\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
 _TAG = re.compile(r"<[^>]+>")
 _PLACEHOLDER = re.compile(r"\bApple[\s\u00a0]+Music\b", re.IGNORECASE)
 
@@ -39,7 +43,42 @@ def normalize_artist_name(value: str) -> str:
 
 
 def _clean_text(value: str) -> str:
-    return " ".join(html.unescape(_TAG.sub("", value or "")).split()).strip()
+    """Strip Apple's light markup while preserving paragraph and line breaks."""
+    text = html.unescape(value or "")
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"</p\s*>", "\n\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<p\b[^>]*>", "", text, flags=re.IGNORECASE)
+    text = _TAG.sub("", text).replace("\r\n", "\n").replace("\r", "\n")
+    lines = [re.sub(r"[^\S\n]+", " ", line).strip() for line in text.split("\n")]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+
+
+def _find_page_biography(node: Any, artist_id: str, depth: int = 0) -> str | None:
+    """Find the artist header's full bio in Apple's serialized page data."""
+    if depth > 20:
+        return None
+    if isinstance(node, dict):
+        descriptor = node.get("contentDescriptor")
+        identifiers = descriptor.get("identifiers") if isinstance(descriptor, dict) else None
+        if (
+            isinstance(identifiers, dict)
+            and str(identifiers.get("storeAdamID", "")) == artist_id
+            and descriptor.get("kind") == "artist"
+            and node.get("title") is not None
+            and ("bio" in node or "circleArtwork" in node)
+        ):
+            bio = node.get("bio")
+            return _clean_text(bio) if isinstance(bio, str) else None
+        for value in node.values():
+            found = _find_page_biography(value, artist_id, depth + 1)
+            if found:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = _find_page_biography(value, artist_id, depth + 1)
+            if found:
+                return found
+    return None
 
 
 def _is_placeholder(value: str) -> bool:
@@ -79,8 +118,18 @@ def _find_description(node: Any, wanted: str, depth: int = 0) -> str | None:
     return None
 
 
-def parse_artist_biography(page: str, artist: str) -> str | None:
-    """Extract an exact-name Apple Music JSON-LD biography, or None for no usable bio."""
+def parse_artist_biography(page: str, artist: str, artist_id: int | None = None) -> str | None:
+    """Prefer the full artist-page bio; retain JSON-LD as a short-description fallback."""
+    if artist_id is not None:
+        for match in _SERIALIZED_SERVER_DATA.finditer(page or ""):
+            try:
+                payload = json.loads(match.group(1))
+            except (TypeError, ValueError):
+                continue
+            bio = _find_page_biography(payload, str(artist_id))
+            if bio:
+                return bio
+
     wanted = normalize_artist_name(artist)
     if not wanted:
         return None
@@ -140,7 +189,7 @@ def lookup_artist_biography(get, artist: str) -> tuple[str | None, bool]:
             )
             response.raise_for_status()
             answered = True
-            biography = parse_artist_biography(response.text, name)
+            biography = parse_artist_biography(response.text, name, artist_id)
             if biography:
                 return biography, True
         except Exception:
