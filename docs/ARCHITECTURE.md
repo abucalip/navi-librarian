@@ -40,6 +40,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `static/listening-room/album.css` | Listening Room album page and quick view (L8). The album views in `static/app.js` reuse the existing album data, feedback and acquisition handlers and Home’s reason renderer and artwork tint. |
 | `static/listening-room/artist.css` | Listening Room artist and genre pages (L9). The detail views in `static/app.js` render the existing artist stream and genre results with shared artwork, feedback and acquisition controls. |
 | `static/listening-room/library.css` | Listening Room Library browse (L10). Styles the shared Library controls, list and grid. `static/app.js` retains search, sort preferences, pagination and detail navigation. |
+| `static/listening-room/search.css` | Listening Room Search, Saved and Blocklist (L11). Styles the top-bar panels, bookmark grid and Blocklist rows. `static/app.js` reuses the existing search stream and action handlers. |
 
 ## Clients
 

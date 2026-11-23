@@ -3934,6 +3934,7 @@ async function loadBlocklist() {
   const status = $('blocklistStatus');
   status.textContent = 'Loading…';
   setStatusState(status, 'loading');
+  const listeningRoom = isListeningRoom();
   let failed = false;
   await Promise.all(BLOCKLIST_GROUPS.map(async group => {
     const target = $(group.list);
@@ -3944,11 +3945,32 @@ async function loadBlocklist() {
       if (!items.length) { addTextElement(target, 'li', 'blocklist-empty', group.empty); return; }
       for (const item of items) {
         const row = document.createElement('li');
-        addTextElement(row, 'span', 'blocklist-name', group.name(item));
+        const lean = group.list === 'blocklistLeans';
+        if (listeningRoom) {
+          const icon = window.listeningRoomHome.icon;
+          const art = item.artist
+            ? window.listeningRoomHome.artistPhoto(item.artist)
+            : icon('tag');
+          art.classList.add('lr-block-art');
+          row.append(art);
+          const copy = addTextElement(row, 'div', '', '');
+          addTextElement(copy, 'span', 'lr-card-title', item.artist || item.genre);
+          if (lean) {
+            const pill = addTextElement(copy, 'span', 'lr-l11-pill', item.lean === 'more' ? 'More like this' : 'Less like this');
+            pill.prepend(icon(item.lean === 'more' ? 'lean-more' : 'lean-less', true));
+          } else if (item.artist && item.blocked_at) {
+            const date = formatListeningRoomDate(item.blocked_at);
+            if (date) addTextElement(copy, 'span', 'lr-meta', 'Hidden ' + date);
+          }
+        } else {
+          addTextElement(row, 'span', 'blocklist-name', group.name(item));
+        }
         const button = document.createElement('button');
         button.type = 'button';
-        button.textContent = group.unblock;
-        button.setAttribute('aria-label', group.unblock + ' ' + group.name(item));
+        const action = listeningRoom && lean ? 'Remove' : group.unblock;
+        if (listeningRoom) button.className = 'lr-btn';
+        button.textContent = action;
+        button.setAttribute('aria-label', action + ' ' + group.name(item));
         button.addEventListener('click', async () => {
           button.disabled = true;
           try {
@@ -3969,7 +3991,7 @@ async function loadBlocklist() {
       addTextElement(target, 'li', 'blocklist-empty', 'Could not load this list: ' + error.message);
     }
   }));
-  status.textContent = failed ? 'Some lists could not be loaded.' : 'Blocks hide picks only. Your library and Saved page are not affected.';
+  status.textContent = failed ? 'Some lists could not be loaded.' : listeningRoom ? '' : 'Blocks hide picks only. Your library and Saved page are not affected.';
   setStatusState(status, failed ? 'error' : 'idle');
 }
 
@@ -3988,11 +4010,16 @@ function wrapInActionGroup(control, label) {
 // hide saved albums, so a reload would remove the card the user just saved and take Undo with
 // it. The control updates in place instead and the album leaves the list on the next load.
 function setSaveButtonState(button, saved, album, busy = false, failed = false) {
+  if (button.classList.contains('lr-saved-toggle')) {
+    button.setAttribute('aria-label', (saved ? 'Remove ' : 'Restore ') + album);
+  }
   button.classList.toggle('is-saved', saved);
   button.classList.toggle('is-failed', failed);
   button.setAttribute('aria-pressed', saved ? 'true' : 'false');
   button.toggleAttribute('aria-busy', busy);
-  button.replaceChildren(spriteIcon(saved ? 'bookmark-check' : 'bookmark'));
+  button.replaceChildren(button.classList.contains('lr-saved-toggle')
+    ? window.listeningRoomHome.icon(failed ? 'refresh' : saved ? 'trash' : 'saved', true)
+    : spriteIcon(saved ? 'bookmark-check' : 'bookmark'));
   addTextElement(button, 'span', 'save-album-label', failed ? 'Retry' : saved ? 'Saved' : 'Save');
   button.title = failed
     ? 'Could not ' + (saved ? 'undo the save' : 'save') + '. Try again: ' + album
@@ -4047,18 +4074,60 @@ function buildSavedRow(entry, index) {
   });
 }
 
+function formatListeningRoomDate(seconds) {
+  if (!seconds) return '';
+  const date = new Date(Number(seconds) * 1000);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.getDate() + ' ' + monthAbbreviations[date.getMonth()] + ' ' + date.getFullYear();
+}
+
+function buildListeningRoomSavedCard(entry) {
+  const {artist, album} = entry;
+  const owned = entry.acquired === true;
+  const item = {...entry.metadata, artist, name: album, owned};
+  const card = document.createElement('article');
+  card.className = 'lr-card';
+  const art = buildAlbumArtwork(item, 'lr-cover', 400);
+  art.prepend(listeningRoomCoverPlaceholder());
+  card.append(art);
+  const title = addTextElement(card, 'p', 'lr-card-title', '');
+  title.append(listeningRoomDetailLink(album, namedAlbumTarget(artist, album, item)));
+  const date = formatListeningRoomDate(entry.saved_at);
+  addTextElement(card, 'p', 'lr-meta', date ? artist + ' · saved ' + date : artist);
+  const actions = addTextElement(card, 'div', 'lr-card-tools', '');
+  if (!owned) actions.append(listeningRoomGetButton(artist, album, item));
+  const remove = createSaveButton(artist, album, item, 'saved');
+  remove.classList.add('lr-saved-toggle', 'lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+  setSaveButtonState(remove, true, album);
+  const menu = createFeedbackMenuButton(artist, album, item, {listName: 'saved'});
+  menu.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+  menu.replaceChildren(window.listeningRoomHome.icon('more', true));
+  actions.append(remove, menu);
+  return card;
+}
+
 async function loadSaved() {
   const target = $('savedCards');
   discoveryStatus('saved', 'Loading saved albums…', 'loading');
+  const listeningRoom = isListeningRoom();
   const asCards = isMobileLayout();
-  setCardTrack(target, asCards);
-  target.replaceChildren(...(asCards ? [] : skeletonRows(4)));
+  setCardTrack(target, asCards && !listeningRoom);
+  target.classList.toggle('ranked-list', !asCards && !listeningRoom);
+  target.replaceChildren(...(asCards || listeningRoom ? [] : skeletonRows(4)));
   try {
     const data = await requestJSON('/api/discovery/for_me?count=150&nonce=' + Date.now());
     const entries = data.items || [];
     target.replaceChildren();
     if (!entries.length) {
       discoveryStatus('saved', '', 'idle');
+      if (listeningRoom) {
+        const note = addTextElement(target, 'div', 'lr-saved-empty', '');
+        note.append(window.listeningRoomHome.icon('note', true));
+        const copy = addTextElement(note, 'div', '', '');
+        addTextElement(copy, 'p', 'lr-note-title', 'Nothing saved yet');
+        addTextElement(copy, 'p', 'lr-meta', '“Save” on any album puts it here. It never starts a download.');
+        return;
+      }
       const empty = addTextElement(target, 'p', 'status-line',
         'Nothing saved yet. Select Save on any album in Personal Discoveries, New releases or the other lists to keep it here.');
       setStatusState(empty, 'empty');
@@ -4067,8 +4136,11 @@ async function loadSaved() {
     const total = Number(data.total) || entries.length;
     discoveryStatus('saved', total > entries.length
       ? 'Showing ' + entries.length + ' of ' + total + ' saved albums · Newest first'
-      : pluralize(entries.length, 'saved album', 'saved albums') + ' · Newest first', 'idle');
-    for (const [index, entry] of entries.entries()) target.append(asCards ? buildSavedCard(entry) : buildSavedRow(entry, index));
+      : pluralize(entries.length, 'saved album', 'saved albums') + (listeningRoom ? '' : ' · Newest first'), 'idle');
+    for (const [index, entry] of entries.entries()) {
+      if (listeningRoom) target.append(buildListeningRoomSavedCard(entry));
+      else target.append(asCards ? buildSavedCard(entry) : buildSavedRow(entry, index));
+    }
   } catch (error) {
     target.replaceChildren();
     discoveryStatus('saved', 'Saved albums could not be loaded: ' + error.message);
@@ -4305,6 +4377,8 @@ async function searchAlbum(artist, album, metadata, button = null) {
 function getFocusOwner(button) {
   if (button.closest('.album-modal')) return $('albumModalClose');
   if (isListeningRoom() && button.closest('#libraryAlbumView') && !button.closest('.card')) return $('albumHeading');
+  const searchLink = button.closest('.lr-sres')?.querySelector('a');
+  if (searchLink) return searchLink;
   const owner = button.closest('[tabindex="0"]') || button.closest('article');
   // Dashboard tiles are articles without a tab stop of their own; -1 makes them focusable by
   // script only and leaves the tab order unchanged.
@@ -4933,6 +5007,29 @@ function showRecentSearches() {
     button.dataset.recentSearch = term;
     addTextElement(button, 'span', 'search-item-name', term);
     item.append(button);
+    if (isListeningRoom()) {
+      item.className = 'lr-sres';
+      const icon = window.listeningRoomHome.icon;
+      const art = addTextElement(item, 'span', 'search-item-art', '');
+      art.append(icon('clock', true));
+      item.prepend(art);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'lr-btn lr-btn-icon lr-btn-quiet';
+      remove.setAttribute('aria-label', 'Remove recent search ' + term);
+      remove.append(icon('close', true));
+      remove.addEventListener('click', () => {
+        try {
+          localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(loadRecentSearches().filter(value => value !== term)));
+        } catch (error) {
+          return;
+        }
+        showRecentSearches();
+        const next = $('globalSearchRecent').hidden ? null : list.children[recent.indexOf(term)] || list.lastElementChild;
+        (next?.querySelector('.lr-btn') || $('globalSearchInput')).focus();
+      });
+      item.append(remove);
+    }
     list.append(item);
   }
   $('globalSearchRecent').hidden = false;
@@ -4961,7 +5058,10 @@ function closeSearchSurface(surface) {
 function closeGlobalSearch({focusInput = false} = {}) {
   closeSearchSurface(globalSearch);
   hideRecentSearches();
-  if (focusInput) $('globalSearchInput').focus();
+  if (focusInput) {
+    $('globalSearchInput').focus();
+    hideRecentSearches();
+  }
   else if (!$('globalSearchInput').value.trim()) setSearchExpanded(false);
 }
 
@@ -4981,7 +5081,9 @@ function searchGroupList(surface, type) {
   const section = document.createElement('section');
   section.className = 'search-group';
   section.dataset.searchType = type;
-  addTextElement(section, 'p', 'search-group-heading', SEARCH_GROUPS[rank][1]);
+  const label = SEARCH_GROUPS[rank][1];
+  addTextElement(section, 'p', 'search-group-heading',
+    surface === globalSearch && isListeningRoom() ? label + ' in your library' : label);
   const list = document.createElement('ul');
   list.className = 'search-group-list';
   section.append(list);
@@ -4993,6 +5095,7 @@ function searchGroupList(surface, type) {
 
 function startGlobalSearch(rawQuery) {
   startSearch(globalSearch, rawQuery, closeGlobalSearch);
+  if (isListeningRoom() && !rawQuery.trim() && document.activeElement === $('globalSearchInput')) showRecentSearches();
 }
 
 // Streams /api/search into a surface. ``close`` is what an empty query does.
@@ -5046,11 +5149,11 @@ function startSearch(surface, rawQuery, close = () => closeSearchSurface(surface
     const item = JSON.parse(event.data);
     if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;
     if (item.owned) {
-      searchGroupList(surface, item.type).append(buildSearchItem(item, surface));
+      searchGroupList(surface, item.type).append(buildSearchItem(item, surface, query));
       shown += 1;
     } else if (externalEl) {
       externalEl.hidden = false;
-      externalList.append(buildSearchItem(item));
+      externalList.append(buildSearchItem(item, globalSearch, query));
       external += 1;
     }
     setStatus(status, 'Searching… ' + pluralize(shown + external, 'match', 'matches') + ' so far', 'loading');
@@ -5059,7 +5162,12 @@ function startSearch(surface, rawQuery, close = () => closeSearchSurface(surface
     finish();
     if (isCurrent()) {
       surface.setLive(true);
-      renderSearchSummary(status, query, shown, external, capabilities);
+      if (surface === globalSearch && isListeningRoom() && capabilities?.owned_index?.available) {
+        setStatus(status, pluralize(shown + external, 'result', 'results') + ' for “' + query + '”',
+          shown + external ? 'idle' : 'empty');
+      } else {
+        renderSearchSummary(status, query, shown, external, capabilities);
+      }
     }
   });
   source.addEventListener('error', event => {
@@ -5127,7 +5235,71 @@ function searchItemTarget(item) {
   return null;
 }
 
-function buildSearchItem(item, surface = globalSearch) {
+function listeningRoomDetailLink(text, target, open = openLibraryTarget) {
+  const link = document.createElement('a');
+  link.href = encodeLibraryHash(target);
+  link.textContent = text;
+  link.addEventListener('click', event => {
+    if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    open(target);
+  });
+  return link;
+}
+
+function listeningRoomGetButton(artist, album, metadata) {
+  const button = createGetButton(artist, album, metadata);
+  button.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet', 'lr-l11-get');
+  button.prepend(window.listeningRoomHome.icon('get', true));
+  return button;
+}
+
+function highlightSearchMatch(parent, text, query) {
+  if (!query) {
+    parent.textContent = text;
+    return;
+  }
+  const matches = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu');
+  let offset = 0;
+  for (const match of text.matchAll(matches)) {
+    parent.append(text.slice(offset, match.index));
+    addTextElement(parent, 'mark', '', match[0]);
+    offset = match.index + match[0].length;
+  }
+  parent.append(text.slice(offset));
+}
+
+function buildListeningRoomSearchItem(item, query) {
+  const row = document.createElement('li');
+  row.className = 'search-item lr-sres';
+  const icon = window.listeningRoomHome.icon;
+  const art = item.type === 'album'
+    ? buildAlbumArtwork(item, 'search-item-art', 96)
+    : buildArtwork(sizedArtwork(item.artwork_url, 96), 'search-item-art');
+  const glyph = {artist: 'person', song: 'note', genre: 'tag'};
+  if (!item.artwork_url) art.prepend(icon(glyph[item.type] || 'disc', true));
+  if (item.type === 'artist') art.classList.add('lr-search-photo');
+  row.append(art);
+  const text = addTextElement(row, 'div', 'search-item-text', '');
+  const target = searchItemTarget(item);
+  const title = target ? listeningRoomDetailLink('', target, openFromSearch) : document.createElement('span');
+  title.className = 'search-item-name';
+  highlightSearchMatch(title, searchItemName(item), query);
+  text.append(title);
+  const detail = addTextElement(text, 'span', 'search-item-detail', '');
+  const description = !item.owned && item.type === 'artist' && item.sources?.includes('musicbrainz')
+    ? 'MusicBrainz artist'
+    : searchItemDetail(item);
+  highlightSearchMatch(detail, description, query);
+  if (item.attribution) addTextElement(text, 'span', 'search-item-detail', item.attribution);
+  const actions = addTextElement(row, 'div', 'lr-search-actions', '');
+  if (!item.owned && item.type === 'album') actions.append(listeningRoomGetButton(item.artist, item.name, item));
+  addTextElement(actions, 'span', 'lr-l11-pill', TYPE_LABELS[item.type]);
+  return row;
+}
+
+function buildSearchItem(item, surface = globalSearch, query = '') {
+  if (surface === globalSearch && isListeningRoom()) return buildListeningRoomSearchItem(item, query);
   const row = document.createElement('li');
   row.className = 'search-item';
   const target = searchItemTarget(item);
@@ -7191,10 +7363,7 @@ albumTabButtons.forEach(button => {
 // layout: the picks strip and the card or row lists. Lists already on screen are reloaded the way
 // they were loaded; the picks keep the albums they had.
 mobileLayoutQuery.addEventListener('change', () => {
-  if (isListeningRoom()) {
-    if ($('savedCards').childElementCount) loadSaved();
-    return;
-  }
+  if (isListeningRoom()) return;
   if (dashboardPickItems.length) renderDashboardPicks();
   if (allRecommendations.length) applyRecommendationFilters();
   for (const name of ['personal', 'new_releases', 'classics']) {

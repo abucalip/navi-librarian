@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="/static/listening-room/album.css">
 <link rel="stylesheet" href="/static/listening-room/artist.css">
 <link rel="stylesheet" href="/static/listening-room/library.css">
+<link rel="stylesheet" href="/static/listening-room/search.css">
 </head>
 <body>
 <!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
@@ -721,11 +722,19 @@
   </div>
 </section>
 <section id="saved" class="page hidden" aria-labelledby="savedHeading">
-  <div class="panel">
-    <h2 id="savedHeading">Saved</h2>
-    <p>Albums you bookmarked with Save, newest first. Saving never starts a download.</p>
-    <div class="action-group" role="group" aria-label="Saved albums">
-      <button data-refresh-saved type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+  <div class="panel lr-l11-page">
+    <div class="lr-l11-head">
+      <div>
+        <h2 id="savedHeading">Saved</h2>
+        <p>Albums you bookmarked with Save, newest first. Saving never starts a download.</p>
+      </div>
+      <div class="action-group" role="group" aria-label="Saved albums">
+        <button data-refresh-saved type="button" title="Refresh" aria-label="Refresh">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg>
+          <svg class="lr-icon lr-l11-only" aria-hidden="true" focusable="false"><use href="#lr-refresh"></use></svg>
+          <span class="lr-l11-only">Refresh</span>
+        </button>
+      </div>
     </div>
     <p id="savedStatus" class="status-line" aria-live="polite"></p>
     <div id="savedCards" class="ranked-list"></div>
@@ -733,16 +742,22 @@
 </section>
 
 <section id="blocklist" class="page hidden" aria-labelledby="blocklistHeading">
-  <div class="panel">
-    <h2 id="blocklistHeading">Blocklist</h2>
-    <p>What you told Discair to leave out of picks. Unblocking restores them on the next refresh.</p>
+  <div class="panel lr-l11-page">
+    <div class="lr-l11-head">
+      <div>
+        <h2 id="blocklistHeading">Blocklist</h2>
+        <p>What you told Discair to leave out of picks. Unblocking restores them on the next refresh.</p>
+      </div>
+    </div>
     <p id="blocklistStatus" class="status-line" aria-live="polite"></p>
-    <h3>Blocked genres</h3>
-    <ul id="blocklistGenres" class="blocklist"></ul>
-    <h3>Artists hidden with Not this artist</h3>
-    <ul id="blocklistArtists" class="blocklist"></ul>
-    <h3>More and Less like this</h3>
-    <ul id="blocklistLeans" class="blocklist"></ul>
+    <h3 id="blocklistGenresHeading">Blocked genres</h3>
+    <p class="lr-l11-only lr-block-sub">Albums with these genres never appear in picks.</p>
+    <ul id="blocklistGenres" class="blocklist" aria-labelledby="blocklistGenresHeading"></ul>
+    <h3 id="blocklistArtistsHeading">Artists hidden with Not this artist</h3>
+    <ul id="blocklistArtists" class="blocklist" aria-labelledby="blocklistArtistsHeading"></ul>
+    <h3 id="blocklistLeansHeading">More and Less like this</h3>
+    <p class="lr-l11-only lr-block-sub">Artists you nudged. Removing one returns its picks to normal.</p>
+    <ul id="blocklistLeans" class="blocklist" aria-labelledby="blocklistLeansHeading"></ul>
   </div>
 </section>
 
