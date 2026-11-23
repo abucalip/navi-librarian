@@ -84,7 +84,7 @@ class PersistentMetadataCacheTests(unittest.TestCase):
 
     def test_found_artist_bio_survives_a_restart_and_a_missing_one_is_not_stored(self):
         metadata._artist_bio_cache.clear()
-        persistent_metadata.write("artist-bio:v2:portishead", {"bio": "A band from Bristol.", "source": "apple_music"})
+        persistent_metadata.write("artist-bio:v3:portishead", {"bio": "A band from Bristol.", "source": "apple_music"})
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self.assertEqual(metadata.artist_bio("Portishead")["bio"], "A band from Bristol.")
             client.get.assert_not_called()
