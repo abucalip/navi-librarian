@@ -112,6 +112,7 @@ function syncListeningRoomShell() {
   else lrMore.removeAttribute('aria-current');
   lrDiscovery.hidden = !inDiscover;
   window.listeningRoomHome?.syncGettingVisibility();
+  window.listeningRoomDiscover?.sync(activePage);
   lrMode.hidden = !(inDiscover || activePage === 'dashboard');
   syncListeningRoomViewport();
   if (isListeningRoom() && !lrMode.hidden && lrModeValue === null && lrModeRetry.hidden) {
@@ -191,8 +192,12 @@ for (const link of lrLinks) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     if (lrSheet.open) lrSheet.close();
-    navigateTo(link.dataset.lrPage);
-    if (link === document.activeElement && lrDiscovery.contains(link)) return;
+    const page = window.listeningRoomDiscover?.destination(link) || link.dataset.lrPage;
+    navigateTo(page);
+    if (isListeningRoom() && lrDiscovery.contains(link)) {
+      link.focus({preventScroll: true});
+      return;
+    }
     window.scrollTo(0, 0);
     $('content').focus({preventScroll: true});
   });
@@ -259,10 +264,13 @@ const initializedPages = new Set(['dashboard']);
 function initializePage(name) {
   if (initializedPages.has(name)) return;
   initializedPages.add(name);
-  if (name === 'recommendations') $('loadRecommendations').click();
+  if (name === 'recommendations' && !isListeningRoom()) $('loadRecommendations').click();
   else if (name === 'newReleases') loadDiscovery('new_releases');
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
-  else if (name === 'lensLists') loadLensList(activeLens);
+  else if (name === 'lensLists') {
+    if (isListeningRoom()) checkDiscoverGenreSpread();
+    loadLensList(activeLens);
+  }
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
   else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadListenbrainzSettings(); loadDiscogsSettings(); }
@@ -2451,11 +2459,17 @@ function applyRecommendationFilters() {
   $('recommendationCount').textContent =
     `Showing ${filtered.length} of ${allRecommendations.length} recommendations · ${basis.label}`;
 
-  const asCards = isMobileLayout();
+  const listeningRoom = isListeningRoom() && window.listeningRoomDiscover;
+  const asCards = !listeningRoom && isMobileLayout();
   setCardTrack(cards, asCards);
+  if (listeningRoom) cards.setAttribute('role', 'list');
+  else if (!asCards) cards.removeAttribute('role');
   filtered.forEach((item, index) => {
     if (asCards) { cards.append(buildRecommendationCard(item)); return; }
-    const row = buildRecommendationRow(item, basis.numbered ? index + 1 : null, {artistBio: true});
+    const rank = basis.numbered ? index + 1 : null;
+    const row = listeningRoom
+      ? listeningRoom.row(item, rank, 'recommendations', () => dismissRecommendationLocally(item.artist || item.album_artist || '', item.album || item.title || item.name || ''))
+      : buildRecommendationRow(item, rank, {artistBio: true});
     row.dataset.key = recommendationKey(item);
     cards.append(row);
   });
@@ -2590,13 +2604,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   // Every row on the Saved page is saved and cannot be dismissed: the Save control starts
   // pressed, and its next press undoes. The other lists dismiss through the server feedback
   // endpoint they pass in, or through the Discover local list.
-  const onDismiss = options.saved ? null : options.onDismiss || (() => {
-    const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
-    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
-    dismissed.add(key);
-    localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
-    applyRecommendationFilters();
-  });
+  const onDismiss = options.saved ? null : options.onDismiss || (() => dismissRecommendationLocally(artist, album));
   const group = createActionGroup(artist, album, item, {
     owned: options.owned,
     listName: options.listName,
@@ -2772,13 +2780,27 @@ const LENS_LISTS = {
   obsessions: 'Obsessions',
   current_tastes: 'Current tastes'
 };
-let activeLens = 'repeated_tracks';
+let activeLens = isListeningRoom() ? 'deep_cuts' : 'repeated_tracks';
 let lensRequestId = 0;
+
+const listeningRoomLenses = {...LENS_LISTS, genre_spread: 'Genre spread'};
+let discoverGenreSpreadCheck;
+
+function checkDiscoverGenreSpread() {
+  if (discoverGenreSpreadCheck) return;
+  // Older servers do not serve a stored Genre spread list. Offer its tab when the route exists.
+  discoverGenreSpreadCheck = requestJSON('/api/discovery/genre_spread?count=1')
+    .then(() => window.listeningRoomDiscover?.showGenreSpread())
+    .catch(error => {
+      if (error.status !== 404) discoverGenreSpreadCheck = null;
+    });
+}
 
 function setActiveLens(name) {
   activeLens = name;
   document.querySelectorAll('[data-lens]').forEach(button =>
     button.setAttribute('aria-pressed', String(button.dataset.lens === name)));
+  window.listeningRoomDiscover?.syncLens(name);
 }
 
 // Each row is a list item, so assistive tech announces the list and each row's position in it.
@@ -2798,14 +2820,15 @@ function buildLensRow(item) {
 }
 
 async function loadLensList(name) {
-  if (isMobileLayout()) return loadAllLensLists();
+  const listeningRoom = isListeningRoom() && window.listeningRoomDiscover;
+  if (!listeningRoom && isMobileLayout()) return loadAllLensLists();
   const lensTarget = $('lensListsCards');
   lensTarget.classList.add('ranked-list');
   lensTarget.classList.remove('lens-sections');
   lensTarget.setAttribute('role', 'list');
   setActiveLens(name);
   const requestId = ++lensRequestId;
-  const label = LENS_LISTS[name];
+  const label = listeningRoomLenses[name];
   const status = $('lensListsStatus');
   const target = $('lensListsCards');
   status.textContent = 'Loading ' + label + '…';
@@ -2816,10 +2839,12 @@ async function loadLensList(name) {
     // A slower response for a lens the user has already left must not overwrite the current one.
     if (requestId !== lensRequestId) return;
     const items = Array.isArray(data.items) ? data.items : [];
-    target.replaceChildren(...items.map(buildLensRow));
+    target.replaceChildren(...items.map((item, index) => listeningRoom
+      ? listeningRoom.row({...item, lens: name}, item.rank ?? index + 1, 'lens_lists')
+      : buildLensRow(item)));
     // Off is a neutral empty state with plain copy; the config key stays out of the UI.
     const message = items.length
-      ? pluralize(items.length, 'album', 'albums') + ' · ' + label + ' · Fixed for today, rebuilt each morning'
+      ? pluralize(items.length, 'album', 'albums') + (listeningRoom ? ' in ' + label : ' · ' + label + ' · Fixed for today, rebuilt each morning')
       : data.disabled ? 'Daily picks are turned off in Settings.'
       : data.message || label + ' has no albums today.';
     status.textContent = message;
@@ -3149,7 +3174,7 @@ async function sendJSON(url, method='POST', body={}) {
 function discoveryStatus(name, message, kind) {
   // The dashboard picks, the New releases shelf and the radio log are not discovery views; each
   // reports on its own status line.
-  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus', listening_room: 'lrPickStatus'};
+  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus', listening_room: 'lrPickStatus', recommendations: 'recommendationCount'};
   const el = $(discoveryViews[name] ? discoveryViews[name][1] : own[name] || 'dashboardPicksStatus');
   el.textContent = message;
   setStatusState(el, kind === undefined ? classifyStatus(message) : kind);
@@ -3238,8 +3263,12 @@ async function loadDiscovery(name, options = {}) {
   const rankedRowList = name === 'new_releases' || name === 'personal' || name === 'classics';
   // On a phone these lists are rows of album cards that scroll sideways; the card row has no
   // skeleton, so the status line carries the loading state.
-  const cardList = isMobileLayout() && rankedRowList;
-  if (rankedRowList) setCardTrack(target, cardList);
+  const cardList = !isListeningRoom() && isMobileLayout() && rankedRowList;
+  if (rankedRowList) {
+    setCardTrack(target, cardList);
+    if (isListeningRoom()) target.setAttribute('role', 'list');
+    else if (!cardList) target.removeAttribute('role');
+  }
   target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));
   if (cardList) target.replaceChildren();
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
@@ -3277,7 +3306,8 @@ async function loadDiscovery(name, options = {}) {
       }
     }
 
-    if (name === 'artist_deep_dive') {
+    const listeningRoom = isListeningRoom() && window.listeningRoomDiscover;
+    if (name === 'artist_deep_dive' && !listeningRoom) {
       const grouped = new Map();
       const artistsByGenre = new Map();
       const rowLabels = new Map(items.map(item => [deepDiveGenre(item), item.genre_row_label]));
@@ -3387,7 +3417,15 @@ async function loadDiscovery(name, options = {}) {
             : count);
     }
 
+    if (listeningRoom && name === 'artist_deep_dive') {
+      listeningRoom.dives(target, items);
+    }
     for (const [index, item] of items.entries()) {
+      if (listeningRoom && name === 'artist_deep_dive') break;
+      if (listeningRoom && rankedRowList) {
+        target.append(listeningRoom.row(item, index + 1, name));
+        continue;
+      }
       if (cardList) {
         target.append({personal: buildPersonalCard, classics: buildClassicsCard, new_releases: buildNewReleaseCard}[name](item));
         continue;
@@ -3716,6 +3754,11 @@ function openFeedbackMenu(button, artist, album, metadata, options) {
     const row = button.closest('article.card, .ranked-row');
     entries.push(['Not this artist', () => sendFeedback('dismiss_artist', artist, album, metadata, options.listName, row)]);
   }
+  if (options.bookmark) {
+    const saved = options.bookmark.getAttribute('aria-pressed') === 'true';
+    entries.push([saved ? 'Remove bookmark' : 'Save', () => options.bookmark.click()]);
+  }
+  if (options.dismissFromMenu) entries.push(['Not for me', options.dismissFromMenu]);
   for (const genre of albumGenres(metadata)) entries.push(['Block genre: ' + genre, () => sendGenreBlock(genre, options.listName)]);
   panel.replaceChildren();
   for (const [label, run] of entries) {
@@ -6712,6 +6755,10 @@ albumTabButtons.forEach(button => {
 // layout: the picks strip and the card or row lists. Lists already on screen are reloaded the way
 // they were loaded; the picks keep the albums they had.
 mobileLayoutQuery.addEventListener('change', () => {
+  if (isListeningRoom()) {
+    if ($('savedCards').childElementCount) loadSaved();
+    return;
+  }
   if (dashboardPickItems.length) renderDashboardPicks();
   if (allRecommendations.length) applyRecommendationFilters();
   for (const name of ['personal', 'new_releases', 'classics']) {
@@ -6755,8 +6802,10 @@ function buildShelfArrows() {
 buildLedgerFilters();
 buildShelfArrows();
 updateLedgerCrumb(activePage);
-// Radio's loader is defined by its deferred script after this one.
+// Radio and Listening Room Discover renderers load in deferred scripts after this one.
 if (window.location.hash === '#radio' || window.location.hash === '#radio/heard') {
+  document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
+} else if (isListeningRoom() && lrDiscoverPages.has(window.location.hash.slice(1).split(/[/?]/)[0])) {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
 } else if (window.location.hash) {
   applyHash(window.location.hash);

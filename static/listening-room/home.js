@@ -998,7 +998,8 @@
     wasEnabled = enabled;
   }
 
-  window.listeningRoomHome = {refresh, updateGetting, syncGettingVisibility};
+  window.listeningRoomHome = {refresh, updateGetting, syncGettingVisibility,
+    renderReason, artistPhoto, icon};
   bindPageLink($('lrRadioGrab'), 'radio');
   $('lrRadioHeard').addEventListener('click', event => {
     if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

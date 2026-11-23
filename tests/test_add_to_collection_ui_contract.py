@@ -37,7 +37,7 @@ class AddToCollectionRowContractTests(unittest.TestCase):
     def test_load_refresh_and_status_line_are_unchanged(self):
         self.assertRegex(self.html, r'<button data-load-discovery="classics"[^>]*title="Load albums" aria-label="Load albums">')
         self.assertRegex(self.html, r'<button data-refresh-discovery="classics"[^>]*title="Refresh" aria-label="Refresh">')
-        self.assertIn('id="classicsStatus" class="status-line" aria-live="polite"', self.html)
+        self.assertIn('id="classicsStatus" class="status-line" role="status" aria-live="polite"', self.html)
         self.assertIn("classics: ['classicsCards','classicsStatus']", self.js)
 
     def test_endpoint_pool_size_and_rotation_are_unchanged(self):
@@ -55,7 +55,7 @@ class AddToCollectionRowContractTests(unittest.TestCase):
 
     def test_classics_items_render_as_rows_not_editorial_cards(self):
         loop_start = self.js.index("for (const [index, item] of items.entries()) {")
-        loop_head = self.js[loop_start:loop_start + 600]
+        loop_head = self.js[loop_start:loop_start + 750]
         self.assertIn("if (name === 'classics') {\n        target.append(buildClassicsRow(item, index));", loop_head)
         generic_card = self.js.index("const artist = item.artist || item.album_artist || 'Unknown artist';", loop_start)
         self.assertLess(loop_start + loop_head.index("if (name === 'classics')"), generic_card)

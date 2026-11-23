@@ -35,7 +35,7 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
     def test_load_refresh_and_status_line_are_unchanged(self):
         self.assertRegex(self.html, r'<button data-load-discovery="personal"[^>]*title="Load discoveries" aria-label="Load discoveries">')
         self.assertRegex(self.html, r'<button data-refresh-discovery="personal"[^>]*title="Refresh" aria-label="Refresh">')
-        self.assertIn('id="personalStatus" class="status-line" aria-live="polite"', self.html)
+        self.assertIn('id="personalStatus" class="status-line" role="status" aria-live="polite"', self.html)
 
     def test_endpoints_and_feedback_route_are_unchanged(self):
         self.assertIn("requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`)", self.js)
@@ -50,7 +50,7 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
 
     def test_personal_items_render_as_rows_not_editorial_cards(self):
         loop_start = self.js.index("for (const [index, item] of items.entries()) {")
-        loop_head = self.js[loop_start:loop_start + 400]
+        loop_head = self.js[loop_start:loop_start + 750]
         self.assertIn("if (name === 'personal') {\n        target.append(buildPersonalRow(item, index));", loop_head)
         # The personal branch must come before the generic card code, or the old card would still run.
         generic_card = self.js.index("const artist = item.artist || item.album_artist || 'Unknown artist';", loop_start)

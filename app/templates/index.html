@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="/static/listening-room/tokens.css">
 <link rel="stylesheet" href="/static/listening-room/shell.css">
 <link rel="stylesheet" href="/static/listening-room/home.css">
+<link rel="stylesheet" href="/static/listening-room/discover.css">
 </head>
 <body>
 <!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
@@ -215,8 +216,12 @@
   <div id="zineMast" class="zine-mast" aria-hidden="true" hidden><b id="zineMastTitle">The Discair Daily</b><span id="zineMastNote"></span></div>
   <p id="zineTicker" class="zine-ticker" aria-hidden="true" hidden><span class="zine-ticker-items" id="zineTickerItems"></span></p>
 
-  <div id="lrDiscoveryLists" class="lr-discovery-lists" role="group" aria-label="Discovery lists" hidden>
-    <a href="#recommendations" data-lr-page="recommendations">Recommendations</a>
+  <div id="lrDiscoverHeading" hidden>
+    <h1>Discover</h1>
+    <p>Every discovery list in one place. Each album says why it is here.</p>
+  </div>
+  <div id="lrDiscoveryLists" class="lr-discovery-lists lr-listswitch" role="tablist" aria-label="Discovery lists" hidden>
+    <a href="#recommendations" data-lr-page="recommendations">Discover music</a>
     <a href="#lensLists" data-lr-page="lensLists">Daily picks</a>
     <a href="#personalDiscoveries" data-lr-page="personalDiscoveries">Personal Discoveries</a>
     <a href="#artistDeepDive" data-lr-page="artistDeepDive">Artist Deep Dives</a>
@@ -373,7 +378,7 @@
     <aside id="tapeDashDeck" class="tape-deck" aria-label="Acquisition deck" hidden></aside>
   </section>
 
-  <section id="recommendations" class="page hidden" aria-labelledby="recommendationsHeading">
+  <section id="recommendations" class="page hidden lr-discover-list" aria-labelledby="recommendationsHeading">
     <div class="panel">
       <h2 id="recommendationsHeading">Discover music</h2>
       <p>Generate a set of album suggestions, then narrow it by discovery category, reorder it, or search for an artist, album, or genre.</p>
@@ -434,7 +439,7 @@
     </div>
   </section>
 
-  <section id="newReleases" class="page hidden" aria-labelledby="newReleasesHeading">
+  <section id="newReleases" class="page hidden lr-discover-list" aria-labelledby="newReleasesHeading">
     <div class="panel">
       <h2 id="newReleasesHeading">New releases</h2>
       <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
@@ -444,12 +449,12 @@
           <button data-refresh-discovery="new_releases" type="button" title="Refresh in background" aria-label="Refresh in background"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
         </div>
       </div>
-      <p id="newReleasesStatus" class="status-line" aria-live="polite"></p>
+      <p id="newReleasesStatus" class="status-line" role="status" aria-live="polite"></p>
       <div id="newReleasesCards" class="ranked-list"></div>
     </div>
   </section>
 
-<section id="personalDiscoveries" class="page hidden" aria-labelledby="personalDiscoveriesHeading">
+<section id="personalDiscoveries" class="page hidden lr-discover-list" aria-labelledby="personalDiscoveriesHeading">
   <div class="panel">
     <h2 id="personalDiscoveriesHeading">Personal Discoveries</h2>
     <p>Recommendations based on your listening and musical interests.</p>
@@ -457,12 +462,12 @@
       <button data-load-discovery="personal" type="button" title="Load discoveries" aria-label="Load discoveries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
       <button data-refresh-discovery="personal" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
     </div>
-    <p id="personalStatus" class="status-line" aria-live="polite"></p>
+    <p id="personalStatus" class="status-line" role="status" aria-live="polite"></p>
     <div id="personalCards" class="ranked-list"></div>
   </div>
 </section>
 
-<section id="lensLists" class="page hidden" aria-labelledby="lensListsHeading">
+<section id="lensLists" class="page hidden lr-discover-list" aria-labelledby="lensListsHeading">
   <div class="panel">
     <h2 id="lensListsHeading">Daily picks</h2>
     <p>One list per lens, built each morning and fixed for the day. An album appears in at most one of them.</p>
@@ -472,12 +477,12 @@
       <button type="button" data-lens="obsessions" aria-pressed="false">Obsessions</button>
       <button type="button" data-lens="current_tastes" aria-pressed="false">Current Tastes</button>
     </div>
-    <p id="lensListsStatus" class="status-line" aria-live="polite"></p>
+    <p id="lensListsStatus" class="status-line" role="status" aria-live="polite"></p>
     <div id="lensListsCards" class="ranked-list" role="list"></div>
   </div>
 </section>
 
-<section id="classics" class="page hidden" aria-labelledby="classicsHeading">
+<section id="classics" class="page hidden lr-discover-list" aria-labelledby="classicsHeading">
   <div class="panel">
     <h2 id="classicsHeading">Add to your collection</h2>
     <p>Find acclaimed albums and less obvious discoveries to expand your library.</p>
@@ -485,12 +490,12 @@
       <button data-load-discovery="classics" type="button" title="Load albums" aria-label="Load albums"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
       <button data-refresh-discovery="classics" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
     </div>
-    <p id="classicsStatus" class="status-line" aria-live="polite"></p>
+    <p id="classicsStatus" class="status-line" role="status" aria-live="polite"></p>
     <div id="classicsCards" class="ranked-list"></div>
   </div>
 </section>
 
-<section id="artistDeepDive" class="page hidden" aria-labelledby="artistDeepDiveHeading">
+<section id="artistDeepDive" class="page hidden lr-discover-list" aria-labelledby="artistDeepDiveHeading">
   <div class="panel">
     <h2 id="artistDeepDiveHeading">Artist Deep Dives</h2>
     <p>Explore missing albums by artists in your library and discover similar artists.</p>
@@ -498,7 +503,7 @@
       <button data-load-discovery="artist_deep_dive" type="button" title="Load albums" aria-label="Load albums"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
       <button data-refresh-discovery="artist_deep_dive" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
     </div>
-    <p id="artistDeepDiveStatus" class="status-line" aria-live="polite"></p>
+    <p id="artistDeepDiveStatus" class="status-line" role="status" aria-live="polite"></p>
     <div id="artistDeepDiveCards" class="cards"></div>
   </div>
 </section>
@@ -879,6 +884,7 @@
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
 <script src="/static/listening-room/home.js" defer></script>
+<script src="/static/listening-room/discover.js" defer></script>
 <script src="/static/layout-zine.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>

@@ -1,0 +1,297 @@
+.lr-discover-button-label, .lr-lens-tabs { display: none; }
+
+:root[data-layout="listeningroom"] #lrDiscoverHeading {
+  margin-bottom: var(--lr-space-24);
+}
+
+#lrDiscoverHeading h1 {
+  font: 700 40px/44px var(--lr-font-display);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--lr-space-8);
+}
+
+#lrDiscoverHeading p,
+:root[data-layout="listeningroom"] .lr-discover-list .panel > h2 + p {
+  color: var(--lr-text-muted);
+  margin: 0;
+}
+
+:root[data-layout="listeningroom"] .lr-discovery-lists:not([hidden]) {
+  gap: var(--lr-space-8);
+  margin-bottom: var(--lr-space-24);
+}
+
+:root[data-layout="listeningroom"] :is(.lr-listswitch, .lr-lens-tabs) .lr-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lr-space-8);
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+:root[data-layout="listeningroom"] .lr-listswitch .lr-tab:not([aria-selected="true"]) {
+  color: var(--lr-text);
+}
+
+:root[data-layout="listeningroom"] .lr-listswitch .lr-tab[aria-selected="true"] {
+  color: var(--lr-bg);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list > .panel {
+  display: grid;
+  gap: var(--lr-space-16);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .panel > h2 {
+  font: 600 22px/28px var(--lr-font-display);
+  letter-spacing: -0.01em;
+  margin: 0 0 calc(-1 * var(--lr-space-8));
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list :is(.lens-picker, [data-load-discovery], .ledger-ranked-head) {
+  display: none;
+}
+
+:root[data-layout="listeningroom"] .lr-lens-tabs {
+  display: flex;
+}
+
+:root[data-layout="listeningroom"] .lr-lens-tabs .lr-tab[hidden] { display: none; }
+
+.lr-discover-list #lrLensPanel {
+  min-width: 0;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list :is(.controls, .status-line, .results-toolbar) {
+  margin: 0;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list :is(button:not(.inline-link), select, input) {
+  min-height: var(--lr-target);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list :is(#loadRecommendations, [data-refresh-discovery]) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lr-space-8);
+  width: auto;
+  padding: 0 var(--lr-space-16);
+  border-radius: var(--lr-radius-control);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-button-label { display: inline; }
+
+:root[data-layout="listeningroom"] .lr-discover-list .request-controls {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--lr-space-4) var(--lr-space-16);
+  align-items: end;
+  justify-items: start;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .request-controls label { grid-column: 1; }
+:root[data-layout="listeningroom"] .lr-discover-list .request-controls select { grid-column: 1; grid-row: 2; }
+:root[data-layout="listeningroom"] .lr-discover-list .request-controls .action-group { grid-column: 2; grid-row: 2; margin: 0; }
+:root[data-layout="listeningroom"] .lr-discover-list .request-controls button { white-space: normal; text-align: left; }
+
+:root[data-layout="listeningroom"] .lr-discover-list #loadRecommendations {
+  background: var(--lr-accent);
+  border-color: var(--lr-accent);
+  color: var(--lr-on-accent);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list #loadRecommendations:hover {
+  background: var(--lr-accent-hover);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .results-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--lr-space-8);
+  background: var(--lr-surface);
+  border: 1px solid var(--lr-edge);
+  border-radius: var(--lr-radius-control);
+  padding: var(--lr-space-16);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .discovery-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: var(--lr-space-16);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .discovery-controls > * {
+  min-width: 0;
+  width: 100%;
+}
+
+:root[data-layout="listeningroom"] :is(.lr-discover-list .ranked-list, #artistDeepDiveCards) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lr-space-16);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .lr-rank {
+  display: grid;
+  grid-template-columns: 32px var(--lr-cover-row) minmax(0, 1fr) minmax(0, 1.6fr) auto;
+  gap: var(--lr-space-16);
+  align-items: center;
+  padding: var(--lr-space-16);
+  min-height: 0;
+  background: var(--lr-surface);
+  border: 1px solid var(--lr-edge);
+  border-radius: var(--lr-radius-control);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .lr-rank-norank {
+  grid-template-columns: var(--lr-cover-row) minmax(0, 1fr) minmax(0, 1.6fr) auto;
+}
+
+.lr-rank-n {
+  font: 600 22px/28px var(--lr-font-display);
+  color: var(--lr-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.lr-rank-main { min-width: 0; display: grid; gap: var(--lr-space-4); }
+.lr-rank-main :is(h3, p) { margin: 0; }
+.lr-rank-main .lr-card-title { display: block; }
+.lr-discover-list .lr-reason p { margin: 0; }
+.lr-rank-main .lr-meta a, .lr-discover-dive-head a { color: inherit; }
+.lr-rank > .lr-rank-tools { grid-column: -2; }
+.lr-rank-tools { display: flex; gap: var(--lr-space-4); align-items: center; }
+
+:root[data-layout="listeningroom"] .lr-discover-list .lr-rank-tools > button {
+  display: inline-grid;
+  place-items: center;
+  width: var(--lr-target);
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .lr-rank-tools > button:hover {
+  background: var(--lr-raised);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list .card-art.lr-cover {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0;
+  border-radius: var(--lr-radius-cover);
+}
+
+.lr-discover-owned {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  inset: auto var(--lr-space-4) var(--lr-space-4) auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--lr-surface);
+  color: var(--lr-ok);
+}
+
+.lr-discover-dive { display: grid; gap: var(--lr-space-16); }
+.lr-discover-dive-head { display: flex; gap: var(--lr-space-16); align-items: center; }
+.lr-discover-dive-name { min-width: 0; overflow-wrap: anywhere; }
+.lr-discover-dive-name :is(p, h3) { margin: 0; }
+.lr-discover-dive-head .lr-chip-avatar { width: 64px; height: 64px; font-size: 20px; }
+:root[data-layout="listeningroom"] .lr-discover-dive-card {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list :is(a, article, button, input, select, summary):focus-visible {
+  outline: 2px solid var(--lr-focus);
+  outline-offset: 2px;
+}
+
+@media (width < 1200px) {
+  :root[data-layout="listeningroom"] .lr-discover-list .lr-rank {
+    grid-template-columns: 32px var(--lr-cover-row) minmax(0, 1fr) auto;
+  }
+  :root[data-layout="listeningroom"] .lr-discover-list .lr-rank-norank {
+    grid-template-columns: var(--lr-cover-row) minmax(0, 1fr) auto;
+  }
+  .lr-rank > .lr-reason { grid-row: 2; grid-column: 2 / -1; }
+  .lr-rank-norank > .lr-reason { grid-column: 1 / -1; }
+  .lr-rank > .lr-rank-tools { grid-row: 1; }
+}
+
+@media (width < 720px) {
+  #lrDiscoverHeading h1 { font-size: 30px; line-height: 34px; }
+
+  :root[data-layout="listeningroom"] :is(.lr-discovery-lists:not([hidden]), .lr-lens-tabs) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: var(--lr-space-4);
+  }
+
+  :root[data-layout="listeningroom"] :is(.lr-discovery-lists, .lr-lens-tabs) .lr-tab { flex: none; }
+  :root[data-layout="listeningroom"] .lr-discover-list .discovery-controls { grid-template-columns: minmax(0, 1fr); }
+  :root[data-layout="listeningroom"] .lr-discover-list .lr-rank {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: var(--lr-space-8) var(--lr-space-16);
+  }
+  .lr-rank > .lr-rank-n { display: none; }
+  .lr-rank > .lr-cover { grid-column: 1; grid-row: 1; }
+  .lr-rank > .lr-rank-main { grid-column: 2; grid-row: 1; }
+  .lr-rank > .lr-reason { grid-column: 1 / -1; grid-row: 2; }
+  .lr-rank > .lr-rank-tools { grid-column: 1 / -1; grid-row: 3; }
+  .lr-discover-dive .lr-dive-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.lr-discover-list .lr-rank-tools :is(.save-album-label, .get-album-label) { display: none; }
+
+.lr-discover-list .lr-cover .card-art-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--lr-text-muted);
+}
+.lr-discover-list .lr-cover .card-art-placeholder::before { content: none; }
+.lr-discover-list .lr-cover .card-art-placeholder svg { width: 32%; height: auto; }
+.lr-discover-list .lr-cover.has-image .card-art-placeholder { display: none; }
+:root[data-layout="listeningroom"] .lr-discover-list .ranked-list { border-top: 0; }
+:root[data-layout="listeningroom"] .lr-discover-list .panel > h2::after { display: none; }
+:root[data-layout="listeningroom"] #lrLensPanel { display: grid; gap: var(--lr-space-16); }
+
+:root[data-layout="listeningroom"] .lr-discover-list #recommendationCount {
+  margin: 0;
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list details {
+  background: var(--lr-surface);
+  border: 1px solid var(--lr-edge);
+  border-radius: var(--lr-radius-control);
+}
+
+:root[data-layout="listeningroom"] .lr-discover-list details > summary {
+  min-height: var(--lr-target);
+  align-content: center;
+  padding-inline: var(--lr-space-16);
+  cursor: pointer;
+}
+
+:root[data-layout="listeningroom"] #recommendationDebug {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: 0 var(--lr-space-16) var(--lr-space-16);
+}

@@ -30,8 +30,8 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn("if (isListeningRoom()) return window.listeningRoomHome?.refresh();", self.js)
 
     def test_page_and_its_status_and_list_containers_exist(self):
-        self.assertIn('<section id="lensLists" class="page hidden" aria-labelledby="lensListsHeading">', self.html)
-        self.assertIn('id="lensListsStatus" class="status-line" aria-live="polite"', self.html)
+        self.assertIn('<section id="lensLists" class="page hidden lr-discover-list" aria-labelledby="lensListsHeading">', self.html)
+        self.assertIn('id="lensListsStatus" class="status-line" role="status" aria-live="polite"', self.html)
         self.assertIn('id="lensListsCards" class="ranked-list"', self.html)
 
     def test_lens_rows_are_a_list_of_list_items(self):
@@ -82,7 +82,8 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn('<symbol id="list-music"', self.icons)
 
     def test_page_loads_the_selected_lens_on_first_visit(self):
-        self.assertIn("else if (name === 'lensLists') loadLensList(activeLens);", self.js)
+        self.assertIn("else if (name === 'lensLists') {", self.js)
+        self.assertIn("    loadLensList(activeLens);", self.js)
 
     def test_requests_use_the_lens_endpoint_and_a_fresh_nonce(self):
         start = self.js.index("async function loadLensList(")
