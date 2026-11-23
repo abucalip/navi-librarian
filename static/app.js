@@ -203,6 +203,8 @@ document.querySelector('.skip-link').addEventListener('click', event => {
 });
 lrMore.addEventListener('click', () => {
   closeGlobalSearch();
+  // Safari does not focus buttons on pointer clicks. Give the dialog a return target.
+  lrMore.focus({preventScroll: true});
   lrSheet.showModal();
   lrMore.setAttribute('aria-expanded', 'true');
   lrSheetLinks[0].focus();
