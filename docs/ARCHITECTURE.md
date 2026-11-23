@@ -37,6 +37,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `static/`, `app/templates/` | Browser UI assets and HTML templates (including `static/listening-room/` for Listening Room design tokens and the responsive shell stylesheet; page, search and acquisition badge wiring stays in `static/app.js`, `docs/plans/LISTENING_ROOM_WEB.md`). The browser presents server-owned results; it must not duplicate recommendation, discovery, acquisition or import rules. |
 | `static/listening-room/home.js`, `home.css` | Listening Room (L3–L5): render Home discovery previews and server-supplied reasons, the owned-album shelves on Library, and Getting now from the existing acquisition updates. Sample the lead cover in a browser canvas and keep the fallback tint if sampling fails. Reuse the app’s navigation, artwork, acquisition and feedback helpers. |
 | `static/listening-room/discover.js`, `discover.css` | Listening Room Discover (L7): list and lens tabs, browser-local list preference, ranked reasons and artist panels. Reuse Home’s reason renderer and the existing browser list loaders and action handlers. |
+| `static/listening-room/album.css` | Listening Room album page and quick view (L8). The album views in `static/app.js` reuse the existing album data, feedback and acquisition handlers and Home’s reason renderer and artwork tint. |
 
 ## Clients
 

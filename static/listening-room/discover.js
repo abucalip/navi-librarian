@@ -150,12 +150,13 @@
     return group;
   }
 
-  function albumEntry(item, className, rank = null) {
+  function albumEntry(item, className, rank, listName) {
     const entry = document.createElement('article');
     entry.className = className;
     const artist = item.artist || item.album_artist || 'Unknown artist';
     const album = item.album || item.title || item.name || 'Untitled album';
     makeAlbumCardInteractive(entry, artist, album, item, false);
+    entry.dataset.albumDiscoveryList = listName;
     if (rank !== null) {
       addTextElement(entry, 'span', 'lr-rank-n', String(rank)).setAttribute('aria-hidden', 'true');
     }
@@ -173,7 +174,7 @@
     }
     const main = addTextElement(entry, 'div', 'lr-rank-main', '');
     const title = addTextElement(main, 'p', 'lr-card-title', '');
-    linkAlbumName(title, artist, album, item);
+    linkAlbumName(title, artist, album, item, listName);
     const meta = addTextElement(main, 'p', 'lr-meta', '');
     linkArtistName(meta, artist);
     const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, item.first_release_date);
@@ -182,7 +183,7 @@
   }
 
   function row(item, rank, listName, dismiss) {
-    const entry = albumEntry(item, 'ranked-row lr-rank', rank);
+    const entry = albumEntry(item, 'ranked-row lr-rank', rank, listName);
     entry.classList.toggle('lr-rank-norank', rank === null);
     entry.setAttribute('role', 'listitem');
     const reason = renderReason(item, 'card');
@@ -215,7 +216,7 @@
       if (reason) panel.append(reason);
       const grid = addTextElement(panel, 'div', 'lr-dive-albums', '');
       for (const item of albums) {
-        const card = albumEntry(item, 'card lr-card lr-discover-dive-card');
+        const card = albumEntry(item, 'card lr-card lr-discover-dive-card', null, 'artist_deep_dive');
         card.append(tools(item, 'artist_deep_dive', card, null, false));
         grid.append(card);
       }
