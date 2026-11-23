@@ -192,6 +192,7 @@ class FuseTests(unittest.TestCase):
         self.assertEqual(items[1]["owned"], True)
         self.assertEqual(items[1]["id"], "ar2")
         self.assertEqual(items[1]["name"], "Portishead")
+        self.assertEqual(items[1]["album_count"], 0)
 
     def test_an_owned_artist_matched_by_mbid_keeps_its_library_id(self):
         data = build_owned_data(

@@ -239,7 +239,7 @@ def album_catalog(
 
 def unowned_only(catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The ``missing_albums`` view of a catalog: albums the library does not own."""
-    keep = ("name", "year", "key", "release_group_mbid", "popularity", "popularity_source", "sources")
+    keep = ("name", "year", "key", "release_group_mbid", "popularity", "popularity_source", "listeners", "sources")
     return [{k: item[k] for k in keep} for item in catalog if not item["owned"]][:MISSING_ALBUMS_LIMIT]
 
 
@@ -273,7 +273,8 @@ def _shape_items(
     for album in albums:
         mbid_album = album["release_group_mbid"]
         # "playcount" is the total listen count; "listeners" is the number of users.
-        listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
+        counts = (stats.get(mbid_album) or {}) if mbid_album else {}
+        listens = counts.get("playcount")
         listen_source = "listenbrainz" if listens is not None else None
         sources = list(album["sources"]) + (["listenbrainz"] if listen_source == "listenbrainz" else [])
         entry = album.get("owned_entry")
@@ -282,6 +283,7 @@ def _shape_items(
             "year": album["year"],
             "release_group_mbid": mbid_album,
             "popularity": listens,
+            "listeners": counts.get("listeners"),
             "popularity_source": listen_source,
             "sources": sources,
             "rank": album.get("rank"),
@@ -610,7 +612,9 @@ def iter_network_sections(
                         # Index theme data list "Owned 5 of 9": provider-listed albums, owned and total.
                         albums["owned_count"], albums["album_count"] = counts
                     yield with_fetched_at(albums, oldest)
-                    yield with_fetched_at(_available("missing_albums", "items", unowned_only(catalog)), oldest)
+                    missing = _available("missing_albums", "items", unowned_only(catalog))
+                    missing["count"] = sum(not item["owned"] for item in catalog)
+                    yield with_fetched_at(missing, oldest)
                 else:
                     yield with_fetched_at(result, oldest)
     finally:

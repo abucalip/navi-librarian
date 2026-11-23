@@ -5364,7 +5364,7 @@ function libraryShow(name) {
   // The page intro belongs to the list; every other view is the reading path.
   $('libraryIntro').hidden = name !== 'list';
   // The artist and album pages open on the picture: the section heading would only repeat the sidebar tab.
-  $('libraryHeading').hidden = name === 'artist' || name === 'album';
+  $('libraryHeading').hidden = name === 'artist' || name === 'album' || (name === 'genre' && isListeningRoom());
   if (name !== 'album' && isListeningRoom()) syncListeningRoomShell();
   zineHook('updateZineMast');
 }
@@ -5863,12 +5863,12 @@ function setArtistBio(bio) {
   const text = $('artistBio');
   text.textContent = bio && bio.text ? bio.text : '';
   text.hidden = !text.textContent;
+  $('artistBioToggle').hidden = true;
   $('artistBioToggle').setAttribute('aria-expanded', 'false');
   fitArtistBio();
 }
 
-// The bio is clamped to three lines on a wide screen (six on a phone). "Read more" appears only
-// when the text really overflows, so a short bio shows whole and the link never opens nothing.
+// Show Read more only when the active layout actually clips the biography.
 function fitArtistBio() {
   const text = $('artistBio');
   const toggle = $('artistBioToggle');
@@ -5888,11 +5888,44 @@ function toggleArtistBio() {
   $('artistBioToggle').setAttribute('aria-expanded', String(!clamped));
 }
 
+function placeArtistPageContent(ctx) {
+  const back = $('libraryBack');
+  const actions = $('lrArtistActions');
+  const bio = $('artistBio');
+  const toggle = $('artistBioToggle');
+  actions.replaceChildren();
+  if (!isListeningRoom()) {
+    document.querySelector('.artist-stage').prepend(back);
+    $('artistBioPosition').after(bio, toggle);
+    return;
+  }
+  document.querySelector('.artist-hero').before(back);
+  actions.before(bio);
+  const more = document.createElement('button');
+  more.type = 'button';
+  more.className = 'lr-btn';
+  more.append(window.listeningRoomHome.icon('lean-more', true), 'More like this');
+  more.addEventListener('click', () => sendArtistLean(ctx.name, 'more', {genres: ctx.genres}));
+  actions.append(toggle, more);
+}
+
+function updateArtistStatus(ctx) {
+  const libraryCount = pluralize(ctx.albumCount, 'album', 'albums') + ' in your library';
+  const message = isListeningRoom()
+    ? libraryCount + (ctx.missingCount === undefined ? '' : ' · ' + ctx.missingCount + ' missing')
+    : ctx.owned ? libraryCount : 'Not in your library';
+  setStatus($('artistDetailStatus'), message, 'idle');
+}
+
 function renderArtist(target) {
   const view = libraryView;
   const seq = ++view.detailSeq;
   libraryShow('artist');
+  const ctx = {name: target.name, missing: null, artistShown: false, genres: []};
+  libraryView.artistCtx = ctx;
+  placeArtistPageContent(ctx);
   clearPageTint('libraryDetailView');
+  document.querySelector('.artist-hero').style.removeProperty('--lr-hero-tint');
   setArtistHero(target, target.name);
   const heading = $('artistDetailHeading');
   const status = $('artistDetailStatus');
@@ -5902,6 +5935,7 @@ function renderArtist(target) {
   $('artistTags').hidden = true;
   for (const id of ['artistOwnedAlbums', 'artistMissingAlbums', 'artistSimilar', 'artistTopSongs']) $(id).replaceChildren();
   $('artistOwnedSection').hidden = true;
+  $('lrArtistActions').hidden = true;
   $('artistMissingAll').hidden = true;
   $('artistTopSongsAll').hidden = true;
   $('artistTopSongsSection').hidden = false;
@@ -5920,8 +5954,6 @@ function renderArtist(target) {
   if (target.mbid) params.set('mbid', target.mbid);
   const source = new EventSource('/api/artists/' + encodeURIComponent(target.key) + '?' + params);
   libraryStreams.add(source);
-  const ctx = {name: target.name, missing: null, artistShown: false};
-  libraryView.artistCtx = ctx;
   source.addEventListener('section', event => {
     if (seq !== view.detailSeq) return;
     applyArtistSection(JSON.parse(event.data), ctx);
@@ -5980,9 +6012,34 @@ async function fillMissingYears(ctx) {
   }
 }
 
+function buildListeningRoomMissingAlbum(item, ctx) {
+  const row = document.createElement('li');
+  row.className = 'lr-artist-missing';
+  row.append(buildAlbumArtwork(item, 'lr-cover', 192));
+  const copy = addTextElement(row, 'div', 'lr-rank-main', '');
+  copy.append(buildLibraryLink(item.name, albumTarget(item), 'lr-card-title lr-artist-title-link'));
+  addTextElement(copy, 'p', 'lr-meta', [item.artist, item.year].filter(Boolean).join(' · '));
+  const sentence = 'You have ' + pluralize(ctx.albumCount, 'album', 'albums') + ' by ' + ctx.name
+    + '. This one is not in your library yet.';
+  const chips = item.listeners == null ? [] : [{
+    type: 'listeners', value: item.listeners, label: compactCount(item.listeners) + ' listeners',
+  }];
+  row.append(window.listeningRoomHome.renderReason({why: {kind: 'deep_dive_missing', sentence, chips}}, 'panel', false, 'Why this pick'));
+  const actions = addTextElement(row, 'div', 'lr-actions', '');
+  const get = buildAlbumState(item);
+  get.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet', 'lr-artist-get');
+  const save = createSaveButton(item.artist, item.name, item, 'library');
+  save.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+  const menu = createFeedbackMenuButton(item.artist, item.name, item, {listName: 'library', bookmark: save});
+  menu.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+  actions.append(get, save, menu);
+  return row;
+}
+
 function paintMissingAlbums(ctx) {
   const items = ctx.missing || [];
-  fillRows($('artistMissingAlbums'), items, item => buildAlbumRow({...item, showListens: true}),
+  fillRows($('artistMissingAlbums'), items, item => isListeningRoom()
+    ? buildListeningRoomMissingAlbum(item, ctx) : buildAlbumRow({...item, showListens: true}),
     ctx.showAllMissing ? Infinity : MISSING_ALBUMS_SHOWN);
   const allButton = $('artistMissingAll');
   allButton.hidden = ctx.showAllMissing || items.length <= MISSING_ALBUMS_SHOWN;
@@ -6017,6 +6074,28 @@ function buildOwnedAlbumCard(item) {
   return row;
 }
 
+function buildListeningRoomTopSong(item, albums) {
+  const row = document.createElement('li');
+  row.className = 'lr-artist-song';
+  const album = albums?.find(entry => albumYearKey(entry.artist, displayAlbumName(entry.name)) === albumYearKey(item.artist, item.album));
+  const art = buildAlbumArtwork(album || {name: item.album || '', artist: item.album ? item.artist : ''}, 'lr-cover', 112);
+  const copy = document.createElement('span');
+  addTextElement(copy, 'span', 'top-song-name', item.rank + '. ' + item.name);
+  if (item.album) {
+    addTextElement(copy, 'span', 'top-song-album', item.album);
+    const open = buildLibraryLink('', album ? albumTarget(album) : namedAlbumTarget(item.artist, item.album), 'lr-artist-song-title');
+    open.append(art, copy);
+    row.append(open);
+    if (!item.owned) row.append(wrapInActionGroup(createTrackGetButton({
+      artist: item.artist, album: item.album, title: item.name,
+    }), 'Actions for ' + item.name));
+  } else {
+    const text = addTextElement(row, 'span', 'lr-artist-song-title', '');
+    text.append(art, copy);
+  }
+  return row;
+}
+
 // A top song: rank, title, album, listens, and a check when the library has it. Songs do not open.
 function buildTopSongRow(item) {
   const row = document.createElement('li');
@@ -6041,7 +6120,9 @@ function buildTopSongRow(item) {
 
 function paintTopSongs(ctx) {
   const items = ctx.topSongs || [];
-  fillRows($('artistTopSongs'), items.map(song => ({...song, artist: ctx.name})), buildTopSongRow, ctx.showAllSongs ? Infinity : TOP_SONGS_SHOWN);
+  const build = isListeningRoom() ? item => buildListeningRoomTopSong(item, ctx.ownedAlbums) : buildTopSongRow;
+  fillRows($('artistTopSongs'), items.map(song => ({...song, artist: ctx.name})), build,
+    ctx.showAllSongs ? Infinity : TOP_SONGS_SHOWN);
   const allButton = $('artistTopSongsAll');
   allButton.hidden = ctx.showAllSongs || items.length <= TOP_SONGS_SHOWN;
   allButton.onclick = () => {
@@ -6071,23 +6152,32 @@ function applyArtistSection(section, ctx) {
     ctx.owned = artist.owned;
     ctx.albumCount = artist.album_count;
     $('artistDetailHeading').textContent = artist.name;
-    setStatus(status, artist.owned ? pluralize(artist.album_count, 'album', 'albums') + ' in your library' : 'Not in your library', 'idle');
+    updateArtistStatus(ctx);
+    if (isListeningRoom()) {
+      const actions = $('lrArtistActions');
+      const menu = createFeedbackMenuButton(ctx.name, ctx.name, {genres: ctx.genres}, {listName: 'library'});
+      menu.classList.add('lr-btn', 'lr-btn-icon');
+      actions.append(menu);
+      actions.hidden = false;
+    }
   } else if (section.section === 'owned_albums') {
     if (!section.available || !section.items.length) return;
     fillRows($('artistOwnedAlbums'), section.items.map(album => ({...album, owned: true, artist: ctx.name})), buildOwnedAlbumCard);
     $('artistOwnedSection').hidden = false;
     ctx.ownedAlbums = section.items.map(album => ({...album, owned: true, artist: ctx.name}));
+    if (isListeningRoom() && ctx.topSongs) paintTopSongs(ctx);
     zineHook('renderZineArtist', ctx);
   } else if (section.section === 'bio') {
     setArtistBio(section.bio);
     zineHook('renderZineArtist', ctx);
   } else if (section.section === 'tags') {
     const tags = $('artistTags');
+    ctx.genres.splice(0, ctx.genres.length, ...(section.items || []).map(tag => tag.name));
     fillRows(tags, section.items || [], tag => {
       const item = document.createElement('li');
       item.append(buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'genre-text-link'));
       return item;
-    }, ARTIST_TAGS_SHOWN);
+    }, isListeningRoom() ? 4 : ARTIST_TAGS_SHOWN);
     tags.hidden = !tags.childElementCount;
   } else if (section.section === 'top_songs') {
     if (!section.available || !section.items.length) {
@@ -6100,6 +6190,10 @@ function applyArtistSection(section, ctx) {
     zineHook('renderZineArtist', ctx);
   } else if (section.section === 'missing_albums') {
     if (section.available) {
+      if (section.complete) {
+        ctx.missingCount = section.count ?? section.items.length;
+        if (ctx.artistShown) updateArtistStatus(ctx);
+      }
       ctx.missing = section.items.map(item => ({...item, artist: ctx.name, owned: false}));
       paintMissingAlbums(ctx);
       fillMissingYears(ctx);
@@ -6112,7 +6206,7 @@ function applyArtistSection(section, ctx) {
   } else if (section.section === 'similar') {
     if (section.available && section.items.length) {
       const similarShown = randomSample(section.items, SIMILAR_ARTISTS_SHOWN);
-      fillRows($('artistSimilar'), similarShown, buildArtistChip);
+      fillRows($('artistSimilar'), similarShown, isListeningRoom() ? buildListeningRoomPerson : buildArtistChip);
       ctx.similar = similarShown;
       zineHook('renderZineArtist', ctx);
       // A tag lookup that ran out of time only changes the order, so the list needs no warning.
@@ -6435,7 +6529,7 @@ function placeAlbumPageContent() {
   }
 }
 
-function buildListeningRoomSimilarAlbum(item) {
+function buildListeningRoomSimilarAlbum(item, {showOwnedActions = true} = {}) {
   const row = document.createElement('li');
   row.className = 'card lr-album-card';
   makeAlbumCardInteractive(row, item.artist, item.name, item, false);
@@ -6444,6 +6538,7 @@ function buildListeningRoomSimilarAlbum(item) {
   const title = buildLibraryLink(item.name, albumTarget(item), 'lr-card-title');
   row.append(art, title);
   addTextElement(row, 'p', 'lr-meta', [item.artist, item.year].filter(Boolean).join(' · '));
+  if (item.owned && !showOwnedActions) return row;
   const actions = addTextElement(row, 'div', 'lr-actions', '');
   if (!item.owned) {
     const get = buildAlbumState(item);
@@ -6463,9 +6558,11 @@ function buildListeningRoomSimilarArtist(item) {
   const count = item.album_count;
   addTextElement(copy, 'strong', '', item.name);
   addTextElement(copy, 'span', 'lr-meta', item.owned
-    ? (count ? pluralize(count, 'album', 'albums') + ' in your library' : 'In your library')
+    ? (count != null ? pluralize(count, 'album', 'albums') + ' in your library' : 'In your library')
     : 'Not in your library');
-  button.prepend(window.listeningRoomHome.artistPhoto(item.name));
+  const photo = item.artwork_url ? buildArtistPhoto(item, 128) : window.listeningRoomHome.artistPhoto(item.name);
+  photo.classList.add('lr-chip-avatar');
+  button.prepend(photo);
   row.append(button);
   return row;
 }
@@ -6634,6 +6731,10 @@ function tintAlbumPage(url, seq) {
 }
 
 function tintArtistPage(url, seq) {
+  if (isListeningRoom()) {
+    tintListeningRoomAlbum(document.querySelector('.artist-hero'), url, () => seq === libraryView.detailSeq);
+    return;
+  }
   tintPage('libraryDetailView', url, () => seq === libraryView.detailSeq);
 }
 
@@ -6860,6 +6961,18 @@ function buildGenreItem(item, type) {
   return row;
 }
 
+function buildListeningRoomPerson(item) {
+  const row = buildListeningRoomSimilarArtist(item);
+  if (item.attribution) addTextElement(row.firstElementChild.lastElementChild, 'span', 'lr-meta', item.attribution);
+  return row;
+}
+
+function buildListeningRoomGenreAlbum(item) {
+  const row = buildListeningRoomSimilarAlbum(item, {showOwnedActions: false});
+  if (item.attribution) addTextElement(row, 'p', 'lr-meta', item.attribution);
+  return row;
+}
+
 async function renderGenre(tag) {
   const view = libraryView;
   const seq = ++view.genreSeq;
@@ -6867,6 +6980,11 @@ async function renderGenre(tag) {
   const heading = $('genreHeading');
   const status = $('genreStatus');
   heading.textContent = tag;
+  const block = $('lrGenreBlock');
+  if (isListeningRoom()) {
+    if (!block.querySelector('svg')) block.prepend(window.listeningRoomHome.icon('block', true));
+    block.onclick = () => sendGenreBlock(tag, 'listening_room');
+  }
   $('genreArtists').replaceChildren();
   $('genreAlbums').replaceChildren();
   setStatus(status, 'Loading…', 'loading');
@@ -6882,14 +7000,17 @@ async function renderGenre(tag) {
       const section = data.sections[name];
       const list = name === 'artists' ? $('genreArtists') : $('genreAlbums');
       if (!section.available) continue;
-      for (const item of section.items) list.append(buildGenreItem(item, name));
+      const build = name === 'artists' ? buildListeningRoomPerson : buildListeningRoomGenreAlbum;
+      for (const item of section.items) list.append(isListeningRoom() ? build(item) : buildGenreItem(item, name));
       count += section.items.length;
       if (!section.complete) incomplete = true;
     }
     if (!count) {
       setStatus(status, incomplete ? 'Nothing could be loaded for this genre right now. Try again.' : 'Nothing found for this genre.', incomplete ? 'error' : 'empty');
     } else {
-      setStatus(status, pluralize(count, 'item', 'items') + (incomplete ? ' · Some sources did not answer, so this list may be incomplete' : ''), 'progress');
+      const detail = incomplete ? 'Some sources did not answer, so this list may be incomplete' : '';
+      const message = isListeningRoom() ? detail : [pluralize(count, 'item', 'items'), detail].filter(Boolean).join(' · ');
+      setStatus(status, message, 'progress');
     }
   } catch (error) {
     if (seq !== view.genreSeq) return;

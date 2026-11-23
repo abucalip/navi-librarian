@@ -336,10 +336,15 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(items[-1]["name"], "Album 20")
 
     def test_missing_albums_stays_the_unowned_subset(self):
-        sections = self.sections()
-        self.assertEqual(sorted(i["name"] for i in sections["missing_albums"]["items"]), ["Pablo Honey", "The Bends"])
-        self.assertEqual(set(sections["missing_albums"]["items"][0]),
-                         {"name", "year", "key", "release_group_mbid", "popularity", "popularity_source", "sources"})
+        stats = {"rg-2": {"playcount": 50, "listeners": 12}}
+        section = self.sections(popularity=lambda mbids, can_cache: stats)["missing_albums"]
+        self.assertEqual(section["count"], 2)
+        self.assertEqual([item["name"] for item in section["items"]], ["Pablo Honey", "The Bends"])
+        self.assertEqual(set(section["items"][0]),
+                         {"name", "year", "key", "release_group_mbid", "popularity", "popularity_source",
+                          "listeners", "sources"})
+        self.assertEqual(section["items"][0]["listeners"], 12)
+        self.assertIsNone(section["items"][1]["listeners"])
 
 
 class YearSuffixTests(unittest.TestCase):

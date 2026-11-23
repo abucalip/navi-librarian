@@ -213,6 +213,7 @@ class GenreSectionsTests(unittest.TestCase):
         sections, partial, _ = genre_sections(owned_view(), genre_network(mb), normalize_tag("  SHOEGAZE "))
         artists = sections["artists"]["items"]
         self.assertEqual([(i["name"], i["owned"]) for i in artists], [("Ride", True), ("Slowdive", False)])
+        self.assertEqual(artists[0]["album_count"], 1)
         albums = sections["albums"]["items"]
         self.assertEqual([(i["name"], i["owned"]) for i in albums], [("Nowhere", True), ("Souvlaki", False)])
         self.assertFalse(partial)

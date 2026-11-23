@@ -1,0 +1,277 @@
+/* Artist and genre detail pages share the Listening Room shell and album cards. */
+:root:not([data-layout="listeningroom"]) .lr-artist-only { display: none; }
+
+:root[data-layout="listeningroom"] {
+  #libraryDetailView::before { content: none; }
+
+  :is(#libraryDetailView, #libraryGenreView):not([hidden]) {
+    display: grid;
+    gap: var(--lr-space-32);
+    min-width: 0;
+  }
+
+  :is(#libraryBack, #genreBack) {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--lr-space-8);
+    width: fit-content;
+    min-height: var(--lr-target);
+    padding: 0 var(--lr-space-16);
+    border-color: transparent;
+    background: transparent;
+    color: var(--lr-text-soft);
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  #lrArtistActions[hidden], #artistBioToggle[hidden] { display: none; }
+
+  .artist-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: var(--lr-space-32);
+    padding: var(--lr-space-32);
+    border-radius: var(--lr-radius-panel);
+    background: var(--lr-hero-tint, var(--lr-hero-fallback));
+    color: var(--lr-hero-text);
+    transition: background-color var(--lr-motion-hero-tint);
+  }
+  .artist-hero.no-songs { grid-template-columns: minmax(0, 1fr); }
+  .artist-stage {
+    display: grid;
+    grid-template-columns: minmax(152px, 320px) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--lr-space-32);
+    min-height: 0;
+    overflow: visible;
+    background: transparent;
+  }
+  .artist-stage::after { content: none; }
+  .artist-hero-art {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--lr-hero-aside-fill);
+    box-shadow: var(--lr-shadow-cover-lead);
+  }
+  .artist-hero-art img { object-position: center; }
+  .artist-hero-text {
+    align-self: center;
+    gap: var(--lr-space-16);
+    padding: 0;
+  }
+  .artist-hero-text .lr-eyebrow, #artistTopSongsHeading { color: var(--lr-hero-eyebrow); }
+  #artistDetailHeading {
+    margin: 0;
+    color: var(--lr-hero-text);
+    font: 700 clamp(40px, 3.6vw, 56px)/1.04 var(--lr-font-display);
+    letter-spacing: -.03em;
+    overflow-wrap: anywhere;
+    text-wrap: wrap;
+  }
+  .artist-hero-text .tag-list:not([hidden]) {
+    display: flex;
+    gap: var(--lr-space-8);
+    margin: 0;
+  }
+  .artist-hero-text .tag-list li::before { content: none; }
+  .artist-hero-text .genre-text-link {
+    min-height: var(--lr-target);
+    padding: 0 var(--lr-space-8);
+    font-weight: 600;
+    border: 1px solid var(--lr-hero-button-edge);
+    border-radius: var(--lr-radius-chip);
+    color: var(--lr-hero-text);
+    text-decoration: none;
+  }
+  .artist-hero-text .genre-text-link:hover { background: var(--lr-hero-button-fill); }
+  #artistDetailStatus, #artistBio, #artistTopSongsNote, .top-song-album, .top-song-listens {
+    color: var(--lr-hero-text-soft);
+  }
+  #artistDetailStatus { font: 400 14px/20px var(--lr-font-text); }
+  #artistBio {
+    max-width: 62ch;
+    margin: 0;
+    font: 400 16px/25px var(--lr-font-text);
+    overflow-wrap: anywhere;
+  }
+  #artistBio.is-clamped { -webkit-line-clamp: 4; }
+
+  #artistTopSongsSection {
+    align-self: stretch;
+    padding: var(--lr-space-16);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-hero-aside-fill);
+  }
+  #artistTopSongsHeading {
+    margin: 0 0 var(--lr-space-8);
+    font: 600 12px/16px var(--lr-font-text);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .lr-artist-song {
+    display: flex;
+    align-items: center;
+    gap: var(--lr-space-8);
+    padding-bottom: var(--lr-space-8);
+  }
+  .lr-artist-song-title {
+    display: grid;
+    flex: 1;
+    grid-template-columns: var(--lr-cover-thumb) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--lr-space-16);
+    padding: var(--lr-space-8);
+    border: 0;
+    border-radius: var(--lr-radius-control);
+    background: transparent;
+    color: var(--lr-hero-text);
+    text-align: start;
+  }
+  button.lr-artist-song-title:hover { background: var(--lr-hero-button-fill); }
+  .lr-artist-song-title :is(.top-song-name, .top-song-album) {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .lr-artist-song-title .top-song-name { font: 600 14px/20px var(--lr-font-text); }
+  .lr-artist-song .get-track { min-width: var(--lr-target); min-height: var(--lr-target); }
+  #artistTopSongsAll { width: 100%; }
+
+  #lrArtistActions > button:not([hidden]), #artistTopSongsAll:not([hidden]), #artistMissingAll:not([hidden]) {
+    padding: 0 var(--lr-space-16);
+    min-height: var(--lr-target);
+    border: 1px solid var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+    color: var(--lr-text);
+    background: transparent;
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  #lrArtistActions > button:not([hidden]), #artistTopSongsAll:not([hidden]) {
+    border-color: var(--lr-hero-button-edge);
+    background: var(--lr-hero-button-fill);
+    color: var(--lr-hero-text);
+  }
+  #lrArtistActions > button.lr-btn-icon { padding: 0; }
+  #lrArtistActions button:hover, #artistTopSongsAll:hover { background: var(--lr-hero-aside-fill); }
+  #artistMissingAll:hover { background: var(--lr-raised); }
+
+  :is(#libraryDetailView, #libraryGenreView) h4 {
+    margin: 0 0 var(--lr-space-16);
+    color: var(--lr-text);
+    font: 600 22px/28px var(--lr-font-display);
+  }
+  #artistMissingHeading { margin-bottom: var(--lr-space-4); }
+  #artistMissingSection > .lr-meta { margin: 0 0 var(--lr-space-16); }
+
+  :is(#artistOwnedAlbums, #genreAlbums) {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--lr-space-24);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .owned-album-card { border: 0; }
+  .owned-album-art { background: var(--lr-raised); border-radius: var(--lr-radius-cover); }
+  :is(.owned-album-art, #genreAlbums .lr-cover) .owned-check {
+    top: auto;
+    right: var(--lr-space-8);
+    bottom: var(--lr-space-8);
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--lr-ok);
+    border-radius: 50%;
+    background: var(--lr-bg);
+    color: var(--lr-ok);
+  }
+  .owned-album-name { font: 600 14px/20px var(--lr-font-text); white-space: normal; overflow-wrap: anywhere; }
+  .owned-album-year { font: 400 13px/18px var(--lr-font-text); color: var(--lr-text-muted); }
+
+  #artistMissingAlbums { gap: var(--lr-space-16); }
+  .lr-artist-missing {
+    display: grid;
+    grid-template-columns: var(--lr-cover-row) minmax(200px, 1fr) minmax(0, 1.6fr) auto;
+    align-items: center;
+    gap: var(--lr-space-16);
+    padding: var(--lr-space-16);
+    border: 1px solid var(--lr-edge);
+    border-radius: var(--lr-radius-panel);
+    background: var(--lr-surface);
+  }
+  .lr-artist-missing p { margin: 0; }
+  .lr-artist-title-link {
+    min-height: var(--lr-target);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: start;
+    justify-self: start;
+  }
+  .lr-artist-title-link:hover { text-decoration: underline; background: transparent; }
+  .lr-artist-missing .lr-actions { flex-wrap: nowrap; gap: var(--lr-space-4); }
+  :is(.lr-artist-get, #genreAlbums .get-album).get-album {
+    position: static;
+    width: var(--lr-target);
+    height: var(--lr-target);
+    padding: 0;
+  }
+  .lr-artist-get .get-album-glyph { width: 18px; height: 18px; }
+  .lr-artist-missing .save-album-label { display: none; }
+
+  :is(#artistSimilar, #genreArtists) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+    gap: var(--lr-space-16);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .lr-album-person strong { font: 600 14px/20px var(--lr-font-text); overflow-wrap: anywhere; }
+  .lr-album-person .library-art { overflow: hidden; border-radius: 50%; }
+  .lr-album-person .library-art img { width: 100%; height: 100%; object-fit: cover; }
+
+  .genre-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--lr-space-16);
+  }
+  #genreHeading {
+    margin: var(--lr-space-8) 0;
+    font: 700 40px/44px var(--lr-font-display);
+    letter-spacing: -.02em;
+    overflow-wrap: anywhere;
+  }
+  .genre-page-head p { margin: 0; }
+  #genreStatus { margin: 0; }
+  #genreStatus:empty { display: none; }
+
+  @media (max-width: 1079px) {
+    .artist-hero { grid-template-columns: minmax(0, 1fr); }
+    :is(#artistOwnedAlbums, #genreAlbums) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lr-artist-missing { grid-template-columns: var(--lr-cover-row) minmax(0, 1fr) auto; }
+    .lr-artist-missing .lr-reason { grid-column: 1 / -1; grid-row: 2; }
+  }
+  @media (max-width: 719px) {
+    :is(#libraryDetailView, #libraryGenreView):not([hidden]) { gap: var(--lr-space-24); }
+    .artist-hero, .artist-stage { grid-template-columns: minmax(0, 1fr); gap: var(--lr-space-16); }
+    .artist-hero { padding: var(--lr-space-16); border-radius: var(--lr-radius-control); }
+    .artist-hero-art { max-width: 280px; }
+    #artistDetailHeading { font-size: 38px; }
+    #genreHeading { font: 700 30px/34px var(--lr-font-display); }
+    :is(#artistOwnedAlbums, #genreAlbums) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--lr-space-16);
+    }
+    :is(#artistSimilar, #genreArtists) { grid-template-columns: minmax(0, 1fr); }
+    .lr-artist-missing { grid-template-columns: 72px minmax(0, 1fr); row-gap: var(--lr-space-8); }
+    .lr-artist-missing .lr-actions { grid-column: 1 / -1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-layout="listeningroom"] .artist-hero { transition: none; }
+}
