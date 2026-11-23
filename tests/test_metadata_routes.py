@@ -118,6 +118,14 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertEqual(result, {"artist": "Artist", "bio": "A musician.", "source": "navidrome"})
         self.assertEqual(library.calls, [("getArtistInfo2", {"id": "ar-1"})])
 
+    def test_wikipedia_bio_is_not_persisted_when_apple_lookup_failed(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, False)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("Wikipedia bio.", True, "wikipedia")):
+            loaded = metadata._load_artist_bio("Artist")
+        self.assertEqual(loaded.value["source"], "wikipedia")
+        self.assertEqual(loaded.memory_ttl, 60)
+        self.assertFalse(loaded.persist)
+
     def test_navidrome_fallback_is_short_lived_when_an_external_provider_failed(self):
         with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, False)), \
              patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")), \

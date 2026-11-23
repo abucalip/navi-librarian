@@ -149,10 +149,12 @@ def _load_artist_bio(name, librarian=None):
 
     wikipedia_bio, wikipedia_answered, wikipedia_source = _load_wikipedia_artist_bio(name)
     if wikipedia_bio:
+        # Do not let a temporary Apple outage persistently demote the primary source.
+        wikipedia_ttl = _ARTIST_BIO_CACHE_TTL if apple_answered else 60
         return Loaded(
             {"bio": wikipedia_bio, "source": wikipedia_source},
-            memory_ttl=_ARTIST_BIO_CACHE_TTL,
-            persist=True,
+            memory_ttl=wikipedia_ttl,
+            persist=apple_answered,
         )
 
     navidrome_bio = _navidrome_artist_bio(librarian, name) if librarian is not None else ""
