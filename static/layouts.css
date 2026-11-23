@@ -697,7 +697,7 @@
   :root[data-layout="zine"] .album-description-text { columns: 2; column-gap: 14px; font-size: var(--text-sm); text-align: justify; max-width: none; }
   :root[data-layout="zine"] .album-description-text::first-letter { float: left; padding: 2px 6px 0 0; font: 400 2.5rem/.8 var(--display); }
   :root[data-layout="zine"] #albumStatus { margin: 4px 16px 0 0; }
-  :root[data-layout="zine"] .album-page > section[aria-labelledby="albumTracksHeading"] { display: flow-root; margin: 6px 16px 0 0; }
+  :root[data-layout="zine"] .album-content > section[aria-labelledby="albumTracksHeading"] { display: flow-root; margin: 6px 16px 0 0; }
   :root[data-layout="zine"] .album-page > section:not([aria-labelledby="albumTracksHeading"]) { clear: both; padding: 0 16px; }
   :root[data-layout="zine"] .track-list { columns: 2; column-gap: 16px; margin: 0; padding: 10px; background: var(--surface); border: var(--zine-rule3); font-size: var(--text-sm); }
   :root[data-layout="zine"] .track-list > li { break-inside: avoid; min-height: 0; padding: 2px 0; border-bottom: 1px dotted var(--edge); }

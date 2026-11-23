@@ -1,4 +1,6 @@
 """Source-contract regressions for the album page's Info and Reviews tabs."""
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -45,6 +47,38 @@ class AlbumTabsUIContractTests(unittest.TestCase):
 
     def test_an_album_without_a_description_opens_on_reviews_unless_the_reader_chose(self):
         self.assertIn("if (description && !albumTabState.chosen) selectAlbumTab('reviews', {byReader: false});", JS)
+
+    def test_listening_room_reason_uses_the_origin_and_stays_hidden_for_owned_albums(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is not available")
+        start = JS.index("const albumDiscoveryLists")
+        end = JS.index("function listeningRoomAlbumActions", start)
+        script = """
+const assert = require('node:assert/strict');
+const listeningRoomLenses = {deep_cuts: 'Deep cuts'};
+const slot = {replaceChildren() { this.child = null; }, append(reason) { this.child = reason; }};
+const $ = () => slot;
+const window = {listeningRoomHome: {renderReason(item, size, grouped, label) {
+  return item.why?.sentence ? {label, size, grouped, sentence: item.why.sentence} : null;
+}}};
+""" + JS[start:end] + """
+const item = {lens: 'deep_cuts', why: {kind: 'tag', sentence: 'From your listening'}};
+const context = listeningRoomAlbumContext(item, 'lens_lists');
+assert.equal(listeningRoomAlbumContext(item), null);
+setListeningRoomAlbumReason('page', context, false, true);
+assert.equal(slot.hidden, false);
+assert.deepEqual(slot.child, {
+  label: 'Why this pick · Daily picks, Deep cuts', size: 'hero', grouped: false, sentence: item.why.sentence
+});
+setListeningRoomAlbumReason('page', context, true, true);
+assert.equal(slot.hidden, true);
+assert.equal(slot.child, null);
+setListeningRoomAlbumReason('page', listeningRoomAlbumContext({}, 'personal'), false, true);
+assert.equal(slot.hidden, true);
+"""
+        run = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stderr)
 
     def test_each_review_is_a_quote_over_a_link_to_the_full_review(self):
         build = JS[JS.index("function buildAlbumReview"):JS.index("async function loadAlbumReviews")]

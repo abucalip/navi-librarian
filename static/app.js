@@ -101,7 +101,9 @@ let lrModeBusy = false;
 
 function syncListeningRoomShell() {
   const inDiscover = lrDiscoverPages.has(activePage);
-  const primary = inDiscover ? 'recommendations' : activePage;
+  const albumView = $('libraryAlbumView');
+  const fromDiscover = activePage === 'library' && !albumView.hidden && albumView.dataset.discovery === 'true';
+  const primary = inDiscover || fromDiscover ? 'recommendations' : activePage;
   for (const link of lrLinks) {
     if (link.classList.contains('lr-brand')) continue;
     const page = lrDiscovery.contains(link) ? activePage : primary;
@@ -1364,6 +1366,47 @@ function platformSearchLinks(encoded) {
   };
 }
 
+const listeningRoomAlbumServices = new Map([
+  ['Apple Music', 'apple_music'], ['Spotify', 'spotify'], ['Deezer', 'deezer'],
+  ['Qobuz', 'qobuz'], ['Bandcamp', 'bandcamp'],
+]);
+
+function fillListeningRoomAlbumLinks(nav, artist, album, mbid) {
+  const stamp = [artist, album, mbid || ''].join('|');
+  const viewStamp = 'listeningroom:' + stamp;
+  if (nav.dataset.albumStamp === viewStamp) return;
+  nav.dataset.albumStamp = viewStamp;
+  nav.replaceChildren();
+  if (nav.id === 'albumPlatformLinks') $('lrAlbumServicesLabel').hidden = true;
+  if (!artist || !album) return;
+  const query = new URLSearchParams({artist, album});
+  if (mbid) query.set('mbid', mbid);
+  cachedJSONRequest(albumLinkRequests, stamp, '/api/album-links?' + query)
+    .then(links => {
+      if (nav.dataset.albumStamp !== viewStamp) return;
+      if (!links) {
+        delete nav.dataset.albumStamp;
+        return;
+      }
+      const buttons = document.createDocumentFragment();
+      for (const [service, key] of listeningRoomAlbumServices) {
+        if (!links[key]) continue;
+        const link = document.createElement('a');
+        link.className = 'lr-btn';
+        link.href = links[key];
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.append(window.listeningRoomHome.icon('external', true), service);
+        buttons.append(link);
+      }
+      nav.replaceChildren(buttons);
+      if (nav.id === 'albumPlatformLinks') $('lrAlbumServicesLabel').hidden = !nav.childElementCount;
+    })
+    .catch(() => {
+      if (nav.dataset.albumStamp === viewStamp) delete nav.dataset.albumStamp;
+    });
+}
+
 function setAlbumPlatformLinks(artist, album, mbid) {
   fillPlatformLinks($('albumModalPlatformLinks'), artist, album, mbid,
     ['ListenBrainz', 'Apple Music', 'Spotify', 'Qobuz', 'Bandcamp']);
@@ -1375,6 +1418,10 @@ function setAlbumPagePlatformLinks(artist, album, mbid) {
 }
 
 function fillPlatformLinks(nav, artist, album, mbid, services) {
+  if (isListeningRoom()) {
+    fillListeningRoomAlbumLinks(nav, artist, album, mbid);
+    return;
+  }
   const stamp = [artist, album, mbid || ''].join('|');
   // The same album again keeps the links already upgraded.
   if (nav.dataset.albumStamp === stamp && nav.childElementCount) return;
@@ -1462,6 +1509,10 @@ const albumDrawerQuery = window.matchMedia('(min-width: 901px)');
 function placeAlbumModalActions() {
   const group = $('albumModalActions'), foot = $('albumModalFoot'), art = document.querySelector('.album-modal-art');
   if (!group || !foot || !art) return;
+  if (isListeningRoom()) {
+    $('lrAlbumModalActions').prepend(group);
+    return;
+  }
   const inFoot = document.documentElement.dataset.layout === 'crate' && albumDrawerQuery.matches;
   if (inFoot && group.parentElement !== foot) foot.prepend(group);
   else if (!inFoot && group.parentElement !== art) art.append(group);
@@ -1475,6 +1526,7 @@ $('albumModalSkip').addEventListener('click', () => {
 });
 
 function closeAlbumModal() {
+  if (feedbackMenuOwner?.closest('.album-modal')) closeFeedbackMenu();
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
   const returnTo = albumModalReturnFocus;
@@ -1509,14 +1561,18 @@ async function openAlbumModal(card, returnFocus = card) {
   const artwork = $('albumModalArtwork');
   const tracklist = $('albumModalTracklist');
   const get = $('albumModalGet');
-  activeAlbumModal = {card, artist, album, metadata};
+  const opened = {card, artist, album, metadata};
+  activeAlbumModal = opened;
   albumModalReturnFocus = returnFocus;
+  const listName = card.dataset.albumDiscoveryList;
   $('albumModalTitle').replaceChildren();
-  linkAlbumName($('albumModalTitle'), artist, album, metadata);
+  if (isListeningRoom()) $('albumModalTitle').textContent = album;
+  else linkAlbumName($('albumModalTitle'), artist, album, metadata);
+  $('albumModalArtist').after($('albumModalYear'));
   $('albumModalArtist').replaceChildren();
   linkArtistName($('albumModalArtist'), artist);
   $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
-  setAlbumPlatformLinks(artist, album);
+  setAlbumPlatformLinks(artist, album, isListeningRoom() ? metadata.release_group_mbid : undefined);
   loadAlbumModalBio(card, artist);
   $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
   setStatusState($('albumModalStatus'), 'loading');
@@ -1532,6 +1588,27 @@ async function openAlbumModal(card, returnFocus = card) {
   setGetButtonState(get, 'idle', artist, album);
   get.onclick = () => searchAlbum(artist, album, metadata, get);
   placeAlbumModalActions();
+  const modal = backdrop.querySelector('.album-modal');
+  modal.scrollTop = 0;
+  modal.style.removeProperty('--lr-hero-tint');
+  if (isListeningRoom()) {
+    const artPanel = artwork.parentElement;
+    if (!artPanel.querySelector('.lr-album-cover-placeholder')) artPanel.prepend(listeningRoomCoverPlaceholder());
+    const target = namedAlbumTarget(artist, album, metadata, listName);
+    if (!target.year) target.year = firstReleaseYear(card.dataset.releaseYear);
+    const context = target.discovery;
+    $('lrAlbumModalEyebrow').textContent = context ? 'Album · ' + albumDiscoveryLists[context.listName] : 'Album';
+    $('albumModalArtist').prepend(window.listeningRoomHome.artistPhoto(artist));
+    $('albumModalArtist').append($('albumModalYear'));
+    $('lrAlbumModalOpen').replaceChildren(buildInlineLink('Open the album page', target));
+    setListeningRoomAlbumReason('lrAlbumModalReason', context, target.owned);
+    get.hidden = target.owned;
+    $('lrAlbumModalActionStatus').textContent = '';
+    const extras = listeningRoomAlbumActions(artist, album, metadata, target.owned, context);
+    $('lrAlbumModalActions').replaceChildren($('albumModalActions'), ...extras);
+  } else {
+    get.hidden = false;
+  }
   // "Not for me" exists only where the originating row has a dismiss control of its own.
   const skip = $('albumModalSkip');
   skip.toggleAttribute('data-available', Boolean(card.querySelector('.dismiss-album')));
@@ -1542,12 +1619,17 @@ async function openAlbumModal(card, returnFocus = card) {
     const query = new URLSearchParams({artist, album});
     const [details, art] = await Promise.all([
       cachedJSONRequest(albumDetailRequests, artist.trim().toLocaleLowerCase() + '::' + album.trim().toLocaleLowerCase(), '/api/album-details?' + query.toString())
-        .then(data => data || Promise.reject(new Error('album details unavailable'))),
+        .then(data => data || Promise.reject(new Error('album details unavailable')))
+        .catch(error => {
+          if (!isListeningRoom()) throw error;
+          return {};
+        }),
       // Same key as the card artwork, so a cover the card already fetched is not asked for again.
       cachedJSONRequest(artworkRequests, artist.trim().toLocaleLowerCase() + '::' + album.trim().toLocaleLowerCase(), '/api/artwork?' + query.toString()).catch(() => null)
     ]);
-    if (!activeAlbumModal || activeAlbumModal.card !== card) return;
-    const artworkUrl = details.artwork_url || (art && art.artwork_url);
+    if (activeAlbumModal !== opened) return;
+    const artworkUrl = details.artwork_url || (art && art.artwork_url) || (isListeningRoom() && metadata.artwork_url);
+    if (isListeningRoom()) tintListeningRoomAlbum(modal, artworkUrl, () => activeAlbumModal === opened);
     if (artworkUrl) {
       artwork.hidden = false;
       artwork.src = artworkUrl;
@@ -1561,6 +1643,7 @@ async function openAlbumModal(card, returnFocus = card) {
       $('albumModalYear').textContent = String(year);
       applyAlbumYear(card, year);
     }
+    if (isListeningRoom()) return;
     const tracks = Array.isArray(details.tracks) ? details.tracks : [];
     if (tracks.length) {
       tracks.forEach((track, index) => {
@@ -1584,7 +1667,7 @@ async function openAlbumModal(card, returnFocus = card) {
       setStatusState($('albumModalStatus'), 'empty');
     }
   } catch (error) {
-    if (activeAlbumModal && activeAlbumModal.card === card) {
+    if (activeAlbumModal === opened) {
       $('albumModalStatus').textContent = 'Could not load tracklist: ' + error.message;
       setStatusState($('albumModalStatus'), 'error');
     }
@@ -1617,8 +1700,15 @@ document.addEventListener('keydown', event => {
     return;
   }
   const albumModalOpen = !$('albumModalBackdrop').hidden;
+  const modalMenuOpen = albumModalOpen && feedbackMenuOwner?.closest('.album-modal');
+  if (modalMenuOpen && event.key === 'Escape') return;
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
   else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});
+  if (modalMenuOpen && event.key === 'Tab') {
+    event.preventDefault();
+    closeFeedbackMenu({focusOwner: true});
+    return;
+  }
   if (event.key === 'Tab' && albumModalOpen) trapAlbumModalFocus(event);
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title], .ranked-row[data-album-title], .acq-row[data-album-title]')) {
     event.preventDefault(); openAlbumModal(event.target);
@@ -3174,7 +3264,10 @@ async function sendJSON(url, method='POST', body={}) {
 function discoveryStatus(name, message, kind) {
   // The dashboard picks, the New releases shelf and the radio log are not discovery views; each
   // reports on its own status line.
-  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus', listening_room: 'lrPickStatus', recommendations: 'recommendationCount'};
+  const own = {
+    dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus', listening_room: 'lrPickStatus',
+    recommendations: 'recommendationCount', album: activeAlbumModal ? 'lrAlbumModalActionStatus' : 'albumStatus',
+  };
   const el = $(discoveryViews[name] ? discoveryViews[name][1] : own[name] || 'dashboardPicksStatus');
   el.textContent = message;
   setStatusState(el, kind === undefined ? classifyStatus(message) : kind);
@@ -3699,6 +3792,7 @@ function closeFeedbackMenu({focusOwner = false} = {}) {
   const panel = $('feedbackMenu');
   if (!panel || panel.hidden) return;
   panel.hidden = true;
+  if (panel.closest('.album-modal')) document.body.append(panel);
   const owner = feedbackMenuOwner;
   feedbackMenuOwner = null;
   if (owner) {
@@ -3774,6 +3868,8 @@ function openFeedbackMenu(button, artist, album, metadata, options) {
   manage.textContent = 'Manage blocklist';
   manage.addEventListener('click', () => { closeFeedbackMenu(); navigateTo('blocklist'); });
   panel.append(manage);
+  const dialog = button.closest('.album-modal');
+  if (dialog) dialog.append(panel);
   panel.hidden = false;
   const rect = button.getBoundingClientRect();
   const width = panel.offsetWidth;
@@ -4095,7 +4191,9 @@ function decorateGetButton(button) {
 // accessible name carries it for assistive tech, so the face never depends on reading a word that
 // does not fit.
 function setGetButtonLabel(button, text) {
-  decorateGetButton(button).querySelector('.get-album-label').textContent = text;
+  decorateGetButton(button).querySelector('.get-album-label').textContent =
+    text && isListeningRoom() && (button.id === 'albumModalGet' || 'fullAlbumLabel' in button.dataset)
+      ? 'Get this album' : text;
 }
 
 function createGetButton(artist, album, metadata) {
@@ -4206,6 +4304,7 @@ async function searchAlbum(artist, album, metadata, button = null) {
 // inside the modal, otherwise the card or row that owns the Get control.
 function getFocusOwner(button) {
   if (button.closest('.album-modal')) return $('albumModalClose');
+  if (isListeningRoom() && button.closest('#libraryAlbumView') && !button.closest('.card')) return $('albumHeading');
   const owner = button.closest('[tabindex="0"]') || button.closest('article');
   // Dashboard tiles are articles without a tab stop of their own; -1 makes them focusable by
   // script only and leaves the tab order unchanged.
@@ -5266,6 +5365,7 @@ function libraryShow(name) {
   $('libraryIntro').hidden = name !== 'list';
   // The artist and album pages open on the picture: the section heading would only repeat the sidebar tab.
   $('libraryHeading').hidden = name === 'artist' || name === 'album';
+  if (name !== 'album' && isListeningRoom()) syncListeningRoomShell();
   zineHook('updateZineMast');
 }
 
@@ -5299,8 +5399,15 @@ function libraryOpen(target) {
 
 function libraryBack() {
   closeLibraryStreams();
+  const returnFrom = libraryNav.current;
   const previous = libraryNav.stack.pop() || null;
   libraryNav.current = previous;
+  if (!previous && returnFrom?.returnPage) {
+    libraryShow('list');
+    navigateTo(returnFrom.returnPage);
+    if (returnFrom.returnFocus?.isConnected) returnFrom.returnFocus.focus();
+    return;
+  }
   syncLocationHash({replace: true});
   if (previous) {
     renderLibraryTarget(previous);
@@ -5472,16 +5579,25 @@ function namedArtistTarget(name, mbid = null) {
   return {type: 'artist', id: null, key: foldKey(name), name, mbid, artworkUrl: null};
 }
 
-function namedAlbumTarget(artist, album, item = {}) {
+function namedAlbumTarget(artist, album, item = {}, listName) {
   return {
-    type: 'album', key: foldKey(artist) + '/' + foldKey(album), id: null, artist, name: album,
+    discovery: isListeningRoom() ? listeningRoomAlbumContext(item, listName) : null,
+    type: 'album', key: foldKey(artist) + '/' + foldKey(album),
+    id: isListeningRoom() && item.owned ? item.navidrome_id || item.id || null : null,
+    artist, name: album,
     year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
-    mbid: item.release_group_mbid || null, artworkUrl: null, owned: false,
+    mbid: item.release_group_mbid || null,
+    artworkUrl: isListeningRoom() ? item.artwork_url || null : null,
+    owned: isListeningRoom() && Boolean(item.owned),
   };
 }
 
 function openLibraryTarget(target) {
+  const returnFocus = albumModalReturnFocus || document.activeElement;
   if (!$('albumModalBackdrop').hidden) closeAlbumModal();
+  if (isListeningRoom() && target.discovery && activePage !== 'library') {
+    target = {...target, returnPage: activePage, returnFocus};
+  }
   navigateTo('library');
   libraryView.listReturn = null;
   libraryOpen(target);
@@ -5509,12 +5625,12 @@ function linkArtistName(parent, artist) {
   parent.append(buildInlineLink(artist, namedArtistTarget(artist)));
 }
 
-function linkAlbumName(parent, artist, album, item) {
+function linkAlbumName(parent, artist, album, item, listName) {
   if (!artist || !album || artist === 'Unknown artist') {
     parent.append(document.createTextNode(album || ''));
     return;
   }
-  parent.append(buildInlineLink(album, namedAlbumTarget(artist, album, item)));
+  parent.append(buildInlineLink(album, namedAlbumTarget(artist, album, item, listName)));
 }
 
 // Genres and tags as links, separated by a middle dot.
@@ -6066,6 +6182,11 @@ function buildAlbumReview(review) {
   item.className = 'album-review';
   const quote = document.createElement('blockquote');
   addTextElement(quote, 'p', '', '\u201c' + review.quote + '\u201d');
+  if (isListeningRoom()) {
+    const head = addTextElement(item, 'p', 'lr-album-review-head', '');
+    head.append(window.listeningRoomHome.icon('quote', true), review.source);
+    if (review.score != null) addTextElement(head, 'span', 'lr-album-review-score', review.score);
+  }
   item.append(quote);
   const link = document.createElement('a');
   link.className = 'album-review-link';
@@ -6073,6 +6194,7 @@ function buildAlbumReview(review) {
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = 'Read the full review at ' + review.source;
+  if (isListeningRoom()) link.textContent = 'Read on ' + review.source;
   item.append(link);
   return item;
 }
@@ -6215,6 +6337,7 @@ function setAlbumDescription(description) {
   $('albumDescriptionToggle').hidden = true;
   $('albumDescriptionToggle').setAttribute('aria-expanded', 'false');
   if (!paragraphs.length) {
+    if (isListeningRoom()) return;
     if (description && !albumTabState.chosen) selectAlbumTab('reviews', {byReader: false});
     return;
   }
@@ -6223,6 +6346,9 @@ function setAlbumDescription(description) {
   link.href = description.url || '#';
   link.hidden = !description.url;
   link.textContent = description.source || 'Apple Music';
+  const sourceName = $('lrAlbumDescriptionSource');
+  sourceName.textContent = link.textContent;
+  sourceName.hidden = Boolean(description.url);
   $('albumDescriptionLicense').textContent = description.license ? ' \u00b7 ' + description.license : '';
   fitAlbumDescription();
 }
@@ -6247,10 +6373,110 @@ function toggleAlbumDescription() {
   $('albumDescriptionToggle').setAttribute('aria-expanded', String(!collapsed));
 }
 
+const albumDiscoveryLists = {
+  lens_lists: 'Daily picks',
+  recommendations: 'Discover music',
+  personal: 'Personal Discoveries',
+  artist_deep_dive: 'Artist Deep Dives',
+  classics: 'Add to your collection',
+  new_releases: 'New releases',
+};
+
+function listeningRoomAlbumContext(item, listName) {
+  const name = albumDiscoveryLists[listName];
+  if (!name) return null;
+  const lens = listName === 'lens_lists' && listeningRoomLenses[item.lens];
+  return {item, listName, label: lens ? name + ', ' + lens : name};
+}
+
+function setListeningRoomAlbumReason(id, context, owned, showSource = false) {
+  const slot = $(id);
+  const label = 'Why this pick' + (showSource && context ? ' · ' + context.label : '');
+  const reason = !owned && context && window.listeningRoomHome.renderReason(context.item, 'hero', false, label);
+  slot.replaceChildren();
+  slot.hidden = !reason;
+  if (!reason) return;
+  slot.append(reason);
+}
+
+function listeningRoomAlbumActions(artist, album, metadata, owned, context) {
+  const actions = [];
+  if (!owned) {
+    const save = createSaveButton(artist, album, metadata, 'album');
+    save.classList.add('lr-btn');
+    actions.push(save);
+  }
+  const more = document.createElement('button');
+  more.type = 'button';
+  more.className = 'lr-btn';
+  more.append(window.listeningRoomHome.icon('lean-more', true), 'More like this');
+  more.addEventListener('click', () => sendArtistLean(artist, 'more', metadata));
+  const menu = createFeedbackMenuButton(artist, album, metadata, {listName: context?.listName || 'library'});
+  menu.classList.add('lr-btn', 'lr-btn-icon');
+  return [...actions, more, menu];
+}
+
+function placeAlbumPageContent() {
+  const head = document.querySelector('.album-head');
+  const body = $('lrAlbumHeroBody');
+  const about = document.querySelector('.album-about');
+  const action = $('albumAction');
+  if (isListeningRoom()) {
+    for (const [id, glyph] of [['albumTabInfo', 'info'], ['albumTabReviews', 'quote']]) {
+      if (!$(id).querySelector('svg')) $(id).prepend(window.listeningRoomHome?.icon(glyph, true) || '');
+    }
+    body.append($('albumHeading'), $('albumArtist'), $('albumMeta'), $('lrAlbumReason'), action);
+    document.querySelector('.album-content').append(about);
+  } else if (action.parentElement === body) {
+    for (const id of ['albumTabInfo', 'albumTabReviews']) $(id).querySelector('svg')?.remove();
+    head.querySelector('.album-hero-art-wrap').append(action);
+    $('zineGetMissing').after($('albumHeading'), $('albumArtist'), $('albumMeta'));
+    $('albumStatus').before(about);
+  }
+}
+
+function buildListeningRoomSimilarAlbum(item) {
+  const row = document.createElement('li');
+  row.className = 'card lr-album-card';
+  makeAlbumCardInteractive(row, item.artist, item.name, item, false);
+  const art = buildAlbumArtwork(item, 'lr-cover', 400);
+  if (item.owned) art.append(buildOwnedCheck());
+  const title = buildLibraryLink(item.name, albumTarget(item), 'lr-card-title');
+  row.append(art, title);
+  addTextElement(row, 'p', 'lr-meta', [item.artist, item.year].filter(Boolean).join(' · '));
+  const actions = addTextElement(row, 'div', 'lr-actions', '');
+  if (!item.owned) {
+    const get = buildAlbumState(item);
+    get.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+    actions.append(get);
+  }
+  const menu = createFeedbackMenuButton(item.artist, item.name, item, {listName: 'library'});
+  menu.classList.add('lr-btn', 'lr-btn-icon', 'lr-btn-quiet');
+  actions.append(menu);
+  return row;
+}
+
+function buildListeningRoomSimilarArtist(item) {
+  const row = document.createElement('li');
+  const button = buildLibraryLink('', artistTarget(item), 'lr-album-person');
+  const copy = addTextElement(button, 'span', '', '');
+  const count = item.album_count;
+  addTextElement(copy, 'strong', '', item.name);
+  addTextElement(copy, 'span', 'lr-meta', item.owned
+    ? (count ? pluralize(count, 'album', 'albums') + ' in your library' : 'In your library')
+    : 'Not in your library');
+  button.prepend(window.listeningRoomHome.artistPhoto(item.name));
+  row.append(button);
+  return row;
+}
+
 function renderAlbum(target) {
   const view = libraryView;
   const seq = ++view.albumSeq;
   libraryShow('album');
+  $('libraryAlbumView').dataset.discovery = String(Boolean(target.discovery) && !target.owned);
+  if (isListeningRoom()) syncListeningRoomShell();
+  placeAlbumPageContent();
   const heading = $('albumHeading');
   const status = $('albumStatus');
   heading.textContent = displayAlbumName(target.name) || 'Loading album…';
@@ -6261,7 +6487,9 @@ function renderAlbum(target) {
   $('albumGenre').replaceChildren();
   $('albumSummary').textContent = '';
   $('albumOwnership').hidden = target.owned !== false;
+  $('lrAlbumOwnership').hidden = target.owned !== false;
   clearPageTint('libraryAlbumView');
+  document.querySelector('.album-head').style.removeProperty('--lr-hero-tint');
   $('albumAction').replaceChildren();
   albumPage.album = null;
   albumPage.tracks = null;
@@ -6271,6 +6499,9 @@ function renderAlbum(target) {
   $('albumSimilarAlbumsAll').hidden = true;
   resetAlbumTabs();
   setAlbumDescription(null);
+  if (isListeningRoom()) {
+    setListeningRoomAlbumReason('lrAlbumReason', target.discovery, target.owned, true);
+  }
   setSectionNote('albumTracksNote', 'Loading tracklist…');
   setSectionNote('albumSimilarArtistsNote', 'Loading similar artists…');
   setSectionNote('albumSimilarAlbumsNote', 'Loading similar albums…');
@@ -6376,7 +6607,29 @@ function tintPage(viewId, url, current) {
   image.src = url;
 }
 
+function listeningRoomCoverPlaceholder() {
+  const placeholder = window.listeningRoomHome.icon('disc');
+  placeholder.classList.add('lr-album-only', 'lr-album-cover-placeholder');
+  return placeholder;
+}
+
+function tintListeningRoomAlbum(panel, url, current) {
+  if (!url) return;
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.onload = () => {
+    if (!current()) return;
+    const tint = window.listeningRoomHome?.sampleTint(image);
+    if (tint) panel.style.setProperty('--lr-hero-tint', tint);
+  };
+  image.src = url;
+}
+
 function tintAlbumPage(url, seq) {
+  if (isListeningRoom()) {
+    tintListeningRoomAlbum(document.querySelector('.album-head'), url, () => seq === libraryView.albumSeq);
+    return;
+  }
   tintPage('libraryAlbumView', url, () => seq === libraryView.albumSeq);
 }
 
@@ -6390,6 +6643,7 @@ function setAlbumHero(target, seq) {
   const frame = buildAlbumArtwork({
     artwork_url: target.artworkUrl, owned: target.owned, artist: target.artist, name: target.name,
   }, 'album-hero-art', 500);
+  if (isListeningRoom()) frame.prepend(listeningRoomCoverPlaceholder());
   tintAlbumPage(sizedArtwork(target.artworkUrl, 500), seq);
   frame.onRemoteArtwork = data => {
     if (seq === libraryView.albumSeq && data.year && !$('albumYear').textContent) $('albumYear').textContent = data.year;
@@ -6411,6 +6665,23 @@ const albumPage = {album: null, target: null};
 // The album's own state: a green check when every song is in the library, the Get button when not.
 // Before the tracklist arrives an owned album shows the check, as it always did.
 function setAlbumAction(album, tracks) {
+  if (isListeningRoom()) {
+    const context = albumPage.target.discovery;
+    const metadata = {...context?.item, ...album};
+    const state = album.owned ? buildOwnedCheck() : createGetButton(album.artist, album.name, metadata);
+    state.classList.add('lr-btn', album.owned ? 'lr-album-done' : 'lr-btn-primary');
+    if (album.owned) {
+      state.removeAttribute('role');
+      state.removeAttribute('aria-label');
+      state.append('In your library');
+    } else {
+      state.dataset.fullAlbumLabel = '';
+      setGetButtonLabel(state, 'get');
+    }
+    $('albumAction').replaceChildren(state,
+      ...listeningRoomAlbumActions(album.artist, album.name, metadata, album.owned, context));
+    return;
+  }
   const complete = tracks ? tracks.every(track => track.owned) : Boolean(album.owned);
   const state = buildAlbumState({
     owned: complete, artist: album.artist, name: album.name, year: album.year,
@@ -6482,7 +6753,9 @@ function applyAlbumSection(section, target) {
     if (album.artwork_url && !target.artworkUrl) {
       const wrap = document.querySelector('.album-hero-art-wrap');
       wrap.querySelector('.album-hero-art')?.remove();
-      wrap.prepend(buildArtwork(sizedArtwork(album.artwork_url, 500), 'album-hero-art'));
+      const art = buildArtwork(sizedArtwork(album.artwork_url, 500), 'album-hero-art');
+      if (isListeningRoom()) art.prepend(listeningRoomCoverPlaceholder());
+      wrap.prepend(art);
       tintAlbumPage(sizedArtwork(album.artwork_url, 500), libraryView.albumSeq);
     }
     $('albumYear').textContent = album.year || $('albumYear').textContent;
@@ -6490,12 +6763,20 @@ function applyAlbumSection(section, target) {
     $('albumQuality').textContent = album.quality || '';
     $('albumQuality').hidden = !album.quality;
     $('albumOwnership').hidden = Boolean(album.owned);
+    $('lrAlbumOwnership').hidden = Boolean(album.owned);
+    if (isListeningRoom()) {
+      $('libraryAlbumView').dataset.discovery = String(Boolean(target.discovery) && !album.owned);
+      syncListeningRoomShell();
+      setListeningRoomAlbumReason('lrAlbumReason', target.discovery, album.owned, true);
+      if (album.owned && !albumTabState.chosen) selectAlbumTab('reviews', {byReader: false});
+    }
     const artist = $('albumArtist');
     artist.replaceChildren();
     artist.append(buildLibraryLink(album.artist, {
       type: 'artist', id: album.owned ? album.artist_id : null, key: album.artist_key,
       name: album.artist, mbid: null, artworkUrl: null,
     }, 'library-link'));
+    if (isListeningRoom() && album.artist) artist.prepend(window.listeningRoomHome.artistPhoto(album.artist));
     setAlbumPagePlatformLinks(album.artist, album.name, album.release_group_mbid);
     albumPage.album = album;
     setAlbumAction(album);
@@ -6520,7 +6801,7 @@ function applyAlbumSection(section, target) {
     if (section.available && section.items.length) {
       fillTrackRows($('albumTracks'), section.items);
       // Album Get stays until every song is in the library, then becomes the check.
-      if (albumPage.album) setAlbumAction(albumPage.album, section.items);
+      if (albumPage.album && !isListeningRoom()) setAlbumAction(albumPage.album, section.items);
       $('albumSummary').textContent = albumSummary(section.items);
       albumPage.tracks = section.items;
       zineHook('renderZineAlbum');
@@ -6531,7 +6812,8 @@ function applyAlbumSection(section, target) {
     }
   } else if (section.section === 'similar_artists') {
     if (section.available && section.items.length) {
-      fillRows($('albumSimilarArtists'), randomSample(section.items, SIMILAR_ARTISTS_SHOWN), buildArtistChip);
+      fillRows($('albumSimilarArtists'), randomSample(section.items, SIMILAR_ARTISTS_SHOWN),
+        isListeningRoom() ? buildListeningRoomSimilarArtist : buildArtistChip);
       setSectionNote('albumSimilarArtistsNote', '');
     } else {
       setSectionNote('albumSimilarArtistsNote', section.available ? 'No similar artists found.'
@@ -6540,7 +6822,7 @@ function applyAlbumSection(section, target) {
   } else if (section.section === 'similar_albums') {
     if (section.available && section.items.length) {
       const showSimilarAlbums = all => {
-        fillRows($('albumSimilarAlbums'), section.items, item => buildAlbumRow({...item, showArtist: true}),
+        fillRows($('albumSimilarAlbums'), section.items, item => isListeningRoom() ? buildListeningRoomSimilarAlbum(item) : buildAlbumRow({...item, showArtist: true}),
           all ? Infinity : SIMILAR_ALBUMS_SHOWN);
       };
       showSimilarAlbums(false);
@@ -6805,7 +7087,8 @@ updateLedgerCrumb(activePage);
 // Radio and Listening Room Discover renderers load in deferred scripts after this one.
 if (window.location.hash === '#radio' || window.location.hash === '#radio/heard') {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
-} else if (isListeningRoom() && lrDiscoverPages.has(window.location.hash.slice(1).split(/[/?]/)[0])) {
+} else if (isListeningRoom() && (lrDiscoverPages.has(window.location.hash.slice(1).split(/[/?]/)[0])
+    || window.location.hash.startsWith('#library/album?'))) {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
 } else if (window.location.hash) {
   applyHash(window.location.hash);

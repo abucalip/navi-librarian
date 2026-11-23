@@ -80,8 +80,8 @@
   const albumName = item => item.album || item.title || item.name || 'Untitled album';
   const pickKey = item => [artistName(item), albumName(item)].map(foldKey).join('::');
 
-  function albumLink(item, text) {
-    const target = namedAlbumTarget(artistName(item), albumName(item), item);
+  function albumLink(item, text, listName) {
+    const target = namedAlbumTarget(artistName(item), albumName(item), item, listName);
     if (item.owned && (item.navidrome_id || item.id)) {
       target.id = item.navidrome_id || item.id;
       target.owned = true;
@@ -127,7 +127,7 @@
     return node;
   }
 
-  function renderReason(item, size, grouped = false) {
+  function renderReason(item, size, grouped = false, headingText) {
     const why = item.why;
     if (typeof why?.sentence !== 'string' || !why.sentence.trim()) return null;
     if (size === 'line') return element('p', 'lr-reason-line', why.sentence);
@@ -138,7 +138,7 @@
       : why.kind === 'discover' ? discoverIcons[item.discovery_category] : reasonIcons[why.kind];
     const box = element('div', 'lr-reason');
     const heading = element('p', 'lr-reason-label');
-    heading.append(icon(glyph || 'layers', true), label);
+    heading.append(icon(glyph || 'layers', true), headingText || label);
     const sentence = element('p', 'lr-reason-head');
     sentence.append(element('span', size === 'hero' ? 'lr-reason-hero' : 'lr-reason-text', text));
     box.append(heading, sentence);
@@ -329,7 +329,7 @@
     hero.setAttribute('aria-labelledby', 'lrLeadTitle');
     const title = element('h1', 'lr-hero-title');
     title.id = 'lrLeadTitle';
-    title.append(albumLink(item, albumName(item)));
+    title.append(albumLink({...item, lens: item.lens || name}, albumName(item), 'lens_lists'));
     const body = element('div', 'lr-hero-body');
     body.append(element('p', 'lr-eyebrow', 'Daily picks · ' + label + ' · Lead pick'), title, artistAndYear(item, true));
     const reason = renderReason({...item, lens: item.lens || name}, 'hero');
@@ -349,7 +349,7 @@
       aside.setAttribute('aria-label', 'Up next in ' + label);
       aside.append(element('p', 'lr-eyebrow', 'Up next in ' + label));
       for (const pick of next) {
-        const anchor = albumLink(pick, '');
+        const anchor = albumLink({...pick, lens: pick.lens || name}, '', 'lens_lists');
         const info = element('div', 'lr-upnext-copy');
         info.append(element('p', 'lr-card-title', albumName(pick)));
         const line = renderReason(pick, 'line');
@@ -364,11 +364,11 @@
     return hero;
   }
 
-  function renderCard(item) {
+  function renderCard(item, lens) {
     const card = element('article', 'lr-card');
     card.dataset.lrPick = pickKey(item);
     const title = element('h3', 'lr-card-title');
-    title.append(albumLink(item, albumName(item)));
+    title.append(albumLink({...item, lens: item.lens || lens}, albumName(item), 'lens_lists'));
     const copy = element('div', 'lr-card-copy');
     copy.append(title, artistAndYear(item, false));
     card.append(artwork(item, 'lr-cover'), copy);
@@ -542,7 +542,7 @@
     }
     if (items.length) {
       const grid = element('div', 'lr-grid');
-      grid.append(...items.map(renderCard));
+      grid.append(...items.map(item => renderCard(item, selectedLens)));
       content.push(grid);
     }
     if (target === panels) panels.append(...content);
@@ -588,7 +588,7 @@
 
     const grid = element('div', 'lr-dive-albums');
     for (const item of albums) {
-      const card = albumLink(item, '');
+      const card = albumLink(item, '', 'artist_deep_dive');
       card.className = 'lr-card';
       card.append(artwork(item, 'lr-cover'), element('p', 'lr-card-title', albumName(item)));
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
@@ -613,12 +613,12 @@
     }
   }
 
-  function renderPreview(item) {
+  function renderPreview(item, listName) {
     const card = element('article', 'lr-rowcard');
     const body = element('div', 'lr-rowcard-body');
     const info = element('div', '');
     const title = element('h3', 'lr-card-title');
-    title.append(albumLink(item, albumName(item)));
+    title.append(albumLink(item, albumName(item), listName));
     info.append(title, artistAndYear(item, false));
     body.append(info);
     const reason = renderReason(item, 'card');
@@ -676,7 +676,8 @@
   function renderMiniCard(item, preview = '') {
     const card = element('article', 'lr-card');
     const title = element('h3', 'lr-card-title');
-    title.append(albumLink(item, albumName(item)));
+    const listName = {collection: 'classics', release: 'new_releases'}[preview];
+    title.append(albumLink(item, albumName(item), listName));
     const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
     const meta = [artistName(item), preview === 'collection' && year].filter(Boolean).join(' · ');
     card.append(artwork(item, 'lr-cover'), title, element('p', 'lr-meta', meta));
@@ -764,15 +765,15 @@
     loadSection($('lrDive'), '/api/discovery/artist_deep_dive?count=150',
       'Artist Deep Dives', 'No artist deep dives yet.',
       (target, items) => renderDive(target, groupDiveAlbums(items)), renderDiveStatus);
-    const showRows = (target, items) => {
+    const showRows = listName => (target, items) => {
       const rows = element('div', 'lr-rows');
-      rows.append(...items.slice(0, 3).map(renderPreview));
+      rows.append(...items.slice(0, 3).map(item => renderPreview(item, listName)));
       target.replaceChildren(rows);
     };
     loadSection($('lrPersonalRows'), '/api/discovery/personal?count=3',
-      'Personal Discoveries', 'No personal discoveries yet.', showRows, showNote);
+      'Personal Discoveries', 'No personal discoveries yet.', showRows('personal'), showNote);
     loadSection($('lrDiscoverRows'), '/api/recommendations?count=3',
-      'Discover music', 'No recommendations yet.', showRows, showNote);
+      'Discover music', 'No recommendations yet.', showRows('recommendations'), showNote);
     loadSection($('lrCollection'), '/api/discovery/classics?count=3',
       'Add to your collection', 'No albums to add yet.', (target, items) => showMiniCards(target, items, 'collection'));
     loadSection($('lrNewReleases'), '/api/discovery/new_releases?count=3',
@@ -999,7 +1000,7 @@
   }
 
   window.listeningRoomHome = {refresh, updateGetting, syncGettingVisibility,
-    renderReason, artistPhoto, icon};
+    renderReason, artistPhoto, icon, sampleTint};
   bindPageLink($('lrRadioGrab'), 'radio');
   $('lrRadioHeard').addEventListener('click', event => {
     if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

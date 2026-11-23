@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/static/listening-room/shell.css">
 <link rel="stylesheet" href="/static/listening-room/home.css">
 <link rel="stylesheet" href="/static/listening-room/discover.css">
+<link rel="stylesheet" href="/static/listening-room/album.css">
 </head>
 <body>
 <!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
@@ -624,15 +625,18 @@
     </div>
     <div id="libraryAlbumView" class="tint-backdrop" hidden>
       <div class="album-page">
-        <button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
+        <button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg><span class="lr-album-only">Back</span></button>
         <div class="album-head">
           <div class="album-hero-art-wrap"><div id="albumAction" class="album-hero-action"></div></div>
           <!-- Zine Spread layout only (hidden in every other theme): byline, a button for the missing tracks, and the pull quote. -->
           <p id="zineAlbumBy" class="zine-album-by" hidden></p>
           <button type="button" id="zineGetMissing" class="zine-get-missing" hidden></button>
+          <div id="lrAlbumHeroBody" class="lr-album-only lr-hero-body">
+            <p class="lr-eyebrow">Album</p>
+          </div>
           <h2 id="albumHeading" tabindex="-1"></h2>
           <p id="albumArtist" class="album-hero-artist"></p>
-          <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span><span id="albumQuality" class="album-quality" title="File quality" hidden></span></p>
+          <div id="albumMeta" class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span><span id="albumQuality" class="album-quality" title="File quality" hidden></span><span id="lrAlbumOwnership" class="lr-album-only lr-album-pill" hidden>Not in your library</span></div>
           <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
           <blockquote id="zinePull" class="zine-pull" hidden></blockquote>
           <div class="album-about">
@@ -645,7 +649,7 @@
               <div id="albumDescription" class="album-description" hidden>
                 <div id="albumDescriptionText" class="album-description-text"></div>
                 <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
-                <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a><span id="albumDescriptionLicense"></span></p>
+                <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a><span id="lrAlbumDescriptionSource" class="lr-album-only" hidden></span><span id="albumDescriptionLicense"></span></p>
               </div>
             </div>
             <div id="albumReviewsPanel" class="album-tab-panel" role="tabpanel" aria-labelledby="albumTabReviews" hidden>
@@ -655,15 +659,19 @@
               <button type="button" id="albumReviewsRetry" class="bio-toggle" hidden>Try again</button>
             </div>
           </div>
+          <div id="lrAlbumReason" class="lr-album-only" hidden></div>
           <p id="albumStatus" class="status-line" aria-live="polite"></p>
         </div>
-        <section aria-labelledby="albumTracksHeading">
-          <h3 id="albumTracksHeading" class="sr-only">Tracklist</h3>
-          <p id="albumTracksNote" class="section-note" role="status" hidden></p>
-          <ol id="albumTracks" class="track-list"></ol>
-          <p id="albumSummary" class="album-summary"></p>
-          <div id="albumPlatformLinks" class="album-platform-links" role="group" aria-label="Open this album on music services"></div>
-        </section>
+        <div class="album-content">
+          <section aria-labelledby="albumTracksHeading">
+            <h3 id="albumTracksHeading" class="sr-only">Tracklist</h3>
+            <p id="albumTracksNote" class="section-note" role="status" hidden></p>
+            <ol id="albumTracks" class="track-list"></ol>
+            <p id="albumSummary" class="album-summary"></p>
+            <p id="lrAlbumServicesLabel" class="lr-album-only" hidden>Open this album on music services</p>
+            <div id="albumPlatformLinks" class="album-platform-links" role="group" aria-label="Open this album on music services"></div>
+          </section>
+        </div>
         <section aria-labelledby="albumSimilarAlbumsHeading">
           <h4 id="albumSimilarAlbumsHeading">Similar albums</h4>
           <p id="albumSimilarAlbumsNote" class="section-note" role="status" hidden></p>
@@ -856,7 +864,19 @@
         <div class="album-modal-art"><div id="albumModalActions" class="action-group" role="group" aria-label="Actions for this album"><button id="albumModalGet" class="get-album" type="button" title="Get this album" aria-label="Get this album">get</button></div></div>
         <nav id="albumModalPlatformLinks" class="album-platform-links" aria-label="Find this album on music services"></nav>
       </div>
-      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalBio" class="album-modal-bio" hidden></p><p id="albumModalStatus" class="album-modal-status status-line" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
+      <div class="album-modal-copy">
+        <p id="lrAlbumModalEyebrow" class="lr-album-only lr-eyebrow"></p>
+        <h2 id="albumModalTitle">Album</h2>
+        <p id="albumModalArtist" class="album-modal-artist"></p>
+        <span id="albumModalYear" class="album-modal-year"></span>
+        <div id="lrAlbumModalReason" class="lr-album-only" hidden></div>
+        <p id="albumModalBio" class="album-modal-bio" hidden></p>
+        <p id="albumModalStatus" class="album-modal-status status-line" aria-live="polite">Loading tracklist…</p>
+        <ol id="albumModalTracklist" class="album-modal-tracklist"></ol>
+        <div id="lrAlbumModalActions" class="lr-album-only lr-actions"></div>
+        <div id="lrAlbumModalOpen" class="lr-album-only"></div>
+        <p id="lrAlbumModalActionStatus" class="lr-album-only status-line" role="status"></p>
+      </div>
     </div>
     <!-- Crate Wall drawer only (static/layouts.css shows it): Get moves here from the cover, and "Not for me" runs the
          originating row's own dismiss control. Nothing here is visible in any other theme. -->

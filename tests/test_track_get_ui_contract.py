@@ -72,6 +72,7 @@ class TrackGetUIContractTests(unittest.TestCase):
         source = block(self.js, "function setAlbumAction(", "// A track: number")
         script = (
             "const made = [];\n"
+            "const isListeningRoom = () => false;\n"
             "const $ = () => ({replaceChildren: x => made.push(x)});\n"
             "const buildAlbumState = item => item;\n"
             "const wrapInActionGroup = control => control;\n" + source +
