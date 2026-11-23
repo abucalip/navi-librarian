@@ -55,7 +55,10 @@ class ButtonGroupContractTests(unittest.TestCase):
                 self.assertIn(f'title="{name}" aria-label="{name}"', markup)
                 self.assertIn(f'icons.svg#{icon}"', markup)
                 self.assertIn(icon, SPRITE_IDS)
-                self.assertNotRegex(markup, r">\s*[A-Za-z]")
+                if marker == 'id="libraryMore"':
+                    self.assertIn('<span class="lr-library-only">Load more</span>', markup)
+                else:
+                    self.assertNotRegex(markup, r">\s*[A-Za-z]")
 
     def test_each_listed_button_is_inside_an_action_group(self):
         for marker in BUTTONS:

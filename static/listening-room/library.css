@@ -1,0 +1,200 @@
+/* Keep the shared Library controls and browse lifecycle across themes. */
+:root:not([data-layout="listeningroom"]) :is(.lr-library-only, .lr-library-initials, .lr-library-next) { display: none; }
+:root:not([data-layout="listeningroom"]) .library-size-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#libraryListView:has(#libraryBrowse[hidden]) .library-toolbar { display: none; }
+
+:root[data-layout="listeningroom"] {
+  #libraryHeading:has(~ #libraryListView:not([hidden])) {
+    margin: 0;
+    color: var(--lr-text);
+    font: 700 40px/44px var(--lr-font-display);
+    letter-spacing: -0.02em;
+  }
+  #libraryHeading:has(~ #libraryListView:not([hidden]))::after { display: none; }
+  #libraryIntro {
+    margin: var(--lr-space-8) 0 var(--lr-space-24);
+    color: var(--lr-text-muted);
+    font: 400 16px/25px var(--lr-font-text);
+  }
+
+  /* The Albums mockup starts directly at Browse. */
+  #libraryListView:has(#libraryTabAlbums[aria-pressed="true"]) #lrLibraryShelves { display: none; }
+  #libraryListView > h3 { margin: 0 0 var(--lr-space-16); }
+
+  .library-browse-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--lr-space-16);
+    padding: var(--lr-space-16);
+    border: 1px solid var(--lr-edge);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-surface);
+  }
+  #libraryListView .library-controls {
+    display: block;
+    flex: 2 1 280px;
+    min-width: 0;
+    margin: 0;
+  }
+  #libraryListView .library-toolbar { display: contents; }
+  #libraryListView:has(#libraryBrowse[hidden]) .library-toolbar { display: none; }
+  #libraryListView :is(.library-control, .library-show, .library-display, .library-size:not([hidden])) {
+    display: grid;
+    gap: var(--lr-space-4);
+    align-items: stretch;
+  }
+  #libraryListView .library-sort {
+    display: grid;
+    grid-template-columns: minmax(0, 154px) auto;
+    justify-content: start;
+    gap: var(--lr-space-4) var(--lr-space-8);
+  }
+  #libraryListView .library-sort label { grid-column: 1 / -1; }
+  #libraryListView .library-sort .search-field { min-width: 0; }
+  .library-browse-controls :is(label:not(.library-size), .lr-library-only, .library-size-label) {
+    color: var(--lr-text-soft);
+    font: 600 13px/18px var(--lr-font-text);
+  }
+  .library-browse-controls .search-field::before { content: none; }
+
+  #libraryFilter, #librarySort {
+    min-height: var(--lr-target);
+    border: 1px solid var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+    background-color: var(--lr-surface-2);
+    color: var(--lr-text);
+    font: 400 16px/20px var(--lr-font-text);
+  }
+  #libraryFilter { padding-inline: 44px; }
+  #libraryFilter::placeholder { color: var(--lr-text-muted); font-weight: 400; }
+  #libraryFilterIcon { left: var(--lr-space-16); right: auto; }
+  #librarySort {
+    padding: 0 28px 0 var(--lr-space-16);
+    background-image: linear-gradient(45deg, transparent 50%, var(--lr-text-soft) 50%),
+      linear-gradient(135deg, var(--lr-text-soft) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%;
+    background-size: 5px 5px;
+  }
+
+  .library-browse-controls .action-group {
+    gap: var(--lr-space-4);
+    padding: var(--lr-space-4);
+    background: var(--lr-surface-2);
+    border: 1px solid var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+  }
+  #libraryListView .library-sort .action-group { padding: 0; }
+  #libraryListView .library-toolbar .action-group > button {
+    height: var(--lr-target);
+    min-width: var(--lr-target);
+    border: 0;
+    border-radius: 4px;
+    color: var(--lr-text-soft);
+    font: 600 13px/18px var(--lr-font-text);
+  }
+  #libraryListView .library-toolbar button[aria-pressed="true"] {
+    color: var(--lr-text);
+    background: var(--lr-raised);
+    box-shadow: inset 0 0 0 1px var(--lr-edge-strong);
+  }
+  .library-show .text-button { flex: 1; min-width: 88px; }
+  .library-toolbar .action-group .icon, #libraryMore .icon { display: none; }
+  .library-toolbar .action-group .lr-icon { width: 18px; height: 18px; }
+  #libraryTileSize { min-height: var(--lr-target); width: 140px; margin: 0; accent-color: var(--lr-text); }
+
+  #libraryStatus {
+    margin: var(--lr-space-16) 0;
+    color: var(--lr-text-muted);
+    font: 400 14px/21px var(--lr-font-text);
+  }
+  #libraryStatus.is-error, #libraryStatus.is-error::before { color: var(--lr-danger); }
+  #libraryList { margin: 0; }
+  #libraryList:not(.is-grid) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  #libraryList .library-artist {
+    min-width: 0;
+    color: var(--lr-text);
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  #libraryList:not(.is-grid) .library-artist {
+    display: grid;
+    grid-template-columns: var(--lr-avatar-artist) minmax(0, 1fr) auto;
+    gap: var(--lr-space-16);
+    min-height: 64px;
+    padding: var(--lr-space-8) var(--lr-space-16);
+    border: 0;
+    border-bottom: 1px solid var(--lr-edge);
+    border-radius: 0;
+  }
+  #libraryList .library-artist:hover { background: var(--lr-raised); }
+  #libraryList .library-art {
+    display: grid;
+    place-items: center;
+    width: var(--lr-avatar-artist);
+    height: var(--lr-avatar-artist);
+    border-radius: 50%;
+    background: var(--lr-raised);
+  }
+  #libraryList.is-albums .library-art { border-radius: var(--lr-radius-cover); }
+  .lr-library-initials { color: var(--lr-text-soft); }
+  .library-art:has(img) .lr-library-initials { display: none; }
+
+  #libraryList.is-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tile-size)), 1fr));
+    gap: var(--lr-space-24);
+  }
+  #libraryList.is-grid .library-artist {
+    padding: 0;
+    border: 0;
+    gap: var(--lr-space-8);
+    background: transparent;
+  }
+  #libraryList.is-grid .library-artist:hover .library-artist-name { text-decoration: underline; }
+  #libraryList.is-grid .library-art { width: 100%; height: auto; }
+  #libraryList.is-grid .library-artist-text { justify-items: start; text-align: left; gap: var(--lr-space-4); }
+  #libraryList.is-grid :is(.library-artist-name, .library-artist-count) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #libraryList.is-grid .lr-library-next { display: none; }
+  #libraryList .lr-library-next { width: 18px; height: 18px; }
+  #libraryList .library-artist-count { color: var(--lr-text-muted); font: 400 14px/20px var(--lr-font-text); }
+
+  #libraryMoreGroup:not([hidden]) {
+    display: flex;
+    width: fit-content;
+    margin: var(--lr-space-16) auto 0;
+    border: 1px solid var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-surface-2);
+  }
+  #libraryMore {
+    width: auto;
+    height: var(--lr-target);
+    padding: 0 var(--lr-space-16);
+    color: var(--lr-text);
+    font: 600 14px/16px var(--lr-font-text);
+  }
+  #libraryListView :is(button, input, select):focus-visible {
+    outline: 2px solid var(--lr-focus);
+    outline-offset: -2px;
+  }
+
+  @media (max-width: 719px) {
+    #libraryHeading:has(~ #libraryListView:not([hidden])) { font-size: 30px; line-height: 34px; }
+    .library-browse-controls { flex-direction: column; align-items: stretch; }
+    #libraryListView .library-controls { flex: auto; }
+    #libraryListView .library-display .action-group { justify-content: start; }
+    #libraryTileSize { width: 100%; }
+    #libraryList.is-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--tile-size) - 30px)), 1fr));
+      gap: var(--lr-space-16);
+    }
+  }
+}

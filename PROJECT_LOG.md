@@ -1,3 +1,9 @@
+## 2026-11-24 — Listening Room Library (L10)
+
+- Styled the Library browse controls, artist rows and thumbnail grid using the Listening Room tokens. The three shelves appear on Artists. Albums starts at Browse, matching its mockup.
+- Reused owned-library search, sort preferences, cursor pagination and detail navigation. Added coverage for the shared toolbar and themed Load more label.
+- `node --check static/app.js` and the focused Library, button-group and Listening Room shell contracts passed (62 tests, 48 subtests). Exact-head browser verification is pending CI.
+
 ## 2026-11-23 — Follow Apple Music artist-page redirects
 
 - **Base and branch** — GitHub `main` at `a32dccd68defd7ac3e1cf58cfedd598edf7f32d9`, branch `fix/apple-artist-bio-redirect`.
