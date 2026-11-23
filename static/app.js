@@ -5168,7 +5168,8 @@ function showLibraryListMore(visible, label, resetOnRetry) {
   $('libraryMoreGroup').hidden = !visible;
   more.title = label;
   more.setAttribute('aria-label', label);
-  more.replaceChildren(spriteIcon(label === 'Load more' ? 'plus' : 'rotate-cw'));
+  more.querySelector('use').setAttribute('href', '/static/icons.svg#' + (label === 'Load more' ? 'plus' : 'rotate-cw'));
+  more.querySelector('span').textContent = label;
   libraryView.resetOnRetry = resetOnRetry;
 }
 
@@ -5240,7 +5241,7 @@ function syncLibraryControls() {
   const orderButton = $('libraryOrder');
   orderButton.title = label;
   orderButton.setAttribute('aria-label', label);
-  orderButton.replaceChildren(spriteIcon(order === 'asc' ? 'chevron-up' : 'chevron-down'));
+  orderButton.querySelector('use').setAttribute('href', '/static/icons.svg#chevron-' + (order === 'asc' ? 'up' : 'down'));
   for (const button of document.querySelectorAll('[data-library-display]')) {
     button.setAttribute('aria-pressed', String(button.dataset.libraryDisplay === view.display));
   }
@@ -5293,9 +5294,9 @@ async function loadLibrary({reset = true} = {}) {
     if (!data.total) {
       setStatus(status, 'No ' + tab.noun[1] + ' in your library.', 'empty');
     } else {
-      const countText = data.next_cursor
-        ? 'Showing ' + shown + ' of ' + pluralize(data.total, tab.noun[0], tab.noun[1])
-        : pluralize(data.total, tab.noun[0], tab.noun[1]);
+      const total = pluralize(data.total, tab.noun[0], tab.noun[1]);
+      let countText = data.next_cursor ? 'Showing ' + shown + ' of ' + total : total;
+      if (isListeningRoom()) countText = listeningRoomLibrarySummary(data.total, tab);
       setStatus(status, countText + (data.index_state === 'stale' ? ' · Showing the last indexed library' : ''), 'progress');
     }
     showLibraryListMore(Boolean(data.next_cursor), 'Load more', false);
@@ -5308,14 +5309,34 @@ async function loadLibrary({reset = true} = {}) {
   }
 }
 
+function listeningRoomLibrarySummary(total, tab) {
+  const sort = libraryView.sort;
+  const directions = {
+    name: ['A to Z', 'Z to A'],
+    artist: ['A to Z', 'Z to A'],
+    added: ['oldest first', 'newest first'],
+    year: ['oldest first', 'newest first'],
+    album_count: ['fewest first', 'most first'],
+    song_count: ['fewest first', 'most first'],
+  };
+  const [, label] = tab.sorts.find(([value]) => value === sort);
+  const direction = directions[sort][libraryOrder() === 'asc' ? 0 : 1];
+  const count = total.toLocaleString() + ' ' + tab.noun[total === 1 ? 0 : 1];
+  return count + ' · by ' + label.toLowerCase() + ', ' + direction;
+}
+
 function formatLibraryDate(iso) {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'});
 }
 
 function libraryItemDetail(item) {
-  const added = libraryView.sort === 'added' && item.added ? 'Added ' + formatLibraryDate(item.added) : '';
-  const base = libraryView.tab === 'albums'
+  const albums = libraryView.tab === 'albums';
+  const listeningRoom = isListeningRoom();
+  const showDate = listeningRoom ? !albums : libraryView.sort === 'added';
+  const date = showDate && item.added ? formatLibraryDate(item.added) : '';
+  const added = date ? (listeningRoom ? 'added ' : 'Added ') + date : '';
+  const base = albums
     ? [item.artist, item.year]
     : [pluralize(item.album_count, 'album', 'albums')];
   return [...base, added].filter(Boolean).join(' · ');
@@ -5329,12 +5350,24 @@ function buildLibraryRow(item) {
   button.className = 'library-artist';
   // A grid tile is much larger than a list thumbnail, so it asks for a bigger image.
   const art = libraryView.display === 'grid' ? 400 : 96;
-  button.append(buildArtwork(sizedArtwork(item.artwork_url, art), 'library-art'));
+  const artwork = buildArtwork(sizedArtwork(item.artwork_url, art), 'library-art');
+  if (!albums) {
+    const initials = item.name.trim().split(/\s+/).slice(0, 2)
+      .map(word => Array.from(word)[0]).join('').toLocaleUpperCase();
+    const fallback = document.createElement('span');
+    fallback.className = 'lr-library-initials';
+    fallback.setAttribute('aria-hidden', 'true');
+    fallback.textContent = initials;
+    artwork.append(fallback);
+  }
+  button.append(artwork);
   const text = document.createElement('span');
   text.className = 'library-artist-text';
   addTextElement(text, 'span', 'library-artist-name', item.name);
   addTextElement(text, 'span', 'library-artist-count', libraryItemDetail(item));
-  button.append(text);
+  const next = spriteIcon('chevron-right');
+  next.classList.add('lr-library-next');
+  button.append(text, next);
   button.addEventListener('click', () => {
     libraryView.listReturn = button;
     libraryOpen(albums ? albumTarget(item) : artistTarget(item));

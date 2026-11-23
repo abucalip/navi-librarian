@@ -39,6 +39,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `static/listening-room/discover.js`, `discover.css` | Listening Room Discover (L7): list and lens tabs, browser-local list preference, ranked reasons and artist panels. Reuse Home’s reason renderer and the existing browser list loaders and action handlers. |
 | `static/listening-room/album.css` | Listening Room album page and quick view (L8). The album views in `static/app.js` reuse the existing album data, feedback and acquisition handlers and Home’s reason renderer and artwork tint. |
 | `static/listening-room/artist.css` | Listening Room artist and genre pages (L9). The detail views in `static/app.js` render the existing artist stream and genre results with shared artwork, feedback and acquisition controls. |
+| `static/listening-room/library.css` | Listening Room Library browse (L10). Styles the shared Library controls, list and grid. `static/app.js` retains search, sort preferences, pagination and detail navigation. |
 
 ## Clients
 

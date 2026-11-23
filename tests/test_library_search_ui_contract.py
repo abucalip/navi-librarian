@@ -341,6 +341,17 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertNotIn("loadLibrary", slider)
         self.assertIn("repeat(auto-fill, minmax(var(--tile-size, 180px), 1fr))", self.css)
 
+    def test_listening_room_browse_controls_and_album_shelves_follow_the_mockups(self):
+        css = (ROOT / "static" / "listening-room" / "library.css").read_text(encoding="utf-8")
+        self.assertIn('href="/static/listening-room/library.css"', self.html)
+        controls = self.html.split('class="library-browse-controls"', 1)[1].split('id="librarySearchResults"', 1)[0]
+        for id_ in ("libraryFilter", "libraryTabArtists", "libraryTabAlbums", "librarySort",
+                    "libraryOrder", "libraryViewList", "libraryViewGrid", "libraryTileSize"):
+            self.assertIn(f'id="{id_}"', controls)
+        self.assertIn('#libraryTabAlbums[aria-pressed="true"]) #lrLibraryShelves { display: none; }', css)
+        self.assertIn("var(--tile-size)", css)
+        self.assertIn("more.querySelector('span').textContent = label;", self.new_js)
+
     def test_library_view_preferences_survive_unavailable_storage(self):
         self.assertIn("localStorage.getItem(LIBRARY_PREFS_KEY)", self.new_js)
         prefs = self.new_js[self.new_js.index("function loadLibraryPrefs()"):self.new_js.index("function syncLibraryControls()")]
