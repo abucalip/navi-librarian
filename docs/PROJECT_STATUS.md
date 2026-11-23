@@ -1,10 +1,12 @@
 # Project status
 
-Last checked: 2026-11-22. GitHub `main` is authoritative; this update is based on main at `0bfba05a` (FirstFM F5.1 merged), with F5.2 ready for PR.
+Last checked: 2026-11-23. GitHub `main` is authoritative; current main is `ffb1528cbd4843292b621c85656aea899a11a9b7` (CritiqueBrainz Android CB-5 merged, PR #1244).
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **CritiqueBrainz web forwarding defect identified (2026-11-23):** CB-1–CB-5 are merged (PRs #1240–#1244), but the web Reviews tab reads `album.mbid` while the album-page payload exposes `release_group_mbid`. As a result, web requests omit the MBID and the server skips CritiqueBrainz. A focused fix and regression test are in progress on branch `fix/critiquebrainz-release-group-mbid` based on `ffb1528cbd4843292b621c85656aea899a11a9b7`. Bitches Brew has no CritiqueBrainz review (so its empty result is expected); Tupelo Honey has one review and is the positive control. Not yet tested, merged, published, deployed or runtime-verified.
 
 - **FirstFM F5.2 ready (2026-11-22):** branch `feat/firstfm-f5-2-cleanup` based on `main` at `0bfba05a` (F5.1 merged, `#1237`). Dropped all remaining temporary `lastfm_listeners`, `lastfm_playcount`, `lastfm_tags`, `lastfm_popularity_bonus`, and `apply_lastfm_popularity_bonus` aliases across `discovery/` (`recommendation_payload.py`, `popularity.py`, `deep_dive_candidates.py`, `new_releases.py`, `lens_week.py`, `classics_candidates.py`, `classics_ratings.py`, `pick_why.py`, `recommendations.py`), `recommendation/` (`replay.py`, `diagnostics.py`, `profile_comparison.py`), `scripts/discovery_mode_sweep.py`, and client fallback decodes (`static/app.js`, `android/.../Discovery.kt`, `Dto.kt`), updated 16 Python test files and `FixtureParsingTest.kt`, and updated `docs/ARCHITECTURE.md`, `PRODUCT.md`, `docs/ACTIVE_WORK.md`, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md`. Verified zero remaining `ws.audioscrobbler.com` or `integrations.lastfm` references in production code. **Tests:** focused `pytest` runs passed (187 + 38 across the 18 affected test files) and Android `FixtureParsingTest` passed (`BUILD SUCCESSFUL`). Full suites not run; not published, deployed, or runtime-verified. **Next action:** merge F5.2 PR, then resume Listening Room slice L2 (shell) or owner runtime checks.
 
