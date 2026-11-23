@@ -34,6 +34,11 @@ class AlbumTabsUIContractTests(unittest.TestCase):
         self.assertIn("requestJSON('/api/album-reviews?' + params)", JS)
         self.assertNotIn("album-reviews", JS[JS.index("function applyAlbumSection"):JS.index("function applyAlbumSection") + 6000])
 
+    def test_reviews_forward_the_album_release_group_mbid(self):
+        load = JS[JS.index("async function loadAlbumReviews"):JS.index("// The description's first paragraph")]
+        self.assertIn("if (album.release_group_mbid) params.set('mbid', album.release_group_mbid);", load)
+        self.assertNotIn("album.mbid", load)
+
     def test_a_new_album_resets_the_tabs_and_a_stale_answer_is_ignored(self):
         self.assertIn("  resetAlbumTabs();\n  setAlbumDescription(null);", JS)
         self.assertEqual(JS.count("if (seq !== albumTabState.reviewSeq) return;"), 2)
