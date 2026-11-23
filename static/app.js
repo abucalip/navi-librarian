@@ -111,6 +111,7 @@ function syncListeningRoomShell() {
   if (lrSheetLinks.some(link => link.dataset.lrPage === activePage)) lrMore.setAttribute('aria-current', 'page');
   else lrMore.removeAttribute('aria-current');
   lrDiscovery.hidden = !inDiscover;
+  window.listeningRoomHome?.syncGettingVisibility();
   lrMode.hidden = !(inDiscover || activePage === 'dashboard');
   syncListeningRoomViewport();
   if (isListeningRoom() && !lrMode.hidden && lrModeValue === null && lrModeRetry.hidden) {
@@ -864,6 +865,7 @@ function updateActiveDownloadBadge(data) {
     const label = link.querySelector('.lr-nav-label').textContent;
     link.setAttribute('aria-label', count ? label + ', ' + count + ' active' : label);
   }
+  window.listeningRoomHome?.updateGetting(jobs);
   updateLedgerStats(jobs, count);
   updateTapeDecks(jobs);
   zineHook('updateZineTicker', jobs);
@@ -4670,7 +4672,7 @@ for (const id of ['shelfNewReleases', 'shelfNewest', 'shelfRecent', 'shelfFreque
 // Populate only the visible dashboard on startup. Other pages load on first visit
 // so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
-loadDashboardShelves();
+if (!isListeningRoom()) loadDashboardShelves();
 
 // ---- Library and global search (SEARCH_CONTRACT P1) --------------------------------
 // Data comes from /api/search (SSE), /api/library/artists and /api/artists/{key}. Every
@@ -5317,6 +5319,13 @@ function decodeLibraryHash(hash) {
   };
 }
 
+function focusRadioHeard() {
+  const heading = $('radioPlaysHeading');
+  heading.tabIndex = -1;
+  heading.focus();
+  heading.scrollIntoView({block: 'start'});
+}
+
 function currentLocationHash() {
   if (activePage === 'library' && libraryNav.current) return encodeLibraryHash(libraryNav.current);
   return '#' + activePage;
@@ -5351,6 +5360,7 @@ function applyHash(hash) {
   try {
     if (!$('albumModalBackdrop').hidden) closeAlbumModal();
     navigateTo(page);
+    if (page === 'radio' && hash === '#radio/heard') focusRadioHeard();
     if (page !== 'library') return;
     const target = decodeLibraryHash(hash);
     if (target) {
@@ -6745,4 +6755,9 @@ function buildShelfArrows() {
 buildLedgerFilters();
 buildShelfArrows();
 updateLedgerCrumb(activePage);
-if (window.location.hash) applyHash(window.location.hash);
+// Radio's loader is defined by its deferred script after this one.
+if (window.location.hash === '#radio' || window.location.hash === '#radio/heard') {
+  document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
+} else if (window.location.hash) {
+  applyHash(window.location.hash);
+}

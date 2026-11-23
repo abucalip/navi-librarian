@@ -79,10 +79,10 @@ const context = {
   URLSearchParams,
 };
 const source = fs.readFileSync(process.argv[1], 'utf8');
-const boot = source.indexOf('  window.listeningRoomHome = {refresh};');
+const boot = source.indexOf('  window.listeningRoomHome = ');
 if (boot === -1) throw Error('Listening Room Home bootstrap missing');
 vm.runInNewContext(
-  source.slice(0, boot) + 'globalThis.render = renderReason; globalThis.tint = clampTint; globalThis.group = groupDiveAlbums;})();',
+  source.slice(0, boot) + 'globalThis.render = renderReason; globalThis.tint = clampTint; globalThis.group = groupDiveAlbums; globalThis.previewReason = previewReason;})();',
   context,
 );
 const reasons = input.items.map(item => ({
@@ -91,7 +91,11 @@ const reasons = input.items.map(item => ({
   line: context.render(item, 'line'),
   panel: context.render(item, 'card', true),
 }));
-console.log(JSON.stringify({reasons, groups: context.group(input.albums), tints: input.colors.map(context.tint)}));
+const release = input.items.find(item => item.why?.kind === 'new_release');
+const collection = input.items.find(item => item.why?.kind === 'collection');
+const previews = [context.previewReason(release.why, release.year, true),
+  context.previewReason(collection.why, collection.year, false)];
+console.log(JSON.stringify({reasons, previews, groups: context.group(input.albums), tints: input.colors.map(context.tint)}));
 """
 
 
@@ -124,6 +128,10 @@ class ListeningRoomReasonUiContractTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         output = json.loads(result.stdout)
+        self.assertEqual(output["previews"], [
+            "New in 2026 · 1 album in your library",
+            "A well-known album; you have 2 albums by this artist",
+        ])
         for drawn, (_, sentence, icon) in zip(output["reasons"], REASONS):
             with self.subTest(sentence=sentence):
                 self.assertEqual(drawn["line"]["textContent"], sentence)
