@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/static/layouts.css">
 <link rel="stylesheet" href="/static/listening-room/tokens.css">
 <link rel="stylesheet" href="/static/listening-room/shell.css">
+<link rel="stylesheet" href="/static/listening-room/home.css">
 </head>
 <body>
 <!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
@@ -244,7 +245,19 @@
       </aside>
       <div class="zine-index-foot"><span class="zine-index-label">Index:</span><span id="zineIndexChips" class="zine-index-chips"></span><span class="zine-keys">J / K next story</span></div>
     </div>
-    <div class="panel">
+    <div id="lrHome" class="lr-home" hidden>
+      <div id="lrLead"></div>
+      <section class="lr-section" aria-labelledby="lrDailyHeading">
+        <div class="lr-section-head">
+          <div><h2 class="lr-section-title" id="lrDailyHeading">Daily picks</h2>
+            <p class="lr-section-sub">Daily selections from your listening.</p></div>
+          <div class="lr-tabs" id="lrLensTabs" role="tablist" aria-label="Lens" hidden></div>
+        </div>
+        <div id="lrDailyPanels"></div>
+      </section>
+      <p class="sr-only" id="lrPickStatus" role="status"></p>
+    </div>
+    <div class="panel" id="dashboardPicksPanel">
       <div class="dashboard-carousel-heading">
         <div>
           <h2 id="dashboardHeading">Recommended</h2>
@@ -778,6 +791,11 @@
      when the active view has no status region, otherwise by that region's own live area. -->
 <p id="appStatusAnnouncer" class="sr-only" role="status" aria-live="polite"></p>
 <div id="feedbackMenu" class="header-menu-panel feedback-menu" hidden></div>
+<dialog id="lrPickMenu" class="lr-pick-menu" aria-labelledby="lrPickMenuTitle">
+  <div class="lr-pick-grip" aria-hidden="true"></div>
+  <h2 id="lrPickMenuTitle" class="lr-pick-menu-title"></h2>
+  <div id="lrPickMenuItems" class="lr-menu" role="menu"></div>
+</dialog>
 <div id="feedbackToast" class="undo-snackbar feedback-toast" role="status">
   <p id="feedbackToastText" class="undo-snackbar-text"></p>
 </div>
@@ -788,6 +806,7 @@
 </div>
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
+<script src="/static/listening-room/home.js" defer></script>
 <script src="/static/layout-zine.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>

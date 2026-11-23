@@ -1,6 +1,6 @@
 # Listening Room: web client redesign
 
-Status: **proposal, docs only, no code.** The owner picked direction A ("Listening Room") on 2026-11-17 from three Home mockups, and asked that it explain each pick's reasons more fully, in the way direction C did. The owner then asked for mockups of **every** web page, with **no Paths** (Paths is exclusive to Android and macOS), and for the reasons behind each pick to be **showcased: given a prominent place of their own**, not literally centre-aligned. This document is the design system and the build plan. The package it refers to is [`docs/design/listening-room/`](../design/listening-room/).
+Status: **L0–L2 merged. L3 in review.** The owner picked direction A ("Listening Room") on 2026-11-17 from three Home mockups, and asked that it explain each pick's reasons more fully, in the way direction C did. The owner then asked for mockups of **every** web page, with **no Paths** (Paths is exclusive to Android and macOS), and for the reasons behind each pick to be **showcased: given a prominent place of their own**, not literally centre-aligned. This document is the design system and the build plan. The package it refers to is [`docs/design/listening-room/`](../design/listening-room/).
 
 Scope: the browser client (`static/`, `app/templates/index.html`, `app/templates/login.html`). The Android and macOS clients are not touched. Every web page is designed here: Home (section 7) and every other page (section 8), each with a 1440 and a 390 mockup. The owner's rule is that mockups are the spec.
 
@@ -291,7 +291,7 @@ In a ranked row the panel sits **beside** the title block, not under it, so it t
 | 7 | Genres / Radio | `/api/dashboard/genres`; "Grab the radio" and Heard (existing) | 6 / 2 links | — |
 
 - **Independent sections.** Each section loads on its own, with no section waiting for another, and fails on its own. A failed or empty section shows its note (`pages/states.html`), never a blank gap.
-- **No new route.** Home uses only routes that exist today.
+- **No new route.** Home uses only routes that exist today. At L3 the stored lens endpoint returns 404 for Genre spread. Home omits it when unavailable and includes it in the order above when the server serves it.
 - **Shelves.** The current Recently played, Most played and Newly added shelves move to Library (L5). They are library views, not discovery, and Home stays about discovery.
 
 ### 7.2 Keyboard and focus

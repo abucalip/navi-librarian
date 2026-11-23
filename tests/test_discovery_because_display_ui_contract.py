@@ -32,6 +32,13 @@ class DiscoveryBecauseDisplayUIContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
+    def test_listening_room_reads_the_server_reason(self):
+        home = (ROOT / "static" / "listening-room" / "home.js").read_text(encoding="utf-8")
+        body = _function_body(home, "function renderReason(item, size)")
+        self.assertIn("const why = item.why;", body)
+        self.assertIn("why.sentence", body)
+        self.assertNotIn("reasonLine(item)", body)
+
     def test_owner_wording_is_used_for_each_kind(self):
         self.assertIn("['tag', names => 'Because you listen to ' + names.join(', ')]", self.js)
         self.assertIn("['similar_artists', names => 'Shares genres with ' + names.join(', ')]", self.js)

@@ -59,13 +59,15 @@ Finished and merged work, and owner checks on work merged before 2026-11-11, wer
 - Plan and evidence: [`efficiency.md`](plans/efficiency.md), Phase K. K2 to K6, the K3 parts, the no-decision follow-ups and finishing-up #1177 are merged; nothing is deployed (the K3 caps are the `compose.yaml` default, so the job runs on the next worker deployment).
 - Open: the K3 album-reviews prefetch stays off until the owner approves a `reviews` cap; waiting on evidence: S1 retention, C3 memory limits, wider K2 scope; M2 acceptance (album route time independent of provider latency) not measured; the restart side-by-side pass (K4/K5/K6) needs the owner's approval for provider traffic.
 
-## 2q. Web client Listening Room redesign: L0–L1 merged, L2 next
+## 2q. Web client Listening Room redesign: L0–L2 merged, L3 in review
 
 - The owner picked direction A ("Listening Room") on 2026-11-17 from three Home mockups, and asked for fuller reasons for each pick (as in direction C). The design system and build plan are in [`LISTENING_ROOM_WEB.md`](plans/LISTENING_ROOM_WEB.md), with the package in [`design/listening-room/`](design/listening-room/): tokens, components, icons, fonts, and Home, reasons and states mockups at 1440 and 390.
 - Open owner decisions D1 to D4 are in section 10 of the plan. L0 assumed the recommended D1 = (b) (server builds `why`); Listening Room becomes the web default, and the old web layouts are retired only after the owner's check; Discover music stays on Home; covers that cannot be sampled get the fallback tint.
 - **L0 (server audit and `pick_why`) merged (2026-11-22, PR #1221, squash `c941c6a1`):** added `deep_dive_kind` in `discovery/deep_dive_candidates.py`, pure `discovery/pick_why.py` (`why: {kind, sentence, chips}`), read-time attachment in `discovery/list_payload.py`, `discovery/lens_week.py` and `app/api/discovery.py`, and confirmed section 9.3 page fields (`quality` present on owned albums, reviews return `{source, quote, url}`, similar artists omit `album_count`, Saved carries client-supplied `metadata` only).
 - **L1 (foundations behind a switch) merged (2026-11-22, PR #1222, squash `ab3e7663`):** shipped Instrument Sans 600/700 and OFL licence in `static/fonts/` + `fonts.css`, copied `static/listening-room/tokens.css`, linked it and inlined the 52-icon `#lr-*` sprite in `app/templates/index.html`, and added opt-in `listeningroom` (`Listening Room`, default still `ink`) in `static/appearance.js` + `static/themes.css`. Not checked in a live browser yet.
-- **Next action:** start L2 (shell: rail, icon rail, phone tab bar with More sheet, top bar with search and mode switch, skip link, focus ring), then L3 to L6 (Home), then L7 to L14.
+- **L2 (shell) merged (PR #1248):** responsive navigation, More sheet, shared search and the discovery mode switch. The PR records isolated Chrome fixture coverage.
+- **L3 (lead, Up next, Daily picks and reasons):** the stored lens endpoint on the L3 base serves four lenses. It returns 404 for Genre spread, so Home omits that tab until the endpoint serves it. Client support for all five lenses is covered with fixtures.
+- **Next action:** review L3. The full application browser checklist and the fallback rate across real lead covers are still open. L4 adds Artist Deep Dives, Personal Discoveries and Discover music.
 
 ## 2r. macOS Paths and Booklet sheets — owner check open
 

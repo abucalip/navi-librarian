@@ -1,3 +1,11 @@
+## 2026-11-23 — Listening Room Home lead and Daily picks (L3)
+
+- **Base:** GitHub `main` at `be7a9d2ec53bd5313d39da24232919acf8b7267d`. Branch `web/listening-room-l3`.
+- **Change:** render the lead, Up next and Daily picks in the opt-in Listening Room layout, with three reason sizes reading the server's `why` payload. Reuse album navigation, Get, bookmark, feedback and Undo actions. Sample lead covers in a 16×16 canvas, isolating the CORS probe for provider covers. Count unique sampled and fallback lead covers in each Home session for D4. The current server omits Genre spread, so the tab appears only when its endpoint is available.
+- **Verification:** 132 focused pytest checks and 30 subtests passed, including all reason kinds, precedence and tint parity against the design reference. Isolated Chrome fixtures checked the responsive layout at 1440, 1080, 1079, 1024, 720, 719 and 390px, tab and action-menu keyboard navigation, safe Get, Skip/Undo, independent lens errors, and owned, CORS-enabled, CORS-blocked and missing covers. Two of four fixture covers used the fallback. The full application browser checklist and representative artwork measurement are pending.
+
+---
+
 ## 2026-11-23 — Invalidate cached short artist biographies after Apple parser update
 
 - **Base:** GitHub `main` at `90dbbaa259c93adfb85256c42f7b33428563b3d2` (PR #1249 merged); branch `fix/apple-artist-bio-cache-invalidation`.
