@@ -6,6 +6,8 @@ struct CupertinoAlbumSpread: View {
     enum Part { case notes, credits, reviews }
     let state: AppState
     let part: Part
+    @State private var cbIndex = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let spread = state.spread
@@ -106,8 +108,19 @@ struct CupertinoAlbumSpread: View {
         case .failed:
             HStack { Text("Reviews could not be loaded.").foregroundStyle(CU.textSecondary); retryButton }
         case .loaded(let list, let retryable):
-            VStack(alignment: .leading, spacing: 8) {
-                if list.isEmpty { Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.").foregroundStyle(CU.textSecondary) }
+            let cbList = state.spread.critiquebrainz
+            VStack(alignment: .leading, spacing: 12) {
+                if !cbList.isEmpty {
+                    critiqueBrainzBlock(cbList)
+                        .onChange(of: cbList) { cbIndex = 0 }
+                    if !list.isEmpty {
+                        Divider()
+                    }
+                }
+                if list.isEmpty && cbList.isEmpty {
+                    Text(retryable ? "No reviews found. Some sources did not answer." : "No reviews found for this album.")
+                        .foregroundStyle(CU.textSecondary)
+                }
                 ForEach(list) { r in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\u{201C}\(r.quote)\u{201D}").font(CU.Font.body.weighted(.regular)).lineSpacing(3).textSelection(.enabled)
@@ -117,6 +130,84 @@ struct CupertinoAlbumSpread: View {
                 }
                 if retryable && !list.isEmpty { Text("Some sources did not answer.").font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary) }
                 if retryable { retryButton }
+            }
+        }
+    }
+
+    @ViewBuilder private func critiqueBrainzBlock(_ cbList: [SpreadCritiqueBrainzReview]) -> some View {
+        let safeIndex = cbIndex % cbList.count
+        let cb = cbList[safeIndex]
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Text(cb.language)
+                    .font(CU.Font.caption.weighted(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(CU.textSecondary.opacity(0.14), in: Capsule())
+                if let origin = cb.origin {
+                    Text(origin)
+                        .font(CU.Font.callout.weighted(.medium))
+                        .foregroundStyle(CU.textSecondary)
+                }
+                Spacer()
+                if cbList.count > 1 {
+                    Text("\(safeIndex + 1) / \(cbList.count)")
+                        .font(CU.Font.caption.weighted(.medium))
+                        .foregroundStyle(CU.textSecondary)
+                        .monospacedDigit()
+                    Button {
+                        if reduceMotion {
+                            cbIndex = (safeIndex + 1) % cbList.count
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                cbIndex = (safeIndex + 1) % cbList.count
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(CU.Font.callout.weighted(.semibold))
+                    }
+                    .buttonStyle(CapsuleButtonStyle(small: true))
+                    .accessibilityLabel("Next review, \(safeIndex + 1) of \(cbList.count)")
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(cb.paragraphs.enumerated()), id: \.offset) { _, p in
+                    Text(p)
+                        .font(CU.Font.body.weighted(.regular))
+                        .lineSpacing(3)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .environment(\.layoutDirection, cb.language == "AR" ? .rightToLeft : .leftToRight)
+
+            HStack(spacing: 6) {
+                Text(cb.author)
+                    .font(CU.Font.callout.weighted(.medium))
+                    .foregroundStyle(CU.textSecondary)
+                if let rating = cb.rating {
+                    Text("· \(rating)/5")
+                        .font(CU.Font.callout.weighted(.regular))
+                        .foregroundStyle(CU.textSecondary)
+                }
+                Text("·")
+                    .font(CU.Font.callout.weighted(.regular))
+                    .foregroundStyle(CU.textSecondary)
+                if let licenseUrl = cb.licenseUrl {
+                    Link(cb.license, destination: licenseUrl)
+                        .font(CU.Font.callout.weighted(.regular))
+                } else {
+                    Text(cb.license)
+                        .font(CU.Font.callout.weighted(.regular))
+                        .foregroundStyle(CU.textSecondary)
+                }
+                Text("·")
+                    .font(CU.Font.callout.weighted(.regular))
+                    .foregroundStyle(CU.textSecondary)
+                Link("CritiqueBrainz", destination: cb.url)
+                    .font(CU.Font.callout.weighted(.regular))
             }
         }
     }

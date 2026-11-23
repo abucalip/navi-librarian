@@ -80,4 +80,28 @@ struct AlbumSpreadTests {
                                        r("c", "file:///etc/passwd"), r("d", "http://x.example/4"), r("e", "https://x.example/5"), r("f", "https://x.example/6")])
         #expect(out.map(\.quote) == ["a", "d", "e"])
     }
+
+    @Test func critiqueBrainzReviewsFilterInvalidAndNormalizeFields() {
+        let valid = CritiqueBrainzReview(
+            id: "1", origin: " BBC ", paragraphs: [" One. ", "  ", "Two."],
+            url: "https://critiquebrainz.org/review/1", language: "ar", author: "A",
+            rating: 4, license: "CC BY 3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/"
+        )
+        let badURL = CritiqueBrainzReview(
+            id: "2", paragraphs: ["Valid."], url: "javascript:alert(1)",
+            language: "en", author: "B", license: "CC0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/"
+        )
+        let emptyParas = CritiqueBrainzReview(
+            id: "3", paragraphs: ["   "], url: "https://critiquebrainz.org/review/3",
+            language: "fr", author: "C", license: "CC0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/"
+        )
+        let out = AlbumSpread.critiquebrainz([valid, badURL, emptyParas])
+        #expect(out.count == 1)
+        #expect(out[0].id == "1")
+        #expect(out[0].origin == "BBC")
+        #expect(out[0].language == "AR")
+        #expect(out[0].paragraphs == ["One.", "Two."])
+        #expect(out[0].rating == 4)
+        #expect(out[0].licenseUrl?.absoluteString == "https://creativecommons.org/licenses/by/3.0/")
+    }
 }

@@ -33,6 +33,19 @@ public struct SpreadReview: Identifiable, Equatable, Sendable {
     public let url: URL
 }
 
+public struct SpreadCritiqueBrainzReview: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let origin: String?
+    public let paragraphs: [String]
+    public let url: URL
+    public let language: String
+    public let author: String
+    public let rating: Int?
+    public let license: String
+    public let licenseUrl: URL?
+    public let publishedOn: String?
+}
+
 public struct AlbumSpreadContent: Equatable, Sendable {
     public var notes: String?
     /// Where the notes came from when the Librarian supplied them ("Apple Music", "Wikipedia"), with the licence.
@@ -136,6 +149,26 @@ public enum AlbumSpread {
         }.prefix(3).map { $0 }
     }
 
+    static func critiquebrainz(_ list: [CritiqueBrainzReview]?) -> [SpreadCritiqueBrainzReview] {
+        (list ?? []).compactMap { r in
+            let paras = r.paragraphs.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            guard !paras.isEmpty, let u = webURL(r.url) else { return nil }
+            let trimmedOrigin = r.origin?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return SpreadCritiqueBrainzReview(
+                id: r.id,
+                origin: (trimmedOrigin?.isEmpty == false) ? trimmedOrigin : nil,
+                paragraphs: paras,
+                url: u,
+                language: r.language.uppercased(),
+                author: r.author,
+                rating: r.rating,
+                license: r.license,
+                licenseUrl: webURL(r.licenseUrl),
+                publishedOn: r.publishedOn
+            )
+        }
+    }
+
     static func webURL(_ s: String) -> URL? {
         guard let u = URL(string: s), u.scheme == "https" || u.scheme == "http", u.host != nil else { return nil }
         return u
@@ -173,16 +206,18 @@ public final class AlbumSpreadModel {
 
     public private(set) var content: AlbumSpreadContent? = AlbumSpread.sample
     public private(set) var reviews: ReviewsState = .loaded(AlbumSpread.sampleReviews, retryable: false)
+    public private(set) var critiquebrainz: [SpreadCritiqueBrainzReview] = []
     public private(set) var loading = false
     public private(set) var isLive = false
     private var loadedFor: String?
+    private var lastMbid: String?
 
     public init() {}
 
     /// Forgets the album shown, so a new page never shows the last one's notes while its own load runs.
     public func startNewAlbum() {
         guard isLive else { return }
-        content = nil; reviews = .idle; loadedFor = nil; loading = true
+        content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastMbid = nil; loading = true
     }
 
     public func load(album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, libraryArtists: [String]) async {
@@ -192,7 +227,7 @@ public final class AlbumSpreadModel {
         isLive = true
         let key = album.remoteID ?? "pick:\(album.artist.lowercased())|\(album.title.lowercased())"
         if loadedFor == key, content != nil { return }
-        loading = true; content = nil; reviews = .idle
+        loading = true; content = nil; reviews = .idle; critiquebrainz = []
         defer { loading = false }
         let ids = (album: album.remoteID, artist: album.artistRemoteID)
         async let facts: NavidromeAlbumFacts? = { guard let navidrome, let id = ids.album else { return nil }; return try? await navidrome.albumFacts(id: id) }()
@@ -202,23 +237,26 @@ public final class AlbumSpreadModel {
         let (f, i, a, d) = await (facts, info, artist, description)
         guard !Task.isCancelled else { return }
         content = AlbumSpread.build(facts: f, info: i, artist: a, description: d, libraryArtists: libraryArtists)
+        lastMbid = [f?.musicBrainzId, i?.musicBrainzId].compactMap { $0 }.first(where: AlbumSpread.isUUID)
         loadedFor = key
         loading = false
-        await loadReviews(album: album, librarian: librarian)
+        await loadReviews(album: album, librarian: librarian, mbid: lastMbid)
     }
 
     /// Asks the Librarian for reviews again (the Retry button, or an outlet that did not answer).
-    public func loadReviews(album: AlbumItem, librarian: LibrarianClient?) async {
-        guard let librarian else { reviews = .idle; return }
+    public func loadReviews(album: AlbumItem, librarian: LibrarianClient?, mbid: String? = nil) async {
+        guard let librarian else { reviews = .idle; critiquebrainz = []; return }
         reviews = .loading
+        critiquebrainz = []
         do {
-            let r = try await librarian.albumReviews(artist: album.artist, album: album.title)
+            let r = try await librarian.albumReviews(artist: album.artist, album: album.title, mbid: mbid ?? lastMbid)
             guard !Task.isCancelled else { return }
+            critiquebrainz = AlbumSpread.critiquebrainz(r.critiquebrainz)
             reviews = .loaded(AlbumSpread.reviews(r.reviews), retryable: r.retryable ?? false)
         } catch {
             if !Task.isCancelled { reviews = .failed }
         }
     }
 
-    public func forget() { content = nil; reviews = .idle; loadedFor = nil; isLive = false }
+    public func forget() { content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastMbid = nil; isLive = false }
 }
