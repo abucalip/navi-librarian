@@ -170,7 +170,7 @@ interface LibraryRepository : AcquisitionApi {
     fun albumLinks(artist: String, album: String, mbid: String?): AlbumLinks
 
     /** Outlet review lines for the album page's Reviews tab; asked only when the tab is opened. */
-    fun albumReviews(artist: String, album: String): AlbumReviews = AlbumReviews()
+    fun albumReviews(artist: String, album: String, mbid: String? = null): AlbumReviews = AlbumReviews()
 
     /** One discovery list in the server's order. [list] is a path name such as `new_releases` or a lens name. */
     fun discovery(list: String, count: Int): DiscoveryResult
@@ -462,8 +462,8 @@ class LibrarianRepository(
     override fun albumLinks(artist: String, album: String, mbid: String?) =
         read<AlbumLinks>(listOf("api", "album-links"), mapOf("artist" to artist, "album" to album, "mbid" to mbid))
 
-    override fun albumReviews(artist: String, album: String) =
-        read<AlbumReviews>(listOf("api", "album-reviews"), mapOf("artist" to artist, "album" to album))
+    override fun albumReviews(artist: String, album: String, mbid: String?) =
+        read<AlbumReviews>(listOf("api", "album-reviews"), mapOf("artist" to artist, "album" to album, "mbid" to mbid))
 
     override fun discovery(list: String, count: Int) =
         parseDiscovery(fetch(listOf("api", "discovery", list), mapOf("count" to "$count")))

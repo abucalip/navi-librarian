@@ -119,7 +119,7 @@ internal fun FlowAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyLi
             }
             item { Summary(d.tracks.size, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.tracks.count { it.owned }) }
         }
-        item { InfoReviewsTabs(d.artist, d.title, d.description, d.descriptionFinished, d.booklet) }
+        item { InfoReviewsTabs(d.artist, d.title, d.description, d.descriptionFinished, d.booklet, mbid = d.info?.releaseGroupMbid) }
         item { ServiceLinks(d.artist, d.title, d.info?.releaseGroupMbid) }
         if (d.similarAlbums.isNotEmpty()) {
             item { FlowHeading("Similar albums", Modifier.padding(top = 20.dp, bottom = 10.dp)) }
