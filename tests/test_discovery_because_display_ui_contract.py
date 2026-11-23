@@ -34,7 +34,7 @@ class DiscoveryBecauseDisplayUIContractTests(unittest.TestCase):
 
     def test_listening_room_reads_the_server_reason(self):
         home = (ROOT / "static" / "listening-room" / "home.js").read_text(encoding="utf-8")
-        body = _function_body(home, "function renderReason(item, size)")
+        body = _function_body(home, "function renderReason(")
         self.assertIn("const why = item.why;", body)
         self.assertIn("why.sentence", body)
         self.assertNotIn("reasonLine(item)", body)
