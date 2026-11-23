@@ -86,7 +86,7 @@ def artist_bio(artist: str, librarian=None):
     value = _artist_bio_cache.get_or_load(
         cache_key,
         lambda: _load_artist_bio(name, librarian),
-        store_key="artist-bio:v3:" + key,
+        store_key="artist-bio:v4:" + key,
         stored_ttl=_ARTIST_BIO_CACHE_TTL,
         accept_stored=lambda item: isinstance(item, dict) and "bio" in item and "source" in item,
     )

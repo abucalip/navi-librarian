@@ -1,3 +1,12 @@
+## 2026-11-23 — Follow Apple Music artist-page redirects
+
+- **Base and branch** — GitHub `main` at `a32dccd68defd7ac3e1cf58cfedd598edf7f32d9`, branch `fix/apple-artist-bio-redirect`.
+- Apple Music returned a 301 for Portishead's ID-based URL. The metadata HTTP client left the redirect unfollowed, so the resolver went straight to Wikipedia. The redirect target contained the full artist biography.
+- The Apple Music page request now follows redirects. The server cache key and web request URL use v4. The standalone endpoint gives fallback bios `Cache-Control: no-store`, and the web request cache releases them so later requests can see the server's refreshed result.
+- **Verification** — 50 focused pytest tests passed across the Apple provider, HTTP cache, metadata cache semantics, persistent cache and web bio contract. A local FastAPI request backed by Apple's live public catalog returned Portishead's 1,106-character Apple Music bio with HTTP 200. Full suites, browser and native UI checks, deployment and production verification remain pending.
+
+---
+
 ## 2026-11-23 — Listening Room Home lead and Daily picks (L3)
 
 - **Base:** GitHub `main` at `be7a9d2ec53bd5313d39da24232919acf8b7267d`. Branch `web/listening-room-l3`.

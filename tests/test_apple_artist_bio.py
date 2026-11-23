@@ -2,6 +2,8 @@
 
 import unittest
 
+import httpx
+
 from app.services import apple_artist_bio
 
 
@@ -118,30 +120,25 @@ class AppleArtistBioTests(unittest.TestCase):
         </script>
         """
         calls = []
+        id_page = "https://music.apple.com/us/artist/x/123"
+        artist_page = "https://music.apple.com/us/artist/portishead/123"
 
-        class Response:
-            text = page
-
-            def __init__(self, payload=None):
-                self.payload = payload
-
-            def raise_for_status(self):
-                return None
-
-            def json(self):
-                return self.payload
-
-        def get(url, **kwargs):
-            calls.append((url, kwargs))
-            if url == apple_artist_bio.APPLE_SEARCH_URL:
-                return Response({"results": [
+        def respond(request):
+            calls.append(request.url)
+            if request.url.host == "itunes.apple.com":
+                return httpx.Response(200, json={"results": [
                     {"wrapperType": "artist", "artistName": "Portishead", "artistId": 123}
                 ]})
-            return Response()
+            if str(request.url) == id_page:
+                return httpx.Response(301, headers={"Location": artist_page})
+            self.assertEqual(str(request.url), artist_page)
+            return httpx.Response(200, text=page)
 
-        self.assertEqual(apple_artist_bio.lookup_artist_biography(get, "Portishead"), ("Long artist biography.", True))
-        self.assertEqual(calls[1][0], "https://music.apple.com/us/artist/x/123")
-        self.assertEqual(calls[0][1]["params"]["entity"], "musicArtist")
+        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+            result = apple_artist_bio.lookup_artist_biography(client.get, "Portishead")
+        self.assertEqual(result, ("Long artist biography.", True))
+        self.assertEqual([str(url) for url in calls[1:]], [id_page, artist_page])
+        self.assertEqual(calls[0].params["entity"], "musicArtist")
 
     def test_provider_failure_is_not_reported_as_a_definitive_no_bio(self):
         def broken(*args, **kwargs):
