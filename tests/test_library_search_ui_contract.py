@@ -75,7 +75,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("addTextElement(text, 'span', 'search-item-name', searchItemName(item));", self.new_js)
 
     def test_results_stream_into_their_groups_with_a_running_count(self):
-        self.assertIn("searchGroupList(surface, item.type).append(buildSearchItem(item, surface));", self.new_js)
+        self.assertIn("searchGroupList(surface, item.type).append(buildSearchItem(item, surface, query));", self.new_js)
         self.assertIn("'Searching… ' + pluralize(shown + external, 'match', 'matches') + ' so far'", self.new_js)
         self.assertIn("surface.setLive(false);", self.new_js)
         self.assertIn("surface.setLive(true);", self.new_js)
@@ -95,15 +95,16 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("pluralize(external, 'match', 'matches') + ' not in your library'", self.new_js)
         self.assertNotIn("in your library' + ' not", self.new_js)
 
-    def test_search_panel_shows_two_sections_and_no_provider_names_or_status(self):
-        # Direction from the owner: while typing, the panel shows only "In your library" and
-        # "Not in your library". Provider names, provider status and popularity never appear.
+    def test_legacy_search_panel_has_no_provider_names_or_status(self):
+        # Listening Room has its own row renderer and uses the mockup for artist details.
         self.assertNotIn("globalSearchSources", self.html)
         self.assertNotIn("source.addEventListener('source'", self.new_js)
         self.assertNotIn("renderSourceStatus", self.new_js)
         self.assertNotIn("Some sources did not finish", self.new_js)
+        shared_detail = self.new_js.split("function searchItemDetail", 1)[1].split("\n}\n", 1)[0]
+        legacy_rows = self.new_js.split("function buildSearchItem", 1)[1].split("\n}\n", 1)[0]
         for provider in ("MusicBrainz", "Last.fm", "ListenBrainz", "Discogs"):
-            self.assertNotIn(provider, self.new_js[self.new_js.index("function searchItemName"):self.new_js.index("// ---- Library list ----")])
+            self.assertNotIn(provider, shared_detail + legacy_rows)
 
     def test_artists_albums_and_genres_open_their_page_owned_or_not_and_songs_do_not(self):
         self.assertIn("if (item.type === 'artist') return artistTarget(item);", self.new_js)
@@ -285,8 +286,17 @@ class LibrarySearchUIContractTests(unittest.TestCase):
     def test_outside_click_closes_the_results_panel(self):
         self.assertIn("if (!$('globalSearch').contains(event.target)) closeGlobalSearch();", self.new_js)
 
+    def test_listening_room_search_has_separate_navigation_and_get_controls(self):
+        renderer = self.new_js.split("function buildListeningRoomSearchItem", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("document.createElement('li')", renderer)
+        self.assertIn("listeningRoomDetailLink('', target, openFromSearch)", renderer)
+        self.assertIn("if (!item.owned && item.type === 'album') actions.append(listeningRoomGetButton", renderer)
+        self.assertLess(renderer.index("text.append(title)"), renderer.index("actions.append(listeningRoomGetButton"))
+        self.assertIn("highlightSearchMatch(title, searchItemName(item), query)", renderer)
+
     def test_group_headings_are_paragraphs_so_the_heading_order_has_no_gap(self):
-        self.assertIn("addTextElement(section, 'p', 'search-group-heading', SEARCH_GROUPS[rank][1]);", self.new_js)
+        self.assertIn("addTextElement(section, 'p', 'search-group-heading',", self.new_js)
+        self.assertIn("surface === globalSearch && isListeningRoom() ? label + ' in your library' : label", self.new_js)
         self.assertNotIn("'h3', 'search-group-heading'", self.new_js)
 
     def test_a_failed_append_retries_the_append_not_a_reset(self):
