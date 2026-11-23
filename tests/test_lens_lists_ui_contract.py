@@ -22,6 +22,13 @@ class LensListsUiContractTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
         cls.icons = ICONS_SVG.read_text(encoding="utf-8")
 
+    def test_listening_room_has_its_own_home_mount_and_loads_after_the_shared_helpers(self):
+        self.assertIn('id="lrHome" class="lr-home" hidden', self.html)
+        self.assertIn('id="lrLensTabs" role="tablist" aria-label="Lens"', self.html)
+        self.assertLess(self.html.index('src="/static/app.js"'),
+                        self.html.index('src="/static/listening-room/home.js"'))
+        self.assertIn("if (isListeningRoom()) return window.listeningRoomHome?.refresh();", self.js)
+
     def test_page_and_its_status_and_list_containers_exist(self):
         self.assertIn('<section id="lensLists" class="page hidden" aria-labelledby="lensListsHeading">', self.html)
         self.assertIn('id="lensListsStatus" class="status-line" aria-live="polite"', self.html)

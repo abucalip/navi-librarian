@@ -393,7 +393,11 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveNavInd
 async function requestJSON(url) {
   const response = await fetch(url);
   const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || 'Request failed');
+  if (!response.ok) {
+    const error = new Error(data.detail || 'Request failed');
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 
@@ -1920,6 +1924,7 @@ function renderDashboardPicks() {
 }
 
 async function loadDashboardPicks() {
+  if (isListeningRoom()) return window.listeningRoomHome?.refresh();
   const target = $('dashboardCarousel');
   const status = $('dashboardPicksStatus');
   const shuffle = $('shuffleDashboard');
@@ -3142,7 +3147,7 @@ async function sendJSON(url, method='POST', body={}) {
 function discoveryStatus(name, message, kind) {
   // The dashboard picks, the New releases shelf and the radio log are not discovery views; each
   // reports on its own status line.
-  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus'};
+  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus', listening_room: 'lrPickStatus'};
   const el = $(discoveryViews[name] ? discoveryViews[name][1] : own[name] || 'dashboardPicksStatus');
   el.textContent = message;
   setStatusState(el, kind === undefined ? classifyStatus(message) : kind);
@@ -3532,6 +3537,7 @@ async function commitDismiss() {
       {action: entry.action, artist: entry.artist, album: entry.album, metadata: entry.metadata});
     // Lens rows are not in discoveryViews; they reload the lens that is on screen.
     if (entry.listName === 'lens_lists') await loadLensList(activeLens);
+    else if (entry.listName === 'listening_room') await window.listeningRoomHome.refresh();
     else if (!['dashboard_picks', 'dashboard_shelf'].includes(entry.listName)) await loadDiscovery(entry.listName);
   } catch (error) {
     if (entry.row) entry.row.classList.remove('is-dismissing');
@@ -3678,6 +3684,7 @@ async function sendArtistLean(artist, lean, metadata) {
 // Lists the server rebuilds from stored rows on every read, so a block shows at once. The dashboard strip and shelf keep what
 // they hold until their next refresh.
 function reloadDiscoveryList(listName) {
+  if (listName === 'listening_room') return window.listeningRoomHome.refresh();
   if (listName === 'lens_lists') return loadLensList(activeLens);
   if (['personal', 'classics', 'new_releases', 'artist_deep_dive'].includes(listName)) return loadDiscovery(listName);
   return null;

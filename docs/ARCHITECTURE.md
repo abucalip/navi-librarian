@@ -35,6 +35,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `settings/` | Configuration defaults, validation, settings persistence and generation/version helpers. `settings/persistence.py` caches decoded settings per process behind one read connection and re-reads when `PRAGMA data_version` changes, after a local write, or when the file or process changes (efficiency P1). |
 | `navidrome_server.py` | Legacy compatibility and orchestration boundary still used by existing server callers. Do not add code; new behavior belongs in the appropriate package and this module may only shrink. |
 | `static/`, `app/templates/` | Browser UI assets and HTML templates (including `static/listening-room/` for Listening Room design tokens and the responsive shell stylesheet; page, search and acquisition badge wiring stays in `static/app.js`, `docs/plans/LISTENING_ROOM_WEB.md`). The browser presents server-owned results; it must not duplicate recommendation, discovery, acquisition or import rules. |
+| `static/listening-room/home.js`, `home.css` | Listening Room Home (L3): render the lead and Up next, lens tabs and Daily picks, and the server-supplied `why` payload. Sample the lead cover in a browser canvas and keep the fallback tint if sampling fails. Reuse the app’s navigation, artwork, acquisition and feedback helpers. |
 
 ## Clients
 
