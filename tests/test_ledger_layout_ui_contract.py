@@ -120,12 +120,15 @@ class LedgerLayoutTests(unittest.TestCase):
         self.assertIn("7 * 86400", counts)
         self.assertNotIn("fetch(", counts)
 
-    def test_ctrl_k_jumps_to_search_only_in_the_ledger_layout_and_the_hint_is_hidden_elsewhere(self):
+    def test_ctrl_k_jumps_to_search_in_layout_themes_and_ledger_shows_the_hint(self):
         app = (STATIC / "app.js").read_text(encoding="utf-8")
         index = (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
-        handler = app.split("document.addEventListener('keydown', event => {\n  if ((event.ctrlKey")[1].split("return;")[0]
+        shortcut = "if ((event.ctrlKey || event.metaKey)"
+        self.assertIn(shortcut, app)
+        handler = app.split(shortcut, 1)[1].split("return;", 1)[0]
         self.assertIn("event.key.toLowerCase() === 'k'", handler)
-        self.assertIn("&& document.documentElement.dataset.layout) {", handler)  # any layout theme, never a plain theme
+        self.assertIn("&& document.documentElement.dataset.layout", handler)
+        self.assertIn("&& !lrSheet.open", handler)
         self.assertIn("event.preventDefault();", handler)
         self.assertIn("setSearchExpanded(true, {focus: true});", handler)
         self.assertIn('<kbd class="search-shortcut" aria-hidden="true" hidden></kbd>', index)
