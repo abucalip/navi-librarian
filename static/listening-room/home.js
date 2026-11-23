@@ -385,27 +385,67 @@
   }
 
   function getItems(result) {
+    if (result?.data?.disabled) return [];
     const items = result?.data?.items;
     if (!Array.isArray(items)) return [];
     return items.filter(item =>
       item && !dismissed.has(pickKey(item)) && !dismissedArtists.has(foldKey(artistName(item))));
   }
 
-  function status(text, retry = null) {
+  function status(text, {retry, detail, settings} = {}) {
     const note = element('div', 'lr-home-note');
-    const message = element('p', '', text);
-    message.setAttribute('role', 'status');
-    note.append(message);
-    if (retry) {
-      const again = button('Retry', 'refresh', 'lr-btn');
-      again.addEventListener('click', retry);
-      note.append(again);
+    const copy = element('div', 'lr-note-copy');
+    const title = element('p', 'lr-note-title', text);
+    title.setAttribute('role', 'status');
+    copy.append(title);
+    if (detail || settings || retry) {
+      const description = element('p', 'lr-note-text', detail);
+      if (settings) {
+        const link = element('a', '', 'Settings');
+        bindPageLink(link, 'settings');
+        if (detail) description.append(' ');
+        description.append('Turn on lens lists in ', link, ' to see them here.');
+      }
+      if (retry) {
+        if (detail) description.append(' ');
+        const again = element('button', 'lr-note-retry', 'Try again');
+        again.type = 'button';
+        again.addEventListener('click', retry);
+        description.append(again);
+      }
+      copy.append(description);
     }
+    note.append(icon(retry ? 'alert' : 'info'), copy);
     return note;
   }
 
-  function retryPicks() {
-    return refresh().then(() => tabs.querySelector('[aria-selected="true"]')?.focus());
+  function loading(label, layout) {
+    const placeholder = element('div', 'lr-loading lr-loading-' + layout);
+    const shapes = element('div', 'lr-loading-shapes');
+    shapes.setAttribute('aria-hidden', 'true');
+    const count = layout === 'grid' ? 6 : 1;
+    for (let index = 0; index < count; index++) {
+      const item = element('div', 'lr-loading-item');
+      const lines = element('div', 'lr-loading-lines');
+      const widths = layout === 'hero' ? ['40%', '80%', '60%'] : ['80%'];
+      for (const width of widths) {
+        const line = element('div', 'lr-skel-line');
+        line.style.width = width;
+        lines.append(line);
+      }
+      item.append(element('div', 'lr-skel'), lines);
+      shapes.append(item);
+    }
+    placeholder.append(element('span', 'lr-visually-hidden', label), shapes);
+    return placeholder;
+  }
+
+  async function retryPicks(event) {
+    const control = event.currentTarget;
+    await refresh();
+    if (!control.isConnected && document.activeElement === document.body) {
+      (tabs.querySelector('[aria-selected="true"]') || $('lrDailyHeading')).focus();
+    }
   }
 
   function renderLead() {
@@ -419,13 +459,13 @@
     }
     const result = heroLens ? results.get(heroLens) : null;
     const items = getItems(result).slice(0, 5);
-    const error = heroOrder.some(name => results.get(name)?.error);
-    const disabled = [...results.values()].some(value => value.data?.disabled);
-    const message = heroLens ? '' : pending ? 'Loading the lead pick…' : disabled ? 'Daily picks are turned off in Settings.'
-      : error ? 'The lead pick could not be loaded.' : 'No lead pick today.';
+    const message = pending ? 'Loading the lead pick…' : '';
     if (renderedHero?.message === message && renderedHero.items.length === items.length &&
         items.every((item, index) => item === renderedHero.items[index])) return;
-    lead.replaceChildren(heroLens ? renderHero(heroLens, items) : status(message, !pending && error ? retryPicks : null));
+    lead.toggleAttribute('hidden', !heroLens && !pending);
+    lead.setAttribute('aria-busy', String(pending));
+    lead.replaceChildren(...(heroLens ? [renderHero(heroLens, items)]
+      : pending ? [loading(message, 'hero')] : []));
     renderedHero = {message, items};
   }
 
@@ -481,23 +521,32 @@
       .slice(0, heroOrder.indexOf(selectedLens)).some(name => !results.has(name));
     const offset = selectedLens === heroLens ? 5 : 0;
     const items = leadPending ? [] : getItems(result).slice(offset, offset + 6);
-    const message = !selectedLens ? 'No Daily picks are available.'
-      : !result || leadPending ? 'Loading Daily picks…'
-      : result.error ? 'Could not load ' + lenses.get(selectedLens)[0] + '.'
-      : result.data?.disabled ? 'Daily picks are turned off in Settings.'
-      : 'No more albums in this lens today.';
+    const pending = Boolean(selectedLens && (!result || leadPending));
+    const disabled = Boolean(result?.data?.disabled && !result.error);
+    const label = lenses.get(selectedLens)?.[0];
+    const message = pending ? 'Loading Daily picks…'
+      : result?.error ? (items.length ? 'This list could not be refreshed' : 'Could not load ' + label + '.')
+      : disabled ? 'Daily picks are off'
+      : !selectedLens ? 'No Daily picks are available.'
+      : result?.data?.message || (getItems(result).length ? 'No more albums in this lens today.' : 'No ' + label + ' list yet');
     if (renderedDaily?.target === target && renderedDaily.message === message &&
         items.length === renderedDaily.items.length && items.every((item, index) => item === renderedDaily.items[index])) return;
     panels.querySelector(':scope > .lr-home-note')?.remove();
+    target.setAttribute('aria-busy', String(pending));
+    const content = [];
+    if (pending) content.push(loading(message, 'grid'));
+    else if (!items.length || result?.error) {
+      const detail = result?.error && items.length ? 'Showing the previous list.'
+        : disabled ? result.data.message : '';
+      content.push(status(message, {detail, settings: disabled, retry: result?.error ? retryPicks : null}));
+    }
     if (items.length) {
       const grid = element('div', 'lr-grid');
       grid.append(...items.map(renderCard));
-      target.replaceChildren(grid);
-    } else {
-      const note = status(message, result?.error ? retryPicks : null);
-      if (target === panels) panels.append(note);
-      else target.replaceChildren(note);
+      content.push(grid);
     }
+    if (target === panels) panels.append(...content);
+    else target.replaceChildren(...content);
     renderedDaily = {target, items, message};
   }
 
@@ -592,26 +641,27 @@
   async function loadSection(target, url, label, empty, renderItems, renderStatus = showNote, readItems = albumItems) {
     const load = () => loadSection(target, url, label, empty, renderItems, renderStatus, readItems);
     const hadFocus = target.contains(document.activeElement);
-    renderStatus(target, status('Loading ' + label + '…'));
     target.setAttribute('aria-busy', 'true');
+    renderStatus(target, loading('Loading ' + label + '…', 'section'));
     if (hadFocus) {
       target.tabIndex = -1;
       target.focus();
     }
     let items;
+    let data;
     try {
-      const data = await requestJSON(url);
+      data = await requestJSON(url);
       if (data?.error) throw new Error(data.error);
       items = readItems(data);
     } catch {
       target.removeAttribute('aria-busy');
-      renderStatus(target, status('Could not load ' + label + '.', load));
-      if (document.activeElement === target) target.querySelector('button')?.focus();
+      renderStatus(target, status('Could not load ' + label + '.', {retry: load}));
+      if (document.activeElement === target) target.querySelector('.lr-note-retry')?.focus();
       return;
     }
     target.removeAttribute('aria-busy');
     if (items.length) renderItems(target, items);
-    else renderStatus(target, status(empty));
+    else renderStatus(target, status(empty, {detail: data?.message}));
     if (document.activeElement === target) target.querySelector('a')?.focus();
   }
 
@@ -743,7 +793,9 @@
     lensChosen = true;
     selectedLens = name;
     render();
-    $(`lrLens-${name}`).focus();
+    const tab = $(`lrLens-${name}`);
+    tab.focus({preventScroll: true});
+    if (listeningRoomPhone.matches) tab.scrollIntoView({block: 'nearest', inline: 'nearest'});
   }
 
   tabs.addEventListener('keydown', event => {
@@ -774,9 +826,9 @@
       let result;
       try {
         const data = await requestJSON(`/api/discovery/${name}?count=11&nonce=${nonce}`);
-        result = {data};
+        result = data?.error ? {error: true, data: results?.get(name)?.data} : {data};
       } catch (error) {
-        result = error.status === 404 ? {unavailable: true} : {error: true};
+        result = error.status === 404 ? {unavailable: true} : {error: true, data: results?.get(name)?.data};
       }
       if (latestRequest !== current) return;
       if (result.data && !result.data.disabled) servedLenses.add(name);
