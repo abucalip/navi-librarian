@@ -2,6 +2,7 @@
 
 Turns one discovery album's server fields into ``why``:
 ``{"kind": ..., "sentence": ..., "chips": [{"type", "label", "value", "href_kind"}]}``.
+The missing-album reason also carries a ``panel_sentence`` for grouped albums.
 Follows ``docs/plans/LISTENING_ROOM_WEB.md`` section 6 precedence and wording.
 """
 from __future__ import annotations
@@ -168,9 +169,11 @@ def _deep_dive_why(item: Mapping[str, Any], list_name: str | None) -> dict[str, 
     count = _positive_int(item.get("anchor_album_count"))
     if not target_artist or count is None:
         return None
+    opening = f"You have {_album_count_phrase(count)} by {target_artist}."
     return {
         "kind": "deep_dive_missing",
-        "sentence": f"You have {_album_count_phrase(count)} by {target_artist}. This one is not in your library yet.",
+        "sentence": f"{opening} This one is not in your library yet.",
+        "panel_sentence": f"{opening} These are the ones not in your library yet.",
         "chips": [_chip("library_count", f"{count} in your library", count)],
     }
 

@@ -285,7 +285,7 @@ In a ranked row the panel sits **beside** the title block, not under it, so it t
 | 1 | Lead pick + Up next | Rank 1 of the first non-empty lens in the default order (Deep cuts, Current tastes, Genre spread) from `/api/discovery/<lens>`; Up next is ranks 2–5 | 1 + 4 | R1, R5, R6 |
 | 2 | Daily picks | `/api/discovery/<lens>`; tabs for the five lenses (Repeated tracks and Obsessions only when the server serves them) | 6 (the hero's lens starts at rank 6) | R1, R5, R6 |
 | 3 | Artist Deep Dives | The Deep Dives list (existing route, same as today's section): one artist with their albums and the artist photo; "Next artist" moves through the list | 1 artist, 4 albums | R7, R8 |
-| 4 | Personal Discoveries | `/api/discovery/for_me` | 3 (desktop), "See all" | R2, R3 |
+| 4 | Personal Discoveries | `/api/discovery/personal` | 3 (desktop), "See all" | R2, R3 |
 | 5 | Discover music | `/api/recommendations` | 3, "Open Discover" | R4, R11 |
 | 6 | Add to your collection / New releases | Classics list; `/api/discovery/new_releases` | 3 each | R1, R9, R10 |
 | 7 | Genres / Radio | `/api/dashboard/genres`; "Grab the radio" and Heard (existing) | 6 / 2 links | — |

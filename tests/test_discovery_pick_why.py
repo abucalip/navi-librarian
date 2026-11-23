@@ -108,6 +108,7 @@ class PickWhyTests(unittest.TestCase):
         self.assertEqual(why, {
             "kind": "deep_dive_missing",
             "sentence": "You have 5 albums by Stereolab. This one is not in your library yet.",
+            "panel_sentence": "You have 5 albums by Stereolab. These are the ones not in your library yet.",
             "chips": [{"type": "library_count", "label": "5 in your library", "value": 5, "href_kind": None}],
         })
 

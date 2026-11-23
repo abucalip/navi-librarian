@@ -73,6 +73,7 @@ const context = {
   },
   cachedJSONRequest: () => Promise.resolve(null),
   artistImageRequests: new Map(),
+  foldKey: name => name.trim().toLowerCase(),
   namedArtistTarget: name => ({type: 'artist', name}),
   encodeLibraryHash: target => '#' + target.type + '/' + (target.tag || target.name),
   URLSearchParams,
@@ -81,15 +82,16 @@ const source = fs.readFileSync(process.argv[1], 'utf8');
 const boot = source.indexOf('  window.listeningRoomHome = {refresh};');
 if (boot === -1) throw Error('Listening Room Home bootstrap missing');
 vm.runInNewContext(
-  source.slice(0, boot) + 'globalThis.render = renderReason; globalThis.tint = clampTint;})();',
+  source.slice(0, boot) + 'globalThis.render = renderReason; globalThis.tint = clampTint; globalThis.group = groupDiveAlbums;})();',
   context,
 );
 const reasons = input.items.map(item => ({
   hero: context.render(item, 'hero'),
   card: context.render(item, 'card'),
   line: context.render(item, 'line'),
+  panel: context.render(item, 'card', true),
 }));
-console.log(JSON.stringify({reasons, tints: input.colors.map(context.tint)}));
+console.log(JSON.stringify({reasons, groups: context.group(input.albums), tints: input.colors.map(context.tint)}));
 """
 
 
@@ -107,7 +109,17 @@ class ListeningRoomReasonUiContractTests(unittest.TestCase):
         items.append({"reason": "Internal reason"})
         result = subprocess.run(
             ["node", "-e", JS_RUNNER, str(HOME_JS)],
-            input=json.dumps({"items": items, "colors": colors}),
+            input=json.dumps({
+                "items": items,
+                "colors": colors,
+                "albums": [
+                    {"artist": artist, "album": album}
+                    for artist, album in (
+                        ("Low", "I"), ("Broadcast", "Tender Buttons"), ("low", "I"),
+                        ("Low", "II"), ("Low", "III"), ("Low", "IV"), ("Low", "V"),
+                    )
+                ],
+            }),
             text=True, capture_output=True, check=False, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -120,7 +132,7 @@ class ListeningRoomReasonUiContractTests(unittest.TestCase):
                     self.assertEqual(label["children"][0]["children"][0]["attrs"]["href"], "#lr-" + icon)
                     self.assertEqual(heading["children"][0]["className"], cls)
                     self.assertEqual(heading["children"][0]["textContent"], sentence)
-        self.assertEqual(output["reasons"][-1], dict(hero=None, card=None, line=None))
+        self.assertEqual(output["reasons"][-1], dict(hero=None, card=None, line=None, panel=None))
         evidence = output["reasons"][4]["hero"]["children"][2]
         self.assertEqual(evidence["attrs"]["aria-label"], "Why this pick")
         seed, count, *extra = [row["children"][0] for row in evidence["children"]]
@@ -131,6 +143,15 @@ class ListeningRoomReasonUiContractTests(unittest.TestCase):
         self.assertEqual(artist["href"], "#artist/Low")
         self.assertEqual(artist["children"][0]["textContent"], "L")
         self.assertEqual(output["reasons"][6]["hero"]["children"][0]["children"][1], "Why this artist")
+
+        panel = output["reasons"][6]["panel"]["children"]
+        self.assertEqual(panel[1]["children"][0]["textContent"],
+                         "You have 2 albums by Low. These are the ones not in your library yet.")
+        count = panel[2]["children"][0]["children"][0]
+        self.assertEqual(count["children"][0]["children"][0]["attrs"]["href"], "#lr-disc")
+        self.assertEqual(output["reasons"][7]["card"], output["reasons"][7]["panel"])
+        self.assertEqual([[item["album"] for item in group] for group in output["groups"]],
+                         [["I", "II", "III", "IV"], ["Tender Buttons"]])
 
         reference = runpy.run_path(str(REFERENCE))
         for sample, tint in zip(colors, output["tints"], strict=True):
