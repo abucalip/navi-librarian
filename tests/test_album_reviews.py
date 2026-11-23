@@ -216,5 +216,103 @@ class PickTests(unittest.TestCase):
         self.assertEqual(reviews.pick_reviews([None, None]), [])
 
 
+class CritiqueBrainzWiringTests(unittest.TestCase):
+    def test_list_store_key_separates_mbid_from_name_only(self):
+        from app.services import album_review_sources as ars
+
+        self.assertEqual(ars.list_store_key("Opeth", "Watershed"), "album-reviews:v1:opeth:watershed")
+        self.assertEqual(
+            ars.list_store_key("Opeth", "Watershed", "rg-123"),
+            "album-reviews:v2:opeth:watershed:rg-123",
+        )
+        self.assertEqual(
+            ars.critiquebrainz_store_key("rg-123"),
+            "album-review-source:v1:CritiqueBrainz:rg-123",
+        )
+
+    def test_runtime_metrics_registers_critiquebrainz_under_reviews(self):
+        from app.services import runtime_metrics
+
+        self.assertEqual(runtime_metrics.provider_for_host("critiquebrainz.org"), "reviews")
+
+    def test_stored_list_value_includes_critiquebrainz_and_retryable(self):
+        from app.services import album_review_sources as ars
+
+        cb_item = {"id": "r1", "source": "CritiqueBrainz", "paragraphs": ["Hello world."]}
+        value, partial = ars.stored_list_value([], False, critiquebrainz=[cb_item], cb_failed=False)
+        self.assertEqual(value["critiquebrainz"], [cb_item])
+        self.assertEqual(value["reviews"], [])
+        self.assertFalse(partial)
+
+        value_fail, partial_fail = ars.stored_list_value([], False, critiquebrainz=[], cb_failed=True)
+        self.assertTrue(partial_fail)
+        self.assertTrue(value_fail.get("retryable"))
+
+    def test_prefetch_reviews_fetches_and_caches_critiquebrainz_when_mbid_present(self):
+        from app.services import album_review_sources as ars
+
+        store_data = {}
+
+        def read(key, ttl):
+            return store_data.get(key)
+
+        def write(key, val):
+            store_data[key] = val
+
+        class Resp:
+            def __init__(self, payload=None, text=""):
+                self._payload, self.text = payload, text
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return self._payload
+
+        cb_payload = {
+            "count": 1,
+            "reviews": [
+                {
+                    "id": "cb-1",
+                    "language": "en",
+                    "is_draft": False,
+                    "is_hidden": False,
+                    "text": "A" * 50,
+                    "user": {"display_name": "Reviewer"},
+                    "license": {"id": "CC BY-SA 3.0", "info_url": "https://creativecommons.org/licenses/by-sa/3.0/"},
+                    "published_on": "2024-01-01",
+                }
+            ],
+        }
+
+        def fake_get(url, **kwargs):
+            if "critiquebrainz.org" in url:
+                return Resp(cb_payload)
+            return Resp(payload=[], text="<html></html>")
+
+        ok = ars.prefetch_reviews(read, write, fake_get, "Opeth", "Watershed", mbid="rg-123")
+        self.assertTrue(ok)
+        cb_key = ars.critiquebrainz_store_key("rg-123")
+        self.assertIn(cb_key, store_data)
+        self.assertEqual(len(store_data[cb_key]["review"]), 1)
+        self.assertEqual(store_data[cb_key]["review"][0]["id"], "cb-1")
+
+    def test_album_reviews_route_skips_critiquebrainz_without_mbid_and_fetches_with_mbid(self):
+        from unittest.mock import patch
+        from app.api import metadata
+
+        cb_item = {"id": "cb-1", "source": "CritiqueBrainz", "paragraphs": ["Full text."]}
+        with patch.object(metadata, "_review_sources", return_value=[]), \
+             patch.object(metadata, "_critiquebrainz_reviews", return_value=[cb_item]) as cb_mock:
+            metadata._review_cache.clear()
+            no_mbid = metadata.album_reviews_route(artist="Opeth", album="Watershed", mbid="")
+            self.assertEqual(no_mbid.get("critiquebrainz", []), [])
+            cb_mock.assert_not_called()
+
+            with_mbid = metadata.album_reviews_route(artist="Opeth", album="Watershed", mbid="rg-123")
+            self.assertEqual(with_mbid["critiquebrainz"], [cb_item])
+            cb_mock.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

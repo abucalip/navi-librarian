@@ -22,6 +22,7 @@ import httpx
 
 from app.services import album_reviews, negative_marks
 from app.services.album_page_sources import APPLE_PAGE_HEADERS
+from integrations.critiquebrainz.reviews import fetch_critiquebrainz_reviews
 
 REVIEW_PAGE_TIMEOUT = httpx.Timeout(4.0, connect=1.5)
 WORDPRESS_REVIEW_SITES = (
@@ -43,8 +44,15 @@ class OutletResting(Exception):
     """The outlet failed for this album within ``SOURCE_FAILURE_TTL``; it is skipped, so the list stays partial."""
 
 
-def list_store_key(artist, album) -> str:
+def list_store_key(artist, album, mbid: str = "") -> str:
+    clean_mbid = str(mbid or "").strip()
+    if clean_mbid:
+        return f"album-reviews:v2:{artist.casefold()}:{album.casefold()}:{clean_mbid}"
     return "album-reviews:v1:" + artist.casefold() + ":" + album.casefold()
+
+
+def critiquebrainz_store_key(mbid: str) -> str:
+    return f"album-review-source:v1:CritiqueBrainz:{str(mbid or '').strip()}"
 
 
 def outlet_store_key(name, artist, album) -> str:
@@ -179,10 +187,20 @@ def fresh_stored_answer(read, store_key):
     return False, None
 
 
-def stored_list_value(found, failed):
+def critiquebrainz_review(get, mbid: str):
+    return fetch_critiquebrainz_reviews(mbid, get=get)
+
+
+def ask_critiquebrainz(read, write, get, mbid: str, refused=()):
+    return ask_outlet(read, write, critiquebrainz_store_key(mbid), lambda: critiquebrainz_review(get, mbid), refused)
+
+
+def stored_list_value(found, failed, critiquebrainz=None, cb_failed: bool = False):
     """``(value, partial)``: the list the route answers from the outlets' answers (None for a failed one)."""
     value = {"reviews": album_reviews.pick_reviews(found)}
-    partial = failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS
+    if critiquebrainz:
+        value["critiquebrainz"] = list(critiquebrainz)
+    partial = (failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS) or cb_failed
     if partial:
         value["retryable"] = True
     return value, partial
@@ -190,7 +208,7 @@ def stored_list_value(found, failed):
 
 # --- Worker prefetch (efficiency K3) ----------------------------------------------------------------
 
-def prefetch_reviews(read, write, get, artist, album, guardian_key="", refused=()):
+def prefetch_reviews(read, write, get, artist, album, guardian_key="", refused=(), mbid: str = ""):
     """Ask, one after another, each outlet with no fresh stored answer, and store its answer as the route does.
 
     Outlet answers and failure marks are written by ``ask_outlet``; the list is not written (see the module
@@ -212,4 +230,18 @@ def prefetch_reviews(read, write, get, artist, album, guardian_key="", refused=(
         except Exception:
             found.append(None)
             failed = True
-    return not stored_list_value(found, failed)[1]
+    cb_reviews, cb_failed = [], False
+    clean_mbid = str(mbid or "").strip()
+    if clean_mbid:
+        cb_key = critiquebrainz_store_key(clean_mbid)
+        fresh, cached_cb = fresh_stored_answer(read, cb_key)
+        if fresh:
+            cb_reviews = cached_cb or []
+        else:
+            try:
+                cb_reviews = ask_critiquebrainz(read, write, get, clean_mbid, refused) or []
+            except refused:
+                return False
+            except Exception:
+                cb_failed = True
+    return not stored_list_value(found, failed, critiquebrainz=cb_reviews, cb_failed=cb_failed)[1]

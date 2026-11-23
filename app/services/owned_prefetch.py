@@ -128,7 +128,7 @@ def entity_extras(librarian, spend) -> dict:
         extras["albums"].append(lambda a: album_review_sources.prefetch_reviews(
             librarian._metadata_cache_get, librarian._metadata_cache_set, album_page_sources.counting_get(spend.get),
             a["artist"], a["name"], os.environ.get("GUARDIAN_API_KEY", "").strip(),
-            refused=(prefetch_state.BudgetExhausted,)))
+            refused=(prefetch_state.BudgetExhausted,), mbid=a.get("release_group_mbid") or ""))
     if not any(name in spend.caps for name in ("deezer", "apple")):
         return extras
     read, write = librarian._metadata_cache_get, librarian._metadata_cache_set

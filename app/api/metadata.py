@@ -424,14 +424,8 @@ def _ask_outlet(store_key, ask):
     return album_review_sources.ask_outlet(persistent_metadata.read, persistent_metadata.write, store_key, ask)
 
 
-def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, stale=None):
-    """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored.
-
-    With `allow_stale` (efficiency K2), a stored answer past its TTL but under 70 days old is returned at
-    once, when it was stored is added to `stale`, and one background ``ask()`` replaces it; a failed ask
-    leaves it.
-    """
-    store_key = album_review_sources.outlet_store_key(name, artist, album)
+def _stored_or_ask(store_key: str, ask, allow_stale=False, stale=None):
+    """Return a stored outlet/source answer (with optional K2 stale serving) or call ``_ask_outlet``."""
     if allow_stale and persistent_metadata.can_read_age():
         stored, age = persistent_metadata.read_with_age(store_key, _REVIEWS_MAX_STALE) or (None, None)
         if isinstance(stored, dict) and "review" in stored:
@@ -448,6 +442,24 @@ def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, s
     return _ask_outlet(store_key, ask)
 
 
+def _outlet_review(name: str, artist: str, album: str, ask, allow_stale=False, stale=None):
+    """The outlet's review (or None) from its own stored answer, else ``ask()``; an exception is not stored.
+
+    With `allow_stale` (efficiency K2), a stored answer past its TTL but under 70 days old is returned at
+    once, when it was stored is added to `stale`, and one background ``ask()`` replaces it; a failed ask
+    leaves it.
+    """
+    store_key = album_review_sources.outlet_store_key(name, artist, album)
+    return _stored_or_ask(store_key, ask, allow_stale, stale)
+
+
+def _critiquebrainz_reviews(mbid: str, allow_stale=False, stale=None) -> list:
+    """CritiqueBrainz reviews for ``mbid`` using the shared K2/K4 outlet store."""
+    store_key = album_review_sources.critiquebrainz_store_key(mbid)
+    ask = lambda: album_review_sources.critiquebrainz_review(_review_get, mbid)
+    return _stored_or_ask(store_key, ask, allow_stale, stale) or []
+
+
 def _review_sources(artist: str, album: str, allow_stale=False, stale=None):
     """The source lookups in display order, each a no-argument callable returning a review or None.
 
@@ -462,30 +474,38 @@ def _review_sources(artist: str, album: str, allow_stale=False, stale=None):
     return [lambda n=name, ask=ask: _outlet_review(n, artist, album, ask, allow_stale, stale) for name, ask in asks]
 
 
-def album_reviews_for(artist: str, album: str) -> dict:
-    """``{"reviews": [{"source", "quote", "url"}, ...]}`` with at most three entries.
+def album_reviews_for(artist: str, album: str, mbid: str = "") -> dict:
+    """``{"critiquebrainz": [...], "reviews": [{"source", "quote", "url"}, ...]}`` with at most three press entries.
 
     ``retryable`` is added when an outlet failed or was too slow and fewer than three were found;
     the browser does not keep such an answer. A stored list past its 7-day TTL is answered at once and
     refreshed in the background, for up to 70 days (efficiency K2); such an answer, or one built from a
     stale outlet answer, carries ``fetched_at`` (UTC, the oldest answer it used).
     """
-    key = (artist.casefold(), album.casefold())
+    clean_mbid = mbid.strip()[:40]
+    key = (artist.casefold(), album.casefold(), clean_mbid)
     return _review_cache.get_or_load(
-        key, lambda: _load_album_reviews(artist, album, allow_stale=True),
-        store_key=album_review_sources.list_store_key(artist, album),
-        store_ttl=_REVIEWS_TTL, accept_stored=lambda stored: bool(stored and stored.get("reviews")),
-        stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE, refresh=lambda: _load_album_reviews(artist, album),
+        key, lambda: _load_album_reviews(artist, album, allow_stale=True, mbid=clean_mbid),
+        store_key=album_review_sources.list_store_key(artist, album, clean_mbid),
+        store_ttl=_REVIEWS_TTL,
+        accept_stored=lambda stored: bool(stored and (stored.get("reviews") or stored.get("critiquebrainz"))),
+        stored_ttl=3600, max_stale=_REVIEWS_MAX_STALE,
+        refresh=lambda: _load_album_reviews(artist, album, mbid=clean_mbid),
         stale_fetched_at=True)
 
 
-def _load_album_reviews(artist: str, album: str, allow_stale=False):
+def _load_album_reviews(artist: str, album: str, allow_stale=False, mbid: str = ""):
     """The reviews as a `Loaded`. A list built from any stale outlet answer is kept in memory briefly and
     not stored, so it is never stamped as fresh; the outlets' own refreshes fill the store. It states the
     oldest stale answer's time as ``fetched_at``."""
     stale = []
     futures = [_review_pool.submit(source) for source in _review_sources(artist, album, allow_stale, stale)]
-    done, pending = wait(futures, timeout=_REVIEWS_DEADLINE)
+    cb_future = (
+        _review_pool.submit(lambda: _critiquebrainz_reviews(mbid, allow_stale, stale))
+        if mbid else None
+    )
+    all_futures = futures + ([cb_future] if cb_future is not None else [])
+    done, pending = wait(all_futures, timeout=_REVIEWS_DEADLINE)
     found, failed = [], bool(pending)
     for future in futures:
         if future not in done:
@@ -497,20 +517,31 @@ def _load_album_reviews(artist: str, album: str, allow_stale=False):
         except Exception:
             found.append(None)
             failed = True
-    value, partial = album_review_sources.stored_list_value(found, failed)
+    cb_reviews, cb_failed = [], False
+    if cb_future is not None:
+        if cb_future not in done:
+            cb_future.cancel()
+            cb_failed = True
+        else:
+            try:
+                cb_reviews = cb_future.result() or []
+            except Exception:
+                cb_failed = True
+    value, partial = album_review_sources.stored_list_value(
+        found, failed, critiquebrainz=cb_reviews, cb_failed=cb_failed)
     short = partial or bool(stale)
     if stale:
         value = with_fetched_at(value, min(stale))
     return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if short else 3600,
-                  persist=bool(value["reviews"]) and not short)
+                  persist=bool(value["reviews"] or value.get("critiquebrainz")) and not short)
 
 
 @router.get("/api/album-reviews")
-def album_reviews_route(artist: str = "", album: str = ""):
-    artist, album = artist.strip()[:180], album.strip()[:180]
+def album_reviews_route(artist: str = "", album: str = "", mbid: str = ""):
+    artist, album, mbid = artist.strip()[:180], album.strip()[:180], mbid.strip()[:40]
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
-    return album_reviews_for(artist, album)
+    return album_reviews_for(artist, album, mbid=mbid) if mbid else album_reviews_for(artist, album)
 
 
 @router.get("/api/album-links")
