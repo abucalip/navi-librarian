@@ -5925,7 +5925,7 @@ async function loadAlbumReviews() {
   $('albumReviewsRetry').hidden = true;
   setSectionNote('albumReviewsNote', 'Loading reviews\u2026');
   const params = new URLSearchParams({artist: album.artist, album: album.name});
-  if (album.mbid) params.set('mbid', album.mbid);
+  if (album.release_group_mbid) params.set('mbid', album.release_group_mbid);
   let data;
   try {
     data = await requestJSON('/api/album-reviews?' + params);
