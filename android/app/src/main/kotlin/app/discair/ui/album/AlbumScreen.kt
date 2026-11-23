@@ -282,7 +282,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 )
             }
         }
-        item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done(), booklet = booklet) }
+        item { InfoReviewsTabs(artist, title, s.description.description, finished = page.done != Done(), booklet = booklet, mbid = info?.releaseGroupMbid) }
         if (tracks.isNotEmpty()) {
             item { RowDivider(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) }
             for (i in tracks.indices) {
@@ -484,7 +484,7 @@ internal fun rememberServiceMenu(artist: String, album: String, mbid: String?): 
  * itself, unless the reader has already picked a tab.
  */
 @Composable
-internal fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean, booklet: app.discair.model.BookletView?) {
+internal fun InfoReviewsTabs(artist: String, album: String, description: Description?, finished: Boolean, booklet: app.discair.model.BookletView?, mbid: String? = null) {
     val paragraphs = description?.paragraphs.orEmpty()
     var chosen by remember(artist, album) { mutableStateOf<Int?>(null) }
     val labels = if (booklet != null) listOf("Info", "Reviews", "Booklet") else listOf("Info", "Reviews")
@@ -504,7 +504,7 @@ internal fun InfoReviewsTabs(artist: String, album: String, description: Descrip
         }
         when {
             tab == 0 -> InfoTab(description, paragraphs, finished)
-            tab == 1 -> ReviewsTab(artist, album)
+            tab == 1 -> ReviewsTab(artist, album, mbid)
             booklet != null -> BookletTab(booklet)
         }
     }
@@ -536,10 +536,10 @@ private fun InfoTab(description: Description?, paragraphs: List<String>, finishe
 }
 
 @Composable
-private fun ReviewsTab(artist: String, album: String) {
+private fun ReviewsTab(artist: String, album: String, mbid: String? = null) {
     val repo = LocalRepository.current
     val uri = LocalUriHandler.current
-    val loaded = rememberLoad(artist, album) { repo.albumReviews(artist, album) }
+    val loaded = rememberLoad(artist, album, mbid) { repo.albumReviews(artist, album, mbid) }
     Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
         when (val state = loaded.state) {
             Load.Loading -> Text("Loading reviews…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -549,6 +549,7 @@ private fun ReviewsTab(artist: String, album: String) {
             }
             is Load.Ready -> {
                 val data = state.value
+                CritiqueBrainzReviewBlock(data.critiquebrainz, hasPressReviews = data.reviews.isNotEmpty())
                 data.reviews.forEach { review ->
                     Column(Modifier.padding(bottom = 16.dp)) {
                         Text("\u201c${review.quote}\u201d", style = MaterialTheme.typography.bodyMedium)
@@ -558,8 +559,9 @@ private fun ReviewsTab(artist: String, album: String) {
                         )
                     }
                 }
+                val hasAny = data.critiquebrainz.isNotEmpty() || data.reviews.isNotEmpty()
                 val note = when {
-                    data.reviews.isNotEmpty() -> if (data.retryable) "Some sources did not answer." else ""
+                    hasAny -> if (data.retryable) "Some sources did not answer." else ""
                     data.retryable -> "No reviews found. Some sources did not answer."
                     else -> "No reviews found for this album."
                 }

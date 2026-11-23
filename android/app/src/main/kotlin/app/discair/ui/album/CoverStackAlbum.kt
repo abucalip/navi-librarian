@@ -154,7 +154,7 @@ internal fun CoverStackAlbumContent(d: CoverStackAlbumData, open: Opener, list: 
             }
             item { Summary(d.tracks.size, d.tracks.sumOf { it.durationSeconds ?: 0 }, d.tracks.count { it.owned }) }
         }
-        item { InfoReviewsTabs(d.artist, d.title, d.description, d.descriptionFinished, d.booklet) }
+        item { InfoReviewsTabs(d.artist, d.title, d.description, d.descriptionFinished, d.booklet, mbid = d.info?.releaseGroupMbid) }
         item { ServiceLinks(d.artist, d.title, d.info?.releaseGroupMbid) }
         if (d.similarAlbums.isNotEmpty()) {
             item { CoverStackHeading("Similar albums", Modifier.padding(top = 16.dp, bottom = 8.dp)) }

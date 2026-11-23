@@ -329,7 +329,28 @@ data class AlbumLinks(
 // ---- Album reviews (GET /api/album-reviews): up to three outlet summary lines; `retryable` when some outlets did not answer
 
 @Serializable
+data class CritiqueBrainzReview(
+    val id: String = "",
+    val source: String = "CritiqueBrainz",
+    val origin: String? = null,
+    @SerialName("full_text") val fullText: String = "",
+    val paragraphs: List<String> = emptyList(),
+    val quote: String = "",
+    val url: String = "",
+    val language: String = "",
+    val author: String = "",
+    val rating: Int? = null,
+    val license: String = "",
+    @SerialName("license_url") val licenseUrl: String = "",
+    @SerialName("published_on") val publishedOn: String = "",
+)
+
+@Serializable
 data class AlbumReview(val source: String = "", val quote: String = "", val url: String = "")
 
 @Serializable
-data class AlbumReviews(val reviews: List<AlbumReview> = emptyList(), val retryable: Boolean = false)
+data class AlbumReviews(
+    val critiquebrainz: List<CritiqueBrainzReview> = emptyList(),
+    val reviews: List<AlbumReview> = emptyList(),
+    val retryable: Boolean = false,
+)

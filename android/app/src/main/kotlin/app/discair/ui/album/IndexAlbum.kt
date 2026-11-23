@@ -166,7 +166,7 @@ internal fun IndexAlbumContent(d: CoverStackAlbumData, open: Opener, list: LazyL
                 }
             }
             "Info" -> item { Column(Modifier.indexArrive(4, tab)) { InfoTab(d) } }
-            "Reviews" -> item { Column(Modifier.indexArrive(4, tab)) { ReviewsTab(d.artist, d.title) } }
+            "Reviews" -> item { Column(Modifier.indexArrive(4, tab)) { ReviewsTab(d.artist, d.title, d.info?.releaseGroupMbid) } }
             "Booklet" -> d.booklet?.let { b -> item { Column(Modifier.indexArrive(4, tab)) { BookletTab(b) } } }
         }
         if (d.similarAlbums.isNotEmpty()) {
@@ -354,11 +354,11 @@ private fun InfoTab(d: CoverStackAlbumData) {
 
 /** Reviews: asked from the server on first open; each quote links to its source. Only "Try again" asks the failed outlets again. */
 @Composable
-private fun ReviewsTab(artist: String, album: String) {
+private fun ReviewsTab(artist: String, album: String, mbid: String? = null) {
     val p = LocalPalette.current
     val repo = LocalRepository.current
     val uri = LocalUriHandler.current
-    val loaded = rememberLoad(artist, album) { repo.albumReviews(artist, album) }
+    val loaded = rememberLoad(artist, album, mbid) { repo.albumReviews(artist, album, mbid) }
     Column(Modifier.padding(start = Gutter, end = Gutter, top = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         when (val state = loaded.state) {
             Load.Loading -> IndexMuted("Loading reviews…")
@@ -368,6 +368,7 @@ private fun ReviewsTab(artist: String, album: String) {
             }
             is Load.Ready -> {
                 val data = state.value
+                CritiqueBrainzReviewBlock(data.critiquebrainz, hasPressReviews = data.reviews.isNotEmpty())
                 data.reviews.forEachIndexed { i, review ->
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         IndexLabel("${IndexPagesRules.letter(i)} · ${review.source}", color = p.accent)
@@ -378,8 +379,9 @@ private fun ReviewsTab(artist: String, album: String) {
                         )
                     }
                 }
+                val hasAny = data.critiquebrainz.isNotEmpty() || data.reviews.isNotEmpty()
                 val note = when {
-                    data.reviews.isNotEmpty() -> if (data.retryable) "Some sources did not answer." else ""
+                    hasAny -> if (data.retryable) "Some sources did not answer." else ""
                     data.retryable -> "No reviews found. Some sources did not answer."
                     else -> "No reviews found for this album."
                 }
