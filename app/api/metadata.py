@@ -159,9 +159,12 @@ def _load_artist_bio(name, librarian=None):
     if navidrome_bio:
         # Navidrome is deliberately a final, library-only fallback; keep it in memory, not the
         # persistent provider cache, so a later library-agent update can become visible.
+        # If either external provider failed, retry soon so Navidrome does not mask a recovered
+        # Apple Music or Wikipedia source for a full day.
+        navidrome_ttl = _ARTIST_BIO_CACHE_TTL if apple_answered and wikipedia_answered else 60
         return Loaded(
             {"bio": navidrome_bio, "source": "navidrome"},
-            memory_ttl=_ARTIST_BIO_CACHE_TTL,
+            memory_ttl=navidrome_ttl,
         )
 
     # A definitive miss can be retried after an hour. A failed upstream lookup is retried sooner.

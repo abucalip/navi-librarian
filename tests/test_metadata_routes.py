@@ -118,6 +118,15 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertEqual(result, {"artist": "Artist", "bio": "A musician.", "source": "navidrome"})
         self.assertEqual(library.calls, [("getArtistInfo2", {"id": "ar-1"})])
 
+    def test_navidrome_fallback_is_short_lived_when_an_external_provider_failed(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, False)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")), \
+             patch.object(metadata, "_navidrome_artist_bio", return_value="Library bio."):
+            loaded = metadata._load_artist_bio("Artist", object())
+        self.assertEqual(loaded.value["source"], "navidrome")
+        self.assertEqual(loaded.memory_ttl, 60)
+        self.assertFalse(loaded.persist)
+
     def test_unowned_artist_stops_after_external_sources(self):
         with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
              patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")), \
