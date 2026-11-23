@@ -325,27 +325,25 @@ class AlbumDetailsTests(_Case):
 
 class ArtistBioTests(_Case):
     def test_a_found_bio_is_kept_a_day_and_stored_under_its_key(self):
-        with patch.object(metadata, "_EXTERNAL_HTTP") as client, \
-             patch.object(metadata, "resolve_artist_bio", return_value="A band."):
-            client.get.return_value = _Resp({"search": []})
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("A band.", True, "wikipedia")):
             metadata.artist_bio("Portishead")
-            self.assertEqual(self.store.data, {"artist-bio:v1:portishead": "A band."})
-            calls = client.get.call_count
-            self.store.data.clear()
+            expected = {"bio": "A band.", "source": "wikipedia"}
+            self.assertEqual(self.store.data, {"artist-bio:v2:portishead": expected})
             self.clock.now += DAY - 1
             self.assertEqual(metadata.artist_bio("Portishead")["bio"], "A band.")
-            self.assertEqual(client.get.call_count, calls)
             self.clock.now += 2
             metadata.artist_bio("Portishead")
-            self.assertGreater(client.get.call_count, calls)
+        self.assertEqual(self.store.reads[-1], ("artist-bio:v2:portishead", DAY))
 
-    def test_the_route_keeps_a_navidrome_bio_in_memory_only(self):
-        with patch.object(metadata, "_navidrome_artist_bio", return_value="From the library.") as local, \
-             patch.object(metadata, "_EXTERNAL_HTTP") as client:
-            self.assertEqual(metadata.artist_bio_route("Artist", object())["bio"], "From the library.")
-            self.assertEqual(metadata.artist_bio_route("Artist", object())["bio"], "From the library.")
+    def test_the_route_keeps_a_navidrome_bio_in_memory_only_after_external_misses(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")), \
+             patch.object(metadata, "_navidrome_artist_bio", return_value="From the library.") as local:
+            result = metadata.artist_bio_route("Artist", object())
+            self.assertEqual(result["bio"], "From the library.")
+            self.assertEqual(result["source"], "navidrome")
         local.assert_called_once()
-        client.get.assert_not_called()
         self.assertEqual(self.store.data, {})
 
 

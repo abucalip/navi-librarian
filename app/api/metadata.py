@@ -15,7 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.dependencies import get_librarian
-from app.services.artist_bio import resolve_artist_bio
+from app.services.artist_bio import resolve_artist_bio_with_source
+from app.services import apple_artist_bio
 from app.services.fallback_artwork import (
     parse_qobuz_albums, select_apple_artwork, select_qobuz_artwork,
 )
@@ -43,19 +44,17 @@ _EXTERNAL_HTTP = runtime_metrics.MeteredClient(
     headers=album_page_sources.EXTERNAL_HEADERS,
 )
 
-# Artist biographies are cached for a day. Wikidata identifies the intended
-# musical entity first; Wikipedia is only used when its page points back to
-# that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
-# versus the optical phenomenon) from producing unrelated summaries.
+# The same provider order is used by the standalone route and artist-page sections:
+# Apple Music first, identity-checked Wikipedia/Wikidata second, Navidrome last.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
+_ARTIST_BIO_NEGATIVE_TTL = 60 * 60
 _artist_bio_cache = LayeredCache("artist-bio")
 
-def _navidrome_artist_bio(librarian, name):
-    """The library's own biography for an artist, or "" when Navidrome has none.
 
-    Read-only and local: the artist id comes from the cached library snapshot and Navidrome
-    answers from its own agent cache, so no public-web request is made. Any failure is a miss.
-    """
+def _navidrome_artist_bio(librarian, name):
+    """The library's own biography, used only after Apple Music and Wikipedia have no usable bio."""
+    if librarian is None:
+        return ""
     try:
         from app.api.search import clean_navidrome_bio
 
@@ -72,30 +71,29 @@ def _navidrome_artist_bio(librarian, name):
 
 @router.get("/api/artist-bio")
 def artist_bio_route(artist: str, librarian=Depends(get_librarian)):
-    """Cache first, then Navidrome's biography for a library artist, then Wikipedia."""
-    name = str(artist or "").strip()
-    if name and len(name) <= 180:
-        key = name.casefold()
-        if key not in _artist_bio_cache:
-            bio = _navidrome_artist_bio(librarian, name)
-            if bio:
-                # Memory only: the library's own bio is not written to the persistent store.
-                _artist_bio_cache.put(key, bio, _ARTIST_BIO_CACHE_TTL)
-    return artist_bio(artist)
+    """Return the first available biography: Apple Music, Wikipedia, then Navidrome."""
+    return artist_bio(artist, librarian=librarian)
 
 
-def artist_bio(artist: str):
+def artist_bio(artist: str, librarian=None):
     name = str(artist or "").strip()
     if not name or len(name) > 180:
         raise HTTPException(status_code=400, detail="A valid artist name is required.")
     key = name.casefold()
-    bio = _artist_bio_cache.get_or_load(
-        key, lambda: _load_artist_bio(name), store_key="artist-bio:v1:" + key,
-        stored_ttl=_ARTIST_BIO_CACHE_TTL)
-    return {"artist": name, "bio": bio}
+    value = _artist_bio_cache.get_or_load(
+        key,
+        lambda: _load_artist_bio(name, librarian),
+        store_key="artist-bio:v2:" + key,
+        stored_ttl=_ARTIST_BIO_CACHE_TTL,
+        accept_stored=lambda item: isinstance(item, dict) and "bio" in item and "source" in item,
+    )
+    # Accept the old in-memory string shape during a rolling process update.
+    if isinstance(value, str):
+        value = {"bio": value, "source": "wikidata" if value else None}
+    return {"artist": name, "bio": value.get("bio") or "", "source": value.get("source")}
 
 
-def _load_artist_bio(name):
+def _load_wikipedia_artist_bio(name):
     params = {
         "action": "wbsearchentities",
         "search": name,
@@ -109,9 +107,7 @@ def _load_artist_bio(name):
         + __import__("urllib.parse", fromlist=["quote"]).quote(name.replace(" ", "_"), safe="")
     )
 
-    # Start both network requests together. The summary is used only after its
-    # Wikidata identity is checked, so the faster path doesn't reintroduce
-    # wrong-name biographies such as Rainbow the optical phenomenon.
+    # Start both requests together. The summary is used only after its Wikidata identity is checked.
     with ThreadPoolExecutor(max_workers=2) as pool:
         search_future = pool.submit(
             _EXTERNAL_HTTP.get, "https://www.wikidata.org/w/api.php", params=params
@@ -134,12 +130,43 @@ def _load_artist_bio(name):
         except Exception:
             pass
 
-    bio = resolve_artist_bio(name, entities, page)
+    bio, source = resolve_artist_bio_with_source(name, entities, page)
+    return bio, search_ok, source or "wikidata"
 
-    # A failed Wikidata lookup is not "this artist has no bio": do not cache it for a day.
-    if not search_ok:
-        return Loaded(bio)
-    return Loaded(bio, memory_ttl=_ARTIST_BIO_CACHE_TTL, persist=bool(bio))
+
+def _load_artist_bio(name, librarian=None):
+    """Resolve in order; provider failures are misses, never stored as a definitive no-bio answer."""
+    apple_bio, apple_answered = apple_artist_bio.lookup_artist_biography(_EXTERNAL_HTTP.get, name)
+    if apple_bio:
+        return Loaded(
+            {"bio": apple_bio, "source": "apple_music"},
+            memory_ttl=_ARTIST_BIO_CACHE_TTL,
+            persist=True,
+        )
+
+    wikipedia_bio, wikipedia_answered, wikipedia_source = _load_wikipedia_artist_bio(name)
+    if wikipedia_bio:
+        return Loaded(
+            {"bio": wikipedia_bio, "source": wikipedia_source},
+            memory_ttl=_ARTIST_BIO_CACHE_TTL,
+            persist=True,
+        )
+
+    navidrome_bio = _navidrome_artist_bio(librarian, name)
+    if navidrome_bio:
+        # Navidrome is deliberately a final, library-only fallback; keep it in memory, not the
+        # persistent provider cache, so a later library-agent update can become visible.
+        return Loaded(
+            {"bio": navidrome_bio, "source": "navidrome"},
+            memory_ttl=_ARTIST_BIO_CACHE_TTL,
+        )
+
+    # A definitive miss can be retried after an hour. A failed upstream lookup is retried sooner.
+    answered = apple_answered and wikipedia_answered
+    return Loaded(
+        {"bio": "", "source": None},
+        memory_ttl=_ARTIST_BIO_NEGATIVE_TTL if answered else 60,
+    )
 
 
 # Artwork is optional presentation metadata; discovery works without it.

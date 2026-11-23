@@ -168,7 +168,7 @@ def artist_network(
     cache_read: Callable[[str], Any],
     cache_write: Callable[[str, Any], None],
     popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]],
-    bio: Callable[[str], str | None],
+    bio: Callable[[str], str | Mapping[str, Any] | None],
     navidrome_mbid: Callable[[str], str | None] | None = None,
     navidrome_bio: Callable[[str], str | None] | None = None,
     deezer_tracks: Callable[[str, str], list[dict[str, Any]]] | None = None,

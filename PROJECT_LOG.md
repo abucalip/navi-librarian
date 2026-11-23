@@ -1,3 +1,12 @@
+## 2026-11-23 — Apple Music artist biographies become the primary source (PR in progress)
+
+- **Base:** GitHub main at bba61f2f4bc9b09fbd747e813bdcde9fa2828743; branch fix/apple-music-artist-bios-default.
+- **Diagnosis:** discovery/search/artist_sections.py::bio_job returned Navidrome's getArtistInfo2 biography immediately for owned artists. Independently, /api/artist-bio preloaded Navidrome text into the memory cache before its Wikidata-validated Wikipedia resolver. The existing Apple Music integration was album editorial notes, not artist biographies.
+- **Provider evidence:** Apple's public iTunes Search API resolves artist IDs; the matching Apple Music artist page exposes JSON-LD description metadata. The Navidrome Apple Music Metadata Plugin uses the same public endpoints, but this implementation is standalone and does not require installing that plugin, an Apple developer token, or Navidrome agent configuration. Artist ID and page name are matched exactly; ambiguous same-name IDs and promotional placeholder descriptions are rejected.
+- **Changes:** added app/services/apple_artist_bio.py; made /api/artist-bio and artist-page sections share the order Apple Music → identity-checked Wikipedia (Wikidata description fallback) → Navidrome; added actual source provenance; moved Navidrome to a final, memory-only fallback; versioned the persistent bio cache key to avoid reusing earlier results; added provider/parser/fallback/cache tests and updated architecture, requirements, search contract and test plan.
+- **Verification:** tests have not yet been run. CI has not yet run. No live provider request was made. Not merged, published, deployed or runtime-verified.
+- **Next:** finish review of the branch diff, open the PR, then verify the required workflows on the exact PR-head SHA and have the owner run the focused tests in the isolated environment.
+
 ## 2026-11-23 — Diagnose CritiqueBrainz album reviews; web MBID fix in progress
 
 - **Base:** GitHub `main` at `ffb1528cbd4843292b621c85656aea899a11a9b7`; branch `fix/critiquebrainz-release-group-mbid`.

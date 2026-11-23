@@ -146,6 +146,21 @@ Also run every test module that reads `static/app.js`, `static/app.css`, `app/te
 
 Manual (owner): artist page for an owned and an unowned artist; album page for an owned and an unowned album (tracklist, year, description with Read more, service links, Get button size and place); every name and tag link on cards, rows, the album panel and search results; Back through artist, album and genre pages; the library-only toggle; Library tab at phone width. Live data to try: an artist with many live recordings (for example Radiohead) must show studio albums with years and listen counts.
 
+## Artist biography provider priority
+
+For the shared artist biography resolver, run the direct Apple parser/provider tests, artist-page section tests, metadata route and cache tests, and persistent-cache restart tests. The fixtures must cover exact iTunes artist matching, ambiguous same-name IDs, exact JSON-LD page identity, placeholder rejection, provider failure versus a definitive miss, Apple Music priority, Wikipedia second, and Navidrome only as the final owned-library fallback.
+
+```sh
+python -m unittest discover -s tests -p 'test_apple_artist_bio.py' -v
+python -m unittest discover -s tests -p 'test_artist_bio_service.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_artist_sections.py' -v
+python -m unittest discover -s tests -p 'test_metadata_routes.py' -v
+python -m unittest discover -s tests -p 'test_metadata_cache_semantics.py' -v
+python -m unittest discover -s tests -p 'test_metadata_persistent_cache.py' -v
+```
+
+No live Apple Music, Wikipedia, or Navidrome request is made by these unit tests. A live provider check is separate and requires owner approval.
+
 ## Global search P5 latency measurement
 
 Measure the section 2.1 targets of `docs/contracts/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:

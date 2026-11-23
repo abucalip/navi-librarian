@@ -59,7 +59,7 @@ class ArtistNetwork:
     # Called with the release-group MBIDs and a ``can_cache`` check. The callable must not write
     # its results to a cache unless ``can_cache()`` is true at the moment of writing.
     popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]]
-    bio: Callable[[str], str | None]
+    bio: Callable[[str], str | Mapping[str, Any] | None]
     cache_read: Callable[[str], Any]
     cache_write: Callable[[str, Any], None]
     # Navidrome's MBID for an artist ID, or None when the library does not tag it.

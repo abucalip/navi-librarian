@@ -382,10 +382,10 @@ Examples:
 
 ```json
 {"section": "bio", "available": true, "complete": true, "reason": null,
- "bio": {"text": "English rock band formed in Abingdon in 1985.", "source": "wikidata"}}
+ "bio": {"text": "English rock band formed in Abingdon in 1985.", "source": "apple_music"}}
 ```
 
-A `bio` section is emitted once, when final, so an available `bio` is always `complete: true`. A `bio` with `available: true, complete: false` is not valid. A bio section that hits the deadline before its source answers is emitted as `{"section": "bio", "available": false, "complete": false, "reason": "deadline", "bio": null}`.
+A `bio` section is emitted once, when final, so an available `bio` is always `complete: true`. The source order is `apple_music`, then identity-checked `wikipedia` (or a `wikidata` music-entity description when no matching Wikipedia extract is available), then `navidrome` as the final fallback for an owned artist. Apple Music is resolved directly through the public iTunes Search and Apple Music artist-page endpoints; it does not depend on a Navidrome metadata agent or an Apple developer token. The `source` field reports the source that actually supplied the text. A `bio` with `available: true, complete: false` is not valid. A bio section that hits the deadline before its source answers is emitted as `{"section": "bio", "available": false, "complete": false, "reason": "deadline", "bio": null}`.
 
 ```json
 {"section": "bio", "available": true, "complete": true, "reason": null, "bio": null}

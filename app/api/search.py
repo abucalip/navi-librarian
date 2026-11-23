@@ -311,7 +311,7 @@ def artist_network_for(librarian):
         )
 
     def bio(name):
-        return artist_bio(artist=name)["bio"]
+        return artist_bio(artist=name, librarian=librarian)
 
     def deezer_tracks(artist, album):
         from app.api.metadata import album_details
@@ -328,15 +328,10 @@ def artist_network_for(librarian):
 
         return lookup(artist, album)
 
-    def navidrome_bio(artist_id):
-        # Navidrome's own biography text, read-only. Its agents (Last.fm and others) fill it in.
-        info = librarian.api_call("getArtistInfo2", id=artist_id).get("artistInfo2", {})
-        return clean_navidrome_bio(info.get("biography"))
 
     return artist_network(
         popularity=popularity,
         bio=bio,
-        navidrome_bio=navidrome_bio,
         deezer_tracks=deezer_tracks,
         album_year=album_year,
         album_description=album_description,

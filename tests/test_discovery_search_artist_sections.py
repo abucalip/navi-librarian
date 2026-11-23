@@ -289,25 +289,21 @@ class ArtistPageNetworkTests(unittest.TestCase):
         self.assertTrue(page.partial)
 
 
-class NavidromeBioTests(unittest.TestCase):
-    def test_owned_artist_uses_the_navidrome_bio_before_wikidata(self):
-        net = network(bio=lambda name: "Wikidata text.")
-        net.navidrome_bio = lambda artist_id: "Navidrome text."
+class BioPayloadTests(unittest.TestCase):
+    def test_apple_music_source_is_preserved_in_the_artist_page(self):
+        net = network(bio=lambda name: {"bio": "Apple Music text.", "source": "apple_music"})
         sections = network_sections(net, "Radiohead", "ar-1", radiohead_owned())
-        self.assertEqual(sections["bio"]["bio"], {"text": "Navidrome text.", "source": "navidrome"})
+        self.assertEqual(sections["bio"]["bio"], {"text": "Apple Music text.", "source": "apple_music"})
 
-    def test_empty_or_failed_navidrome_bio_falls_back_to_wikidata(self):
-        for reader in (lambda artist_id: None, lambda artist_id: 1 / 0):
-            net = network(bio=lambda name: "Wikidata text.")
-            net.navidrome_bio = reader
-            sections = network_sections(net, "Radiohead", "ar-1", radiohead_owned())
-            self.assertEqual(sections["bio"]["bio"], {"text": "Wikidata text.", "source": "wikidata"})
-
-    def test_unowned_artist_never_asks_navidrome(self):
+    def test_wikipedia_legacy_text_callback_keeps_its_default_source(self):
         net = network(bio=lambda name: "Wikidata text.")
-        net.navidrome_bio = lambda artist_id: self.fail("Navidrome must not be asked")
+        sections = network_sections(net, "Radiohead", "ar-1", radiohead_owned())
+        self.assertEqual(sections["bio"]["bio"], {"text": "Wikidata text.", "source": "wikidata"})
+
+    def test_unowned_artist_uses_the_same_bio_callback(self):
+        net = network(bio=lambda name: {"bio": "Apple Music text.", "source": "apple_music"})
         sections = network_sections(net, "Radiohead", None, radiohead_owned())
-        self.assertEqual(sections["bio"]["bio"]["source"], "wikidata")
+        self.assertEqual(sections["bio"]["bio"]["source"], "apple_music")
 
 
 class CatalogTests(unittest.TestCase):

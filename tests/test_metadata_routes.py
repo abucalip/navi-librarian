@@ -76,11 +76,28 @@ class MetadataRoutesTests(unittest.TestCase):
         metadata._artist_bio_cache.put("artist", "A musician.", 60)
         with patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self.assertEqual(metadata.artist_bio(" Artist "), {
-                "artist": "Artist", "bio": "A musician."
+                "artist": "Artist", "bio": "A musician.", "source": "wikidata"
             })
         client.get.assert_not_called()
 
-    def test_bio_route_prefers_navidrome_bio_for_library_artists_without_web_requests(self):
+    def test_apple_music_is_the_first_bio_source(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=("Apple bio.", True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio") as wikipedia, \
+             patch.object(metadata, "_navidrome_artist_bio") as navidrome:
+            result = metadata.artist_bio("Artist", librarian=object())
+        self.assertEqual(result, {"artist": "Artist", "bio": "Apple bio.", "source": "apple_music"})
+        wikipedia.assert_not_called()
+        navidrome.assert_not_called()
+
+    def test_wikipedia_is_used_before_navidrome(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("Wikipedia bio.", True, "wikipedia")), \
+             patch.object(metadata, "_navidrome_artist_bio") as navidrome:
+            result = metadata.artist_bio("Artist", librarian=object())
+        self.assertEqual(result["source"], "wikipedia")
+        navidrome.assert_not_called()
+
+    def test_navidrome_is_the_final_fallback_for_owned_artists(self):
         class Library:
             _music_key = staticmethod(lambda value: str(value).casefold())
             calls = []
@@ -93,44 +110,40 @@ class MetadataRoutesTests(unittest.TestCase):
                 return {"artistInfo2": {"biography": 'A musician. <a href="https://x">Read more</a>'}}
 
         library = Library()
-        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
-            self.assertEqual(metadata.artist_bio_route("Artist", library), {"artist": "Artist", "bio": "A musician."})
-            self.assertEqual(metadata.artist_bio_route("Artist", library)["bio"], "A musician.")
-        client.get.assert_not_called()
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")):
+            result = metadata.artist_bio_route("Artist", library)
+        self.assertEqual(result, {"artist": "Artist", "bio": "A musician.", "source": "navidrome"})
         self.assertEqual(library.calls, [("getArtistInfo2", {"id": "ar-1"})])
 
-    def test_bio_route_falls_back_to_web_lookup_when_navidrome_has_nothing(self):
-        class Library:
-            _music_key = staticmethod(lambda value: str(value).casefold())
+    def test_unowned_artist_stops_after_external_sources(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")), \
+             patch.object(metadata, "_navidrome_artist_bio") as navidrome:
+            result = metadata.artist_bio("Nobody", librarian=None)
+        self.assertEqual(result["bio"], "")
+        navidrome.assert_not_called()
 
-            def _discovery_library_snapshot(self):
-                return {"artists": []}
-
-        with patch.object(metadata, "artist_bio", return_value={"artist": "Nobody", "bio": "web"}) as web:
-            self.assertEqual(metadata.artist_bio_route("Nobody", Library())["bio"], "web")
-        web.assert_called_once_with("Nobody")
+    def test_bio_route_passes_the_librarian_to_the_shared_resolver(self):
+        library = object()
+        expected = {"artist": "Nobody", "bio": "web", "source": "apple_music"}
+        with patch.object(metadata, "artist_bio", return_value=expected) as resolver:
+            self.assertEqual(metadata.artist_bio_route("Nobody", library), expected)
+        resolver.assert_called_once_with("Nobody", librarian=library)
 
     def test_artist_bio_client_sends_json_accept_header(self):
         # Wikimedia returns 403 for the default `Accept: */*`; every bio was empty because of it.
         self.assertEqual(metadata._EXTERNAL_HTTP.headers["accept"], "application/json")
 
-    def test_artist_bio_does_not_cache_a_failed_wikidata_lookup(self):
-        def get(url, params=None):
-            if "wikidata" in url:
-                return _Response({}, status_code=403)
-            return _Response({}, status_code=404)
-        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
-            client.get.side_effect = get
-            self.assertEqual(metadata.artist_bio("Artist")["bio"], "")
-        self.assertNotIn("artist", metadata._artist_bio_cache)
+    def test_external_lookup_failure_keeps_only_a_short_lived_empty_memory_result(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, False)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", False, "wikidata")):
+            metadata.artist_bio("Artist")
+        self.assertEqual(metadata._artist_bio_cache.peek("artist"), {"bio": "", "source": None})
 
-    def test_artist_bio_caches_a_successful_lookup_without_a_bio(self):
-        def get(url, params=None):
-            if "wikidata" in url:
-                return _Response({"search": []})
-            return _Response({}, status_code=404)
-        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
-            client.get.side_effect = get
+    def test_artist_bio_caches_a_definitive_no_bio_answer_briefly(self):
+        with patch.object(metadata.apple_artist_bio, "lookup_artist_biography", return_value=(None, True)), \
+             patch.object(metadata, "_load_wikipedia_artist_bio", return_value=("", True, "wikidata")):
             metadata.artist_bio("Artist")
         self.assertIn("artist", metadata._artist_bio_cache)
 
