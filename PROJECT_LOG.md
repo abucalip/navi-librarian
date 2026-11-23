@@ -4,7 +4,9 @@
 - **Diagnosis:** the album-page API emits `release_group_mbid` (from `discovery/search/album_page.py`), but `static/app.js` used `album.mbid` when building `GET /api/album-reviews`. That omitted the MBID, and the server intentionally skipped CritiqueBrainz when no MBID was supplied. macOS and Android paths pass their release-group MBID fields.
 - **Album evidence:** Bitches Brew release group `a9e30282-5b37-3f92-b897-b9659a1a312b` has no CritiqueBrainz review; MusicBrainz says no one has reviewed it. Positive control: Tupelo Honey release group `c2c0e5e7-dc91-3e4e-b5bf-a26f06328926` has one CritiqueBrainz review by Chris Jones (4 positive, 0 negative votes).
 - **Change in progress:** switch the web request to `album.release_group_mbid`, add a source-contract regression test, and correct the stale CB plan/project status.
-- **Verification:** not run yet on this branch. No PR opened, no CI result, no merge, publish, deployment or runtime verification yet. Full unit suite is not run by agents under the project workflow.
+- **PR:** [#1245](https://github.com/abucalip/navi-librarian/pull/1245), initial head `2affb063ddeacc7d6be979604fff03d877997d3d` (open; not merged).
+- **Verification on that exact head:** GitHub Actions passed `compile`, `lint-changed`, `container-smoke`, `test-and-build` (unit tests and Docker image build), `validate-container`, and `validate-release-workflow`; the tag-only `publish-release` job was skipped. The focused local test and manual browser check were not run. Full unit suite was run by CI, not by the agent.
+- **Not verified:** not merged, published, deployed or runtime-verified. PR head will move for this documentation evidence update, so required CI must be rechecked on the final head.
 - **Next:** run focused UI contract test and JavaScript syntax check, inspect the diff, open a PR, and verify required CI on its exact head SHA.
 
 ---
