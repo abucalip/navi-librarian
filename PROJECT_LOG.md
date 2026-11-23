@@ -1,10 +1,20 @@
-## 2026-11-23 — Extract the full Apple Music artist-page biography (follow-up PR in progress)
+## 2026-11-23 — Invalidate cached short artist biographies after Apple parser update
+
+- **Base:** GitHub `main` at `90dbbaa259c93adfb85256c42f7b33428563b3d2` (PR #1249 merged); branch `fix/apple-artist-bio-cache-invalidation`.
+- **Diagnosis:** PR #1247 improved the Apple Music parser, but `/api/artist-bio` continued reading persistent values from `artist-bio:v2`. Wikipedia answers cached by the previous parser therefore remained eligible for the full 24-hour cache lifetime and skipped the new Apple lookup.
+- **Change:** use `artist-bio:v3`, leaving old stored rows intact but unreachable by the current resolver; add a test that seeds a short v2 Wikipedia result and verifies the new full Apple biography is fetched and stored under v3. The web client also uses `&v=3` to bypass its existing 24-hour HTTP cache entry. Update the test plan and status record.
+- **Verification:** `tests/test_metadata_cache_semantics.py` passed (18 tests). All 45 test modules that read web assets passed (535 tests, 61 subtests) when run with a writable temporary `DISCAIR_DATA_DIR`; the initial run's auth integration test could not write to the managed worktree's default data directory. The first Docker packaging CI run failed because `tests/test_metadata_persistent_cache.py` still seeded `artist-bio:v2`; its fixture now uses v3, and the focused persistence module passed (10 tests). No post-push CI check, live provider request, UI check, deployment or runtime verification.
+
+---
+
+## 2026-11-23 — Extract the full Apple Music artist-page biography (merged, PR #1247)
 
 - **Base:** GitHub `main` at `8bf6ca84c5b92e8ca49b8d1fdad884df8937f0a8` (PR #1246 merged); branch `fix/apple-music-full-artist-bio`.
 - **Diagnosis:** the initial provider extracted only JSON-LD `description`, which is a short summary. Apple's public artist page also embeds its full About biography in the artist header's `bio` field inside `serialized-server-data`. Independent implementations corroborate the structure: the header item carries `contentDescriptor.kind = artist`, `contentDescriptor.identifiers.storeAdamID`, `title`, and `bio`.
 - **Implementation:** parse the full page payload first; accept only the header item whose Apple artist ID matches the exact iTunes artist ID resolved by the provider. Keep JSON-LD as fallback, preserve line and paragraph breaks (including `<br>` markup), and request the canonical public `/artist/x/{id}` page. No developer token, new provider, or client change.
 - **Regression coverage:** full bio beats JSON-LD summary; artist-ID match required; unrelated links and non-artist descriptors rejected; paragraph preservation and existing JSON-LD/fallback behavior retained.
-- **Verification:** focused tests and GitHub Actions on the final PR head pending. No live Apple request from the implementation runtime, no manual UI check (no client changes), no merge, deployment or runtime verification yet.
+- **PR:** [#1247](https://github.com/abucalip/navi-librarian/pull/1247) merged as `5442de6c56bd927a899f85736e6242aab6cf229e`.
+- **Verification recorded in the PR:** focused tests were not run locally. No live Apple request from the implementation runtime, no manual UI check (no client changes), deployment or runtime verification.
 
 ---
 
