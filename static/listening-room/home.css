@@ -137,6 +137,46 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
 .lr-chip-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lr-chip-k { flex: none; }
 
+.lr-section-link { display: inline-flex; align-items: center; min-height: var(--lr-target); }
+.lr-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--lr-space-24); }
+.lr-rowcard {
+  display: grid;
+  grid-template-columns: var(--lr-cover-row) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--lr-space-16);
+  padding: var(--lr-space-16);
+  border: 1px solid var(--lr-edge);
+  border-radius: var(--lr-radius-control);
+  background: var(--lr-surface);
+  min-width: 0;
+}
+.lr-rowcard-body { display: flex; flex-direction: column; gap: var(--lr-space-8); min-width: 0; }
+
+.lr-dive {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--lr-space-32);
+  padding: var(--lr-space-32);
+  border: 1px solid var(--lr-edge);
+  border-radius: var(--lr-radius-panel);
+  background: var(--lr-surface);
+}
+.lr-dive-copy { display: flex; flex-direction: column; gap: var(--lr-space-16); min-width: 0; }
+.lr-dive-photo {
+  display: grid;
+  position: relative;
+  place-items: center;
+  overflow: hidden;
+  min-height: 400px;
+  border-radius: var(--lr-radius-control);
+  background: var(--lr-raised);
+  color: var(--lr-text-muted);
+  font: 700 40px/44px var(--lr-font-display);
+}
+.lr-dive-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.lr-dive-name { font: 700 40px/44px var(--lr-font-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.lr-dive-albums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lr-space-16); }
+
 /* Keep app.js's request state, with Listening Room's icon and visible lead label. */
 .lr-home .get-album.lr-btn {
   position: static;
@@ -161,7 +201,7 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
   border-radius: var(--lr-radius-control);
 }
 .lr-home .get-album.lr-lead-get:hover { background: var(--lr-accent-hover); border-color: var(--lr-accent-hover); }
-.lr-home .lr-actions .lr-btn:not(.get-album):hover { background: var(--lr-hero-aside-fill); }
+.lr-home .lr-hero .lr-actions .lr-btn:not(.get-album):hover { background: var(--lr-hero-aside-fill); }
 .lr-home .get-album .get-album-label, .lr-home .get-album .get-album-glyph,
 .lr-home .get-album .lr-get-requested, .lr-home .get-album:is(.is-pending, .requested, .is-failed) > .lr-icon { display: none; }
 .lr-home .get-album:is(.is-pending, .requested, .is-failed) .get-album-glyph { display: block; width: 24px; height: 24px; }
@@ -202,12 +242,18 @@ a.lr-chip:hover { background: var(--lr-raised); color: var(--lr-text); }
 .lr-menu-item .lr-icon { flex: none; }
 
 @media (width < 1080px) {
+  .lr-dive { grid-template-columns: minmax(0, 1fr); }
   .lr-hero { grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); }
   .lr-upnext { grid-column: 1 / -1; }
   .lr-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (width < 720px) {
+  .lr-rows { grid-template-columns: minmax(0, 1fr); }
+  .lr-dive { padding: var(--lr-space-16); gap: var(--lr-space-16); }
+  .lr-dive-photo { min-height: 240px; }
+  .lr-dive-name { font-size: 30px; line-height: 34px; }
+  .lr-dive-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lr-home:not([hidden]) { gap: var(--lr-space-24); }
   .lr-hero { grid-template-columns: minmax(0, 1fr); padding: var(--lr-space-16); gap: var(--lr-space-16); border-radius: var(--lr-radius-control); }
   .lr-hero-title { font-size: 36px; line-height: 40px; }

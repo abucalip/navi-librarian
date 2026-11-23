@@ -88,9 +88,9 @@
     return link(text, target);
   }
 
-  function avatar(artist) {
+  function artistPhoto(artist, className = 'lr-chip-avatar') {
     const initials = artist.trim().split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join('').toLocaleUpperCase();
-    const frame = element('span', 'lr-chip-avatar', initials);
+    const frame = element('span', className, initials);
     frame.setAttribute('aria-hidden', 'true');
     cachedJSONRequest(artistImageRequests, artist.trim().toLocaleLowerCase(),
       '/api/artist-image?' + new URLSearchParams({name: artist}))
@@ -104,31 +104,33 @@
     return frame;
   }
 
-  function reasonChip(chip, seedTag) {
+  function reasonChip(chip, seedTag, artistReason) {
     const value = String(chip.value ?? '');
     const isSeed = chip.type === 'tag' && value === seedTag;
     let target;
     if (chip.href_kind === 'genre' && value) target = {type: 'genre', tag: value.toLocaleLowerCase()};
     if (chip.href_kind === 'artist' && value) target = namedArtistTarget(value);
     const node = target ? link('', target, 'lr-chip') : element('span', 'lr-chip');
-    if (chip.type === 'artist' && value) node.append(avatar(value));
+    if (chip.type === 'artist' && value) node.append(artistPhoto(value));
     if (chip.type === 'listeners') {
       const full = Number(chip.value).toLocaleString('en-US') + ' listeners';
       node.title = full;
       node.setAttribute('aria-label', full);
       node.append(icon('listeners', true));
     }
+    if (artistReason && chip.type === 'library_count') node.append(icon('disc', true));
     if (isSeed) node.append(icon('tag', true), element('span', 'lr-chip-k', 'Seed tag'));
     else if (chip.type === 'tag' && seedTag) node.append(element('span', 'lr-chip-k', 'Tag'));
     node.append(element('span', 'lr-chip-value', chip.label));
     return node;
   }
 
-  function renderReason(item, size) {
+  function renderReason(item, size, grouped = false) {
     const why = item.why;
     if (typeof why?.sentence !== 'string' || !why.sentence.trim()) return null;
     if (size === 'line') return element('p', 'lr-reason-line', why.sentence);
     const artistReason = ['deep_dive_missing', 'deep_dive_similar'].includes(why.kind);
+    const text = (grouped && why.panel_sentence) || why.sentence;
     const label = artistReason ? 'Why this artist' : 'Why this pick';
     const glyph = why.kind === 'lens' ? lenses.get(item.lens)?.[1]
       : why.kind === 'discover' ? discoverIcons[item.discovery_category] : reasonIcons[why.kind];
@@ -136,14 +138,14 @@
     const heading = element('p', 'lr-reason-label');
     heading.append(icon(glyph || 'layers', true), label);
     const sentence = element('p', 'lr-reason-head');
-    sentence.append(element('span', size === 'hero' ? 'lr-reason-hero' : 'lr-reason-text', why.sentence));
+    sentence.append(element('span', size === 'hero' ? 'lr-reason-hero' : 'lr-reason-text', text));
     box.append(heading, sentence);
     if (why.chips?.length) {
       const evidence = element('ul', 'lr-evidence');
       evidence.setAttribute('aria-label', label);
       for (const chip of why.chips.slice(0, 4)) {
         const row = element('li', '');
-        row.append(reasonChip(chip, why.kind === 'lens' ? item.seed_tag : ''));
+        row.append(reasonChip(chip, why.kind === 'lens' ? item.seed_tag : '', artistReason));
         evidence.append(row);
       }
       box.append(evidence);
@@ -263,7 +265,7 @@
   function artistAndYear(item, main) {
     const artist = artistName(item);
     const meta = element('p', main ? 'lr-hero-artist' : 'lr-meta');
-    if (main) meta.append(avatar(artist));
+    if (main) meta.append(artistPhoto(artist));
     const name = link(artist, namedArtistTarget(artist));
     const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
     const line = element('span', 'lr-artist-year');
@@ -387,15 +389,21 @@
       item && !dismissed.has(pickKey(item)) && !dismissedArtists.has(foldKey(artistName(item))));
   }
 
-  function status(text, retry = false) {
+  function status(text, retry = null) {
     const note = element('div', 'lr-home-note');
-    note.append(element('p', '', text));
+    const message = element('p', '', text);
+    message.setAttribute('role', 'status');
+    note.append(message);
     if (retry) {
       const again = button('Retry', 'refresh', 'lr-btn');
-      again.addEventListener('click', () => refresh().then(() => tabs.querySelector('[aria-selected="true"]')?.focus()));
+      again.addEventListener('click', retry);
       note.append(again);
     }
     return note;
+  }
+
+  function retryPicks() {
+    return refresh().then(() => tabs.querySelector('[aria-selected="true"]')?.focus());
   }
 
   function renderLead() {
@@ -415,7 +423,7 @@
       : error ? 'The lead pick could not be loaded.' : 'No lead pick today.';
     if (renderedHero?.message === message && renderedHero.items.length === items.length &&
         items.every((item, index) => item === renderedHero.items[index])) return;
-    lead.replaceChildren(heroLens ? renderHero(heroLens, items) : status(message, !pending && error));
+    lead.replaceChildren(heroLens ? renderHero(heroLens, items) : status(message, !pending && error ? retryPicks : null));
     renderedHero = {message, items};
   }
 
@@ -484,11 +492,137 @@
       grid.append(...items.map(renderCard));
       target.replaceChildren(grid);
     } else {
-      const note = status(message, !!result?.error);
+      const note = status(message, result?.error ? retryPicks : null);
       if (target === panels) panels.append(note);
       else target.replaceChildren(note);
     }
     renderedDaily = {target, items, message};
+  }
+
+  function bindPageLink(anchor, page) {
+    anchor.href = '#' + page;
+    anchor.addEventListener('click', event => {
+      if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      navigateTo(page);
+      const heading = $(page).querySelector('h2');
+      heading.tabIndex = -1;
+      heading.focus();
+    });
+  }
+
+  function groupDiveAlbums(items) {
+    const groups = new Map();
+    for (const item of items) {
+      const key = foldKey(artistName(item));
+      if (!groups.has(key)) groups.set(key, []);
+      const albums = groups.get(key);
+      if (albums.length < 4 && !albums.some(album => pickKey(album) === pickKey(item))) albums.push(item);
+    }
+    return [...groups.values()];
+  }
+
+  function renderDive(target, groups, index = 0, focusNext = false) {
+    const albums = groups[index];
+    const artist = artistName(albums[0]);
+    const heading = element('h2', 'lr-dive-name');
+    heading.id = 'lrDiveTitle';
+    heading.append(link(artist, namedArtistTarget(artist)));
+    const copy = element('div', 'lr-dive-copy');
+    copy.append(element('p', 'lr-eyebrow', 'Artist Deep Dives'), heading);
+    const reasonItem = albums.find(item =>
+      ['deep_dive_missing', 'deep_dive_similar'].includes(item.why?.kind));
+    const reason = reasonItem && renderReason(reasonItem, 'card', albums.length > 1);
+    if (reason) copy.append(reason);
+
+    const grid = element('div', 'lr-dive-albums');
+    for (const item of albums) {
+      const card = albumLink(item, '');
+      card.className = 'lr-card';
+      card.append(artwork(item, 'lr-cover'), element('p', 'lr-card-title', albumName(item)));
+      const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
+      if (year !== null) card.append(element('p', 'lr-meta', String(year)));
+      grid.append(card);
+    }
+    const actions = element('div', 'lr-actions');
+    const open = element('a', 'lr-btn', 'Open the deep dive');
+    bindPageLink(open, 'artistDeepDive');
+    actions.append(open);
+    const next = button('Next artist', 'next', 'lr-btn');
+    if (groups.length > 1) {
+      next.addEventListener('click', () => renderDive(target, groups, (index + 1) % groups.length, true));
+      actions.append(next);
+    }
+    copy.append(grid, actions);
+    target.classList.add('lr-panel', 'lr-dive');
+    target.replaceChildren(artistPhoto(artist, 'lr-dive-photo'), copy);
+    if (focusNext) {
+      next.focus();
+      $('lrPickStatus').textContent = artist;
+    }
+  }
+
+  function renderPreview(item) {
+    const card = element('article', 'lr-rowcard');
+    const body = element('div', 'lr-rowcard-body');
+    const info = element('div', '');
+    const title = element('h3', 'lr-card-title');
+    title.append(albumLink(item, albumName(item)));
+    info.append(title, artistAndYear(item, false));
+    body.append(info);
+    const reason = renderReason(item, 'card');
+    if (reason) body.append(reason);
+    card.append(artwork(item, 'lr-cover'), body);
+    return card;
+  }
+
+  function renderDiveStatus(target, note) {
+    const heading = element('h2', 'lr-section-title', 'Artist Deep Dives');
+    heading.id = 'lrDiveTitle';
+    target.replaceChildren(heading, note);
+  }
+
+  async function loadSection(target, url, label, empty, renderItems, renderStatus) {
+    const load = () => loadSection(target, url, label, empty, renderItems, renderStatus);
+    const hadFocus = target.contains(document.activeElement);
+    renderStatus(target, status('Loading ' + label + '…'));
+    target.setAttribute('aria-busy', 'true');
+    if (hadFocus) {
+      target.tabIndex = -1;
+      target.focus();
+    }
+    let items;
+    try {
+      const data = await requestJSON(url);
+      if (data?.error) throw new Error(data.error);
+      const candidates = Array.isArray(data?.items) ? data.items : getRecommendations(data);
+      items = candidates.filter(isAlbumRecommendation);
+    } catch {
+      target.removeAttribute('aria-busy');
+      renderStatus(target, status('Could not load ' + label + '.', load));
+      if (document.activeElement === target) target.querySelector('button')?.focus();
+      return;
+    }
+    target.removeAttribute('aria-busy');
+    if (items.length) renderItems(target, items);
+    else renderStatus(target, status(empty));
+    if (document.activeElement === target) target.querySelector('a')?.focus();
+  }
+
+  function loadHomeSections() {
+    loadSection($('lrDive'), '/api/discovery/artist_deep_dive?count=150',
+      'Artist Deep Dives', 'No artist deep dives yet.',
+      (target, items) => renderDive(target, groupDiveAlbums(items)), renderDiveStatus);
+    const showRows = (target, items) => {
+      const rows = element('div', 'lr-rows');
+      rows.append(...items.slice(0, 3).map(renderPreview));
+      target.replaceChildren(rows);
+    };
+    const showNote = (target, note) => target.replaceChildren(note);
+    loadSection($('lrPersonalRows'), '/api/discovery/personal?count=3',
+      'Personal Discoveries', 'No personal discoveries yet.', showRows, showNote);
+    loadSection($('lrDiscoverRows'), '/api/recommendations?count=3',
+      'Discover music', 'No recommendations yet.', showRows, showNote);
   }
 
   function render() {
@@ -669,6 +803,7 @@
   }, true);
 
   let wasOnHome = false;
+  let sectionsLoaded = false;
   let wasEnabled = isListeningRoom();
   function syncHome() {
     const enabled = isListeningRoom();
@@ -682,7 +817,13 @@
       $('dashboard').removeAttribute('aria-label');
       $('dashboard').setAttribute('aria-labelledby', 'dashboardHeading');
     }
-    if (onHome && !wasOnHome) refresh();
+    if (onHome && !wasOnHome) {
+      refresh();
+      if (!sectionsLoaded) {
+        sectionsLoaded = true;
+        loadHomeSections();
+      }
+    }
     if (!onHome) closeMenu(false);
     if (!enabled && wasEnabled && !loadedLegacy) {
       loadedLegacy = true;
@@ -693,6 +834,8 @@
   }
 
   window.listeningRoomHome = {refresh};
+  bindPageLink($('lrPersonalRows').parentElement.querySelector('.lr-section-link'), 'personalDiscoveries');
+  bindPageLink($('lrDiscoverRows').parentElement.querySelector('.lr-section-link'), 'recommendations');
   const observer = new MutationObserver(syncHome);
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-layout']});
   observer.observe($('dashboard'), {attributes: true, attributeFilter: ['class']});
