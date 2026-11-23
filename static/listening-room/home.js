@@ -1,9 +1,11 @@
-// Listening Room Home renders the stored lens lists and the server's reason payloads.
+// Listening Room renders Home, Library shelves and acquisition progress in the rail.
 (() => {
   const home = $('lrHome');
   const lead = $('lrLead');
   const tabs = $('lrLensTabs');
   const panels = $('lrDailyPanels');
+  const getting = $('lrGetting');
+  const libraryShelves = $('lrLibraryShelves');
   const menu = $('lrPickMenu');
   const menuItems = $('lrPickMenuItems');
   const heroOrder = ['deep_cuts', 'current_tastes', 'genre_spread'];
@@ -582,8 +584,13 @@
     target.replaceChildren(heading, note);
   }
 
-  async function loadSection(target, url, label, empty, renderItems, renderStatus) {
-    const load = () => loadSection(target, url, label, empty, renderItems, renderStatus);
+  const albumItems = data => (Array.isArray(data?.items) ? data.items : getRecommendations(data))
+    .filter(isAlbumRecommendation);
+  const sectionItems = data => Array.isArray(data?.items) ? data.items : [];
+  const showNote = (target, note) => target.replaceChildren(note);
+
+  async function loadSection(target, url, label, empty, renderItems, renderStatus = showNote, readItems = albumItems) {
+    const load = () => loadSection(target, url, label, empty, renderItems, renderStatus, readItems);
     const hadFocus = target.contains(document.activeElement);
     renderStatus(target, status('Loading ' + label + '…'));
     target.setAttribute('aria-busy', 'true');
@@ -595,8 +602,7 @@
     try {
       const data = await requestJSON(url);
       if (data?.error) throw new Error(data.error);
-      const candidates = Array.isArray(data?.items) ? data.items : getRecommendations(data);
-      items = candidates.filter(isAlbumRecommendation);
+      items = readItems(data);
     } catch {
       target.removeAttribute('aria-busy');
       renderStatus(target, status('Could not load ' + label + '.', load));
@@ -609,6 +615,101 @@
     if (document.activeElement === target) target.querySelector('a')?.focus();
   }
 
+  function previewReason(why, year, release) {
+    if (!why?.sentence) return '';
+    const libraryCount = why.chips?.find(chip => chip.type === 'library_count');
+    return release && why.kind === 'new_release' && year && libraryCount?.label
+      ? 'New in ' + year + ' · ' + libraryCount.label
+      : why.sentence;
+  }
+
+  function renderMiniCard(item, preview = '') {
+    const card = element('article', 'lr-card');
+    const title = element('h3', 'lr-card-title');
+    title.append(albumLink(item, albumName(item)));
+    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year);
+    const meta = [artistName(item), preview === 'collection' && year].filter(Boolean).join(' · ');
+    card.append(artwork(item, 'lr-cover'), title, element('p', 'lr-meta', meta));
+    const reason = preview && previewReason(item.why, year, preview === 'release');
+    if (reason) card.append(element('p', 'lr-reason-line', reason));
+    return card;
+  }
+
+  function showMiniCards(target, items, preview) {
+    const grid = element('div', 'lr-mini-grid');
+    grid.append(...items.slice(0, 3).map(item => renderMiniCard(item, preview)));
+    target.replaceChildren(grid);
+  }
+
+  function showGenres(target, items) {
+    const links = element('div', 'lr-tabs lr-genre-links');
+    links.append(...items.slice(0, 6).map(genre => link(genre.name, {type: 'genre', tag: genre.tag}, 'lr-genre')));
+    target.replaceChildren(links);
+  }
+
+  function loadLibraryShelves() {
+    for (const [id, source, label] of [
+      ['Recent', 'recent', 'Recently played'],
+      ['Frequent', 'frequent', 'Most played'],
+      ['Newest', 'newest', 'Newly added'],
+    ]) {
+      loadSection($('lrShelf' + id), '/api/dashboard/albums/' + source + '?count=6',
+        label, 'Nothing to show yet.', (target, items) => {
+          const grid = element('div', 'lr-grid lr-shelf');
+          grid.append(...items.slice(0, 6).map(item => renderMiniCard(item)));
+          target.replaceChildren(grid);
+        }, showNote, sectionItems);
+    }
+  }
+
+  let gettingActive = false;
+  let gettingArtworkKey;
+  const gettingArtwork = $('lrGettingArtwork');
+  const gettingTitle = $('lrGettingTitle');
+  const gettingProgress = $('lrGettingProgress');
+  const gettingSummary = $('lrGettingSummary');
+
+  function syncGettingVisibility() {
+    getting.hidden = !isListeningRoom() || !gettingActive || activePage === 'acquisitions';
+  }
+
+  function updateGetting(jobs) {
+    if (!isListeningRoom()) return;
+    const statusOf = job => String(job.status || '').toLowerCase();
+    const active = jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(statusOf(job)));
+    const current = active.find(job => statusOf(job) === 'downloading') || active[0];
+    gettingActive = Boolean(current);
+    syncGettingVisibility();
+    if (!current) return;
+
+    const details = current.details || {};
+    const title = (details.kind === 'track' ? details.track_title : current.album) || current.album || 'Acquisition';
+    const item = {artist: current.artist, album: details.kind === 'track' ? details.album_name : current.album};
+    const key = pickKey(item);
+    if (key !== gettingArtworkKey) {
+      gettingArtworkKey = key;
+      gettingArtwork.replaceChildren(artwork(item, 'lr-cover'));
+    }
+    gettingTitle.textContent = title;
+
+    const percent = details.live_progress?.percent;
+    const value = percent == null ? NaN : Number(percent);
+    gettingProgress.hidden = !Number.isFinite(value);
+    if (!gettingProgress.hidden) {
+      const bounded = Math.max(0, Math.min(100, value));
+      gettingProgress.setAttribute('aria-label', title + ' download');
+      gettingProgress.setAttribute('aria-valuenow', String(Math.round(bounded)));
+      gettingProgress.firstElementChild.style.width = bounded + '%';
+    }
+
+    const counts = new Map();
+    for (const job of active) {
+      const label = acquisitionStatusInfo(statusOf(job)).label.toLowerCase();
+      counts.set(label, (counts.get(label) || 0) + 1);
+    }
+    gettingSummary.textContent = [...counts].map(([label, count]) => count + ' ' + label).join(' · ');
+  }
+
   function loadHomeSections() {
     loadSection($('lrDive'), '/api/discovery/artist_deep_dive?count=150',
       'Artist Deep Dives', 'No artist deep dives yet.',
@@ -618,11 +719,16 @@
       rows.append(...items.slice(0, 3).map(renderPreview));
       target.replaceChildren(rows);
     };
-    const showNote = (target, note) => target.replaceChildren(note);
     loadSection($('lrPersonalRows'), '/api/discovery/personal?count=3',
       'Personal Discoveries', 'No personal discoveries yet.', showRows, showNote);
     loadSection($('lrDiscoverRows'), '/api/recommendations?count=3',
       'Discover music', 'No recommendations yet.', showRows, showNote);
+    loadSection($('lrCollection'), '/api/discovery/classics?count=3',
+      'Add to your collection', 'No albums to add yet.', (target, items) => showMiniCards(target, items, 'collection'));
+    loadSection($('lrNewReleases'), '/api/discovery/new_releases?count=3',
+      'New releases', 'No new releases yet.', (target, items) => showMiniCards(target, items, 'release'));
+    loadSection($('lrGenres'), '/api/dashboard/genres?limit=6',
+      'Genres', 'No genres in your library yet.', showGenres, showNote, sectionItems);
   }
 
   function render() {
@@ -804,10 +910,16 @@
 
   let wasOnHome = false;
   let sectionsLoaded = false;
+  let wasOnLibrary = false;
   let wasEnabled = isListeningRoom();
   function syncHome() {
     const enabled = isListeningRoom();
+    if (enabled && !wasEnabled) refreshActiveDownloadBadge();
     const onHome = enabled && activePage === 'dashboard';
+    const onLibrary = enabled && activePage === 'library' && !$('libraryListView').hidden;
+    libraryShelves.hidden = !enabled;
+    if (onLibrary && !wasOnLibrary) loadLibraryShelves();
+    wasOnLibrary = onLibrary;
     home.hidden = !enabled;
     $('dashboardPicksPanel').hidden = enabled;
     if (enabled) {
@@ -828,16 +940,26 @@
     if (!enabled && wasEnabled && !loadedLegacy) {
       loadedLegacy = true;
       loadDashboardPicks();
+      loadDashboardShelves();
     }
     wasOnHome = onHome;
     wasEnabled = enabled;
   }
 
-  window.listeningRoomHome = {refresh};
+  window.listeningRoomHome = {refresh, updateGetting, syncGettingVisibility};
+  bindPageLink($('lrRadioGrab'), 'radio');
+  $('lrRadioHeard').addEventListener('click', event => {
+    if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    window.history.pushState(null, '', '#radio/heard');
+    applyHash(window.location.hash);
+  });
   bindPageLink($('lrPersonalRows').parentElement.querySelector('.lr-section-link'), 'personalDiscoveries');
   bindPageLink($('lrDiscoverRows').parentElement.querySelector('.lr-section-link'), 'recommendations');
   const observer = new MutationObserver(syncHome);
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-layout']});
   observer.observe($('dashboard'), {attributes: true, attributeFilter: ['class']});
+  observer.observe($('library'), {attributes: true, attributeFilter: ['class']});
+  observer.observe($('libraryListView'), {attributes: true, attributeFilter: ['hidden']});
   syncHome();
 })();
