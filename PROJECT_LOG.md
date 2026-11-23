@@ -1,3 +1,17 @@
+## 2026-11-23 — Diagnose CritiqueBrainz album reviews; web MBID fix in progress
+
+- **Base:** GitHub `main` at `ffb1528cbd4843292b621c85656aea899a11a9b7`; branch `fix/critiquebrainz-release-group-mbid`.
+- **Diagnosis:** the album-page API emits `release_group_mbid` (from `discovery/search/album_page.py`). Web used nonexistent `album.mbid`, omitting the MBID so the server skipped CritiqueBrainz. macOS used Navidrome's `musicBrainzId`, which the repository documents as the release MBID rather than the release-group MBID. Android already reads `release_group_mbid` from the album-page DTO.
+- **Album evidence:** Bitches Brew release group `a9e30282-5b37-3f92-b897-b9659a1a312b` has no CritiqueBrainz review; MusicBrainz says no one has reviewed it. Positive control: Tupelo Honey release group `c2c0e5e7-dc91-3e4e-b5bf-a26f06328926` has one CritiqueBrainz review by Chris Jones (4 positive, 0 negative votes).
+- **Changes in PR #1245:** switch web to `album.release_group_mbid`; pass macOS `RelatedModel.releaseGroupMBID` into `AlbumSpreadModel` rather than deriving the review ID from Navidrome release metadata; add web source-contract and macOS request-level regression tests; correct the stale CB plan/project status.
+- **PR:** [#1245](https://github.com/abucalip/navi-librarian/pull/1245), expanded cross-client head `4c1ab200ff22c711e79130623512b146e7e7b833` (open; not merged).
+- **Verification on initial web-only head `2affb063ddeacc7d6be979604fff03d877997d3d`:** GitHub Actions passed `compile`, `lint-changed`, `container-smoke`, `test-and-build` (unit tests and Docker image build), `validate-container`, and `validate-release-workflow`; the tag-only `publish-release` job was skipped. The macOS changes were added after these runs; the Swift regression test and manual browser check have not been run. Full Python unit suite was run by CI, not by the agent.
+- **Additional macOS correction:** `AlbumSpreadModel` now receives `RelatedModel.releaseGroupMBID` from `AppState.loadSelectedAlbum`; it no longer sends the Navidrome release MBID to CritiqueBrainz. A request-level Swift regression test was added, but not run locally.
+- **Verification on expanded head:** GitHub Actions were triggered again for `4c1ab200ff22c711e79130623512b146e7e7b833`; results were pending at the time of this documentation update. No macOS Swift test or manual browser check has been run.
+- **Not verified:** not merged, published, deployed or runtime-verified. **Next:** verify CI on the final PR head, run `swift test --filter DiscairUITests.AlbumSpreadTests` and the required manual browser check, then obtain owner review/merge.
+
+---
+
 ## 2026-11-22 — FirstFM F5.2: drop temporary lastfm_* aliases and close out docs (PR pending)
 
 - **Branch:** `feat/firstfm-f5-2-cleanup`, based on `main` at `0bfba05a` (FirstFM F5.1 merged, PR `#1237`).

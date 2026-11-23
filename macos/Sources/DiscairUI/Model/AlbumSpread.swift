@@ -4,8 +4,8 @@ import Foundation
 import Observation
 
 /// The album spread (contract section 6.9): liner notes, credits, MusicBrainz data, similar artists.
-/// Everything comes from Navidrome (`getAlbumInfo2`, `getArtistInfo2`, OpenSubsonic `getAlbum`); a part the server
-/// has nothing for is left out, never invented. No review source exists, so reviews say so.
+/// Notes, credits and release facts come from Navidrome; CritiqueBrainz reviews come from the Librarian and require
+/// the album page's MusicBrainz release-group MBID. A part with no source data is left out, never invented.
 
 public struct SpreadCreditGroup: Identifiable, Equatable, Sendable {
     public var id: String { title }
@@ -174,6 +174,12 @@ public enum AlbumSpread {
         return u
     }
 
+    /// CritiqueBrainz indexes album reviews by release group, never by the Navidrome release MBID.
+    static func reviewReleaseGroupMBID(_ raw: String?) -> String? {
+        guard let value = raw?.trimmingCharacters(in: .whitespacesAndNewlines), isUUID(value) else { return nil }
+        return value.lowercased()
+    }
+
     static func isUUID(_ s: String) -> Bool { UUID(uuidString: s) != nil }
 
     /// Only a Last.fm page over https is linked.
@@ -210,24 +216,32 @@ public final class AlbumSpreadModel {
     public private(set) var loading = false
     public private(set) var isLive = false
     private var loadedFor: String?
-    private var lastMbid: String?
+    private var lastReleaseGroupMBID: String?
 
     public init() {}
 
     /// Forgets the album shown, so a new page never shows the last one's notes while its own load runs.
     public func startNewAlbum() {
         guard isLive else { return }
-        content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastMbid = nil; loading = true
+        content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastReleaseGroupMBID = nil; loading = true
     }
 
-    public func load(album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, libraryArtists: [String]) async {
+    public func load(album: AlbumItem, navidrome: NavidromeClient?, librarian: LibrarianClient? = nil, libraryArtists: [String], releaseGroupMBID: String? = nil) async {
         guard navidrome != nil || librarian != nil else {
             isLive = false; content = AlbumSpread.sample; reviews = .loaded(AlbumSpread.sampleReviews, retryable: false); loadedFor = nil; return
         }
         isLive = true
         let key = album.remoteID ?? "pick:\(album.artist.lowercased())|\(album.title.lowercased())"
-        if loadedFor == key, content != nil { return }
+        let reviewGroup = AlbumSpread.reviewReleaseGroupMBID(releaseGroupMBID)
+        if loadedFor == key, content != nil {
+            if lastReleaseGroupMBID != reviewGroup {
+                lastReleaseGroupMBID = reviewGroup
+                await loadReviews(album: album, librarian: librarian, mbid: reviewGroup)
+            }
+            return
+        }
         loading = true; content = nil; reviews = .idle; critiquebrainz = []
+        lastReleaseGroupMBID = reviewGroup
         defer { loading = false }
         let ids = (album: album.remoteID, artist: album.artistRemoteID)
         async let facts: NavidromeAlbumFacts? = { guard let navidrome, let id = ids.album else { return nil }; return try? await navidrome.albumFacts(id: id) }()
@@ -237,10 +251,9 @@ public final class AlbumSpreadModel {
         let (f, i, a, d) = await (facts, info, artist, description)
         guard !Task.isCancelled else { return }
         content = AlbumSpread.build(facts: f, info: i, artist: a, description: d, libraryArtists: libraryArtists)
-        lastMbid = [f?.musicBrainzId, i?.musicBrainzId].compactMap { $0 }.first(where: AlbumSpread.isUUID)
         loadedFor = key
         loading = false
-        await loadReviews(album: album, librarian: librarian, mbid: lastMbid)
+        await loadReviews(album: album, librarian: librarian, mbid: lastReleaseGroupMBID)
     }
 
     /// Asks the Librarian for reviews again (the Retry button, or an outlet that did not answer).
@@ -249,7 +262,7 @@ public final class AlbumSpreadModel {
         reviews = .loading
         critiquebrainz = []
         do {
-            let r = try await librarian.albumReviews(artist: album.artist, album: album.title, mbid: mbid ?? lastMbid)
+            let r = try await librarian.albumReviews(artist: album.artist, album: album.title, mbid: mbid ?? lastReleaseGroupMBID)
             guard !Task.isCancelled else { return }
             critiquebrainz = AlbumSpread.critiquebrainz(r.critiquebrainz)
             reviews = .loaded(AlbumSpread.reviews(r.reviews), retryable: r.retryable ?? false)
@@ -258,5 +271,5 @@ public final class AlbumSpreadModel {
         }
     }
 
-    public func forget() { content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastMbid = nil; isLive = false }
+    public func forget() { content = nil; reviews = .idle; critiquebrainz = []; loadedFor = nil; lastReleaseGroupMBID = nil; isLive = false }
 }

@@ -1,8 +1,23 @@
+import DiscairCore
 import DiscairLibrarian
 import DiscairNavidrome
 import Foundation
 import Testing
 @testable import DiscairUI
+
+private final class AlbumReviewCaptureTransport: HTTPTransport, @unchecked Sendable {
+    private let lock = NSLock()
+    private var requests: [URLRequest] = []
+    var sent: [URLRequest] { lock.withLock { requests } }
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        lock.withLock { requests.append(request) }
+        let body = request.url?.path == "/api/album-description"
+            ? #"{ "paragraphs":[] }"#
+            : #"{ "critiquebrainz":[],"reviews":[] }"#
+        return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+    }
+}
 
 @MainActor
 struct AlbumSpreadTests {
@@ -55,6 +70,24 @@ struct AlbumSpreadTests {
     @Test func nothingFromTheServerIsAnEmptySpread() {
         #expect(AlbumSpread.build(facts: nil, info: nil, artist: nil, libraryArtists: []).isEmpty)
         #expect(!AlbumSpread.sample.isEmpty)
+    }
+
+    @Test func critiqueBrainzRequestUsesTheAlbumPageReleaseGroupMBID() async throws {
+        let group = "c2c0e5e7-dc91-3e4e-b5bf-a26f06328926"
+        let transport = AlbumReviewCaptureTransport()
+        let librarian = try LibrarianClient(
+            baseURL: URL(string: "https://lib.example.ts.net")!,
+            credential: Credential(username: "owner", password: "test"),
+            transport: transport
+        )
+        let album = AlbumItem(id: 99, title: "Tupelo Honey", artist: "Van Morrison", year: 1971, genre: "", format: "", owned: false, hue: 0)
+        let model = AlbumSpreadModel()
+
+        await model.load(album: album, navidrome: nil, librarian: librarian, libraryArtists: [], releaseGroupMBID: group)
+
+        let request = transport.sent.first { $0.url?.path == "/api/album-reviews" }
+        let query = request?.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems }
+        #expect(query?.first(where: { $0.name == "mbid" })?.value == group)
     }
 
     @Test func withoutASessionTheSampleShowsAndAPickShowsNothing() async {

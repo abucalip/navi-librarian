@@ -626,7 +626,7 @@ public final class AppState {
         async let relatedLoad: Void = related.loadAlbum(selectedAlbum, librarian: session?.librarian)
         await library.loadTracks(for: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, related: related)
         await relatedLoad
-        await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name))
+        await spread.load(album: selectedAlbum, navidrome: session?.navidrome, librarian: session?.librarian, libraryArtists: library.artists.map(\.name), releaseGroupMBID: related.releaseGroupMBID)
         await albumCredits.load(rgid: related.releaseGroupMBID, librarian: session?.librarian)
     }
 
