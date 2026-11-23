@@ -1,6 +1,6 @@
 # CritiqueBrainz Inline Album Reviews (`CB.md`)
 
-**Status:** Implemented across server and all three clients (CB-1–CB-5 merged); web MBID forwarding correction in progress
+**Status:** Implemented across server and all three clients (CB-1–CB-5 merged); web and macOS release-group MBID corrections in progress
 **Created:** 2026-11-23
 **Scope:** Server (`integrations/critiquebrainz/`, `app/services/`, `app/api/metadata.py`) and clients (Web, macOS, Android)
 
@@ -127,6 +127,6 @@ All three clients follow the same presentation rules (domain formatting stays se
 ### Implementation and verification status (2026-11-23)
 
 - CB-1 through CB-5 are implemented and merged in PRs [#1240](https://github.com/abucalip/navi-librarian/pull/1240), [#1241](https://github.com/abucalip/navi-librarian/pull/1241), [#1242](https://github.com/abucalip/navi-librarian/pull/1242), [#1243](https://github.com/abucalip/navi-librarian/pull/1243), and [#1244](https://github.com/abucalip/navi-librarian/pull/1244).
-- Cross-client verification found two identifier defects: web read nonexistent `album.mbid` instead of `release_group_mbid`; macOS used Navidrome's album `musicBrainzId` (a release MBID) instead of the album page's release-group MBID. Android already reads the correct field. PR [#1245](https://github.com/abucalip/navi-librarian/pull/1245) now fixes both and adds regression coverage. Initial GitHub Actions passed on web-only head `2affb063ddeacc7d6be979604fff03d877997d3d`; macOS Swift tests and manual browser verification remain outstanding.
+- Cross-client verification found two identifier defects: web read nonexistent `album.mbid` instead of `release_group_mbid`; macOS used Navidrome's album `musicBrainzId` (a release MBID) instead of the album page's release-group MBID. Android already reads the correct field. PR [#1245](https://github.com/abucalip/navi-librarian/pull/1245) fixes both and adds regression coverage. Initial GitHub Actions passed on web-only head `2affb063ddeacc7d6be979604fff03d877997d3d`. GitHub Actions are running on the expanded cross-client head `4c1ab200ff22c711e79130623512b146e7e7b833`; the macOS Swift regression test and manual browser verification remain outstanding.
 - Bitches Brew (release group `a9e30282-5b37-3f92-b897-b9659a1a312b`) has no CritiqueBrainz review, so its empty result is expected and it is not a valid positive smoke test. A positive control is Tupelo Honey by Van Morrison (release group `c2c0e5e7-dc91-3e4e-b5bf-a26f06328926`), which has one CritiqueBrainz review by Chris Jones.
 - Provider runtime verification and client UI verification remain separate from implementation and automated tests; do not infer deployment or runtime success from merged code.
