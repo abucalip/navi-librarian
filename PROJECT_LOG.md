@@ -17,7 +17,7 @@
 - **Changes:** app/services/apple_artist_bio.py; shared resolver for /api/artist-bio and artist-page sections; priority Apple Music → identity-checked Wikipedia (Wikidata description fallback) → Navidrome; actual source provenance; cache versioning and separation of library/non-library contexts; short retries after external-provider failures; parser, identity, priority, cache and fallback regression tests; architecture, requirements, search contract and test-plan updates.
 - **CI on f7941a2074aa4aac51a67cb91eb2c29d6444168f:** 4,439 passed, 2 skipped, 1 xfailed, 1,136 subtests passed. Python compile, changed-file lint, container runtime smoke, multi-architecture image validation, Docker packaging build and release-workflow validation passed. Release publishing was skipped by design. The first CI attempt exposed two test-only issues; both were corrected before the passing run.
 - **Not performed:** no local focused test run, live Apple Music/Wikipedia request, manual UI test (no UI changed), merge, image publication, deployment or runtime verification.
-- **Next:** improve the page parser to prefer the full artist-header biography; see the follow-up entry at the top of `PROJECT_LOG.md`.
+- **Follow-up:** PR #1247 extracts the full artist-header biography from the public page; its verification status is recorded in the entry above.
 
 ## 2026-11-23 — Diagnose CritiqueBrainz album reviews; web MBID fix in progress
 
