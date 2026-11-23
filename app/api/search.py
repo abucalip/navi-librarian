@@ -328,7 +328,6 @@ def artist_network_for(librarian):
 
         return lookup(artist, album)
 
-
     return artist_network(
         popularity=popularity,
         bio=bio,

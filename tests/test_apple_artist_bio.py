@@ -36,7 +36,7 @@ class AppleArtistBioTests(unittest.TestCase):
     def test_handles_json_ld_graph_and_html_entities(self):
         page = """
         <script type="application/ld+json">
-        {"@graph":[{"@type":"Person","name":"Björk","description":"Singer &amp; composer."}]}
+        {"@graph":[{"@type":"https://schema.org/Person","name":"Björk","description":"Singer &amp; composer."}]}
         </script>
         """
         self.assertEqual(

@@ -61,7 +61,7 @@ def _find_description(node: Any, wanted: str, depth: int = 0) -> str | None:
         if (
             isinstance(name, str)
             and normalize_artist_name(name) == wanted
-            and any(str(kind).casefold() in allowed for kind in types)
+            and any(str(kind).rstrip("/").rsplit("/", 1)[-1].casefold() in allowed for kind in types)
             and isinstance(description, str)
         ):
             text = _clean_text(description)

@@ -44,7 +44,6 @@ from discovery.search.top_songs import top_songs
 MISSING_ALBUMS_LIMIT = 50
 CATALOG_LIMIT = 20
 BIO_SOURCE = "wikidata"
-NAVIDROME_BIO_SOURCE = "navidrome"
 # Tag lookups per artist page: the seed plus this many top unowned candidates (MusicBrainz is 1 req/s).
 TAG_LOOKUP_LIMIT = 4
 TAG_DISPLAY_LIMIT = 8
@@ -64,9 +63,6 @@ class ArtistNetwork:
     cache_write: Callable[[str, Any], None]
     # Navidrome's MBID for an artist ID, or None when the library does not tag it.
     navidrome_mbid: Callable[[str], str | None] | None = None
-    # Navidrome's own biography for an artist ID (``getArtistInfo2``). Owned artists use it before
-    # the Wikidata service, so the page shows the text Navidrome shows.
-    navidrome_bio: Callable[[str], str | None] | None = None
     # Deezer's tracklist for ``(artist, album)``, supplied by the route adapter (it owns the HTTP client).
     deezer_tracks: Callable[[str, str], list[dict[str, Any]]] | None = None
     # The release year of ``(artist, album)`` from the catalogue lookups, supplied by the route adapter.
@@ -532,17 +528,16 @@ def iter_network_sections(
         return deadline_at - network.clock()
 
     def bio_job() -> dict[str, Any]:
-        if artist_id and network.navidrome_bio is not None:
-            try:
-                owned_text = network.navidrome_bio(artist_id)
-            except Exception:
-                owned_text = None  # A failed Navidrome read falls back to the public bio service.
-            if owned_text:
-                return _available("bio", "bio", {"text": owned_text, "source": NAVIDROME_BIO_SOURCE})
-        text = network.bio(name)
+        result = network.bio(name)
+        if isinstance(result, Mapping):
+            text = result.get("bio") or result.get("text")
+            source = result.get("source") or BIO_SOURCE
+        else:
+            # Older injected callers that return only text remain compatible.
+            text, source = result, BIO_SOURCE
         if not text:
             return _available("bio", "bio", None)
-        return _available("bio", "bio", {"text": text, "source": BIO_SOURCE})
+        return _available("bio", "bio", {"text": text, "source": source})
 
     progress: dict[str, Any] = {}
     identity_lock = threading.Lock()
