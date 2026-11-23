@@ -1,8 +1,8 @@
 """Direct Apple Music artist-biography lookup using its public iTunes and web endpoints.
 
 The iTunes Search API resolves an exact artist name to an Apple artist ID. The public artist page
-contains JSON-LD metadata; its description is accepted only when the embedded artist name matches
-the requested name. No Apple developer token, Navidrome plugin, or user credential is required.
+embeds its full About biography in serialized page data; the artist header is accepted only when its
+Apple artist ID matches. JSON-LD description is a fallback. No developer token or Navidrome plugin is required.
 """
 
 from __future__ import annotations

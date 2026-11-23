@@ -1,13 +1,23 @@
-## 2026-11-23 — Apple Music artist biographies become the primary source (PR #1246 open)
+## 2026-11-23 — Extract the full Apple Music artist-page biography (follow-up PR in progress)
+
+- **Base:** GitHub `main` at `8bf6ca84c5b92e8ca49b8d1fdad884df8937f0a8` (PR #1246 merged); branch `fix/apple-music-full-artist-bio`.
+- **Diagnosis:** the initial provider extracted only JSON-LD `description`, which is a short summary. Apple's public artist page also embeds its full About biography in the artist header's `bio` field inside `serialized-server-data`. Independent implementations corroborate the structure: the header item carries `contentDescriptor.kind = artist`, `contentDescriptor.identifiers.storeAdamID`, `title`, and `bio`.
+- **Implementation:** parse the full page payload first; accept only the header item whose Apple artist ID matches the exact iTunes artist ID resolved by the provider. Keep JSON-LD as fallback, preserve line and paragraph breaks (including `<br>` markup), and request the canonical public `/artist/x/{id}` page. No developer token, new provider, or client change.
+- **Regression coverage:** full bio beats JSON-LD summary; artist-ID match required; unrelated links and non-artist descriptors rejected; paragraph preservation and existing JSON-LD/fallback behavior retained.
+- **Verification:** focused tests and GitHub Actions on the final PR head pending. No live Apple request from the implementation runtime, no manual UI check (no client changes), no merge, deployment or runtime verification yet.
+
+---
+
+## 2026-11-23 — Apple Music artist biographies become the primary source (PR #1246 merged)
 
 - **Base and branch:** GitHub main at bba61f2f4bc9b09fbd747e813bdcde9fa2828743; fix/apple-music-artist-bios-default.
-- **Verified code head:** f7941a2074aa4aac51a67cb91eb2c29d6444168f. PR [#1246](https://github.com/abucalip/navi-librarian/pull/1246) is open and GitHub reports it mergeable.
+- **Verified code head:** f7941a2074aa4aac51a67cb91eb2c29d6444168f. PR [#1246](https://github.com/abucalip/navi-librarian/pull/1246) merged as `8bf6ca84c5b92e8ca49b8d1fdad884df8937f0a8`.
 - **Diagnosis:** discovery/search/artist_sections.py::bio_job returned Navidrome's getArtistInfo2 biography immediately for owned artists. Independently, /api/artist-bio preloaded Navidrome text into memory before calling its Wikidata-validated Wikipedia resolver. The existing Apple Music integration covered album editorial notes, not artist biographies.
-- **Provider:** Apple's public iTunes Search API resolves the artist ID; the corresponding Apple Music artist page exposes JSON-LD biography text. The Navidrome Apple Music Metadata Plugin uses the same public endpoints, but this implementation is standalone and needs neither that plugin, an Apple developer token nor Navidrome agent configuration. Exact normalized artist IDs and page names are required; ambiguous same-name IDs and generic Apple Music promotional descriptions are rejected.
+- **Provider:** Apple's public iTunes Search API resolves the artist ID; the corresponding Apple Music artist page exposes the full About biography in its `serialized-server-data` artist header; JSON-LD carries a shorter description. The Navidrome Apple Music Metadata Plugin uses the same public endpoints, but this implementation is standalone and needs neither that plugin, an Apple developer token nor Navidrome agent configuration. Exact normalized artist IDs and page names are required; ambiguous same-name IDs and generic Apple Music promotional descriptions are rejected.
 - **Changes:** app/services/apple_artist_bio.py; shared resolver for /api/artist-bio and artist-page sections; priority Apple Music → identity-checked Wikipedia (Wikidata description fallback) → Navidrome; actual source provenance; cache versioning and separation of library/non-library contexts; short retries after external-provider failures; parser, identity, priority, cache and fallback regression tests; architecture, requirements, search contract and test-plan updates.
 - **CI on f7941a2074aa4aac51a67cb91eb2c29d6444168f:** 4,439 passed, 2 skipped, 1 xfailed, 1,136 subtests passed. Python compile, changed-file lint, container runtime smoke, multi-architecture image validation, Docker packaging build and release-workflow validation passed. Release publishing was skipped by design. The first CI attempt exposed two test-only issues; both were corrected before the passing run.
 - **Not performed:** no local focused test run, live Apple Music/Wikipedia request, manual UI test (no UI changed), merge, image publication, deployment or runtime verification.
-- **Next:** owner runs the focused biography tests in the isolated PR environment; then review/merge PR #1246 when approved. After merge, update status against the merge SHA.
+- **Next:** improve the page parser to prefer the full artist-header biography; see the follow-up entry at the top of `PROJECT_LOG.md`.
 
 ## 2026-11-23 — Diagnose CritiqueBrainz album reviews; web MBID fix in progress
 

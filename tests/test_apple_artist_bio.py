@@ -6,6 +6,57 @@ from app.services import apple_artist_bio
 
 
 class AppleArtistBioTests(unittest.TestCase):
+    def test_extracts_full_artist_page_bio_and_preserves_paragraphs(self):
+        page = """
+        <script type="application/json" id="serialized-server-data">
+        {"data":[{"data":{"sections":[{"items":[
+          {"title":"Fela Kuti","contentDescriptor":{"kind":"artist","identifiers":{"storeAdamID":"55088"}},
+           "bio":"First paragraph.<br />Second <i>paragraph</i>.\\n\\nThird paragraph.","circleArtwork":{}}
+        ]}]}}]}
+        </script>
+        <script type="application/ld+json">
+        {"@type":"MusicGroup","name":"Fela Kuti","description":"Short summary."}
+        </script>
+        """
+        self.assertEqual(
+            apple_artist_bio.parse_artist_biography(page, "Fela Kuti", 55088),
+            "First paragraph.\nSecond paragraph.\n\nThird paragraph.",
+        )
+
+    def test_full_artist_bio_is_selected_by_artist_id_not_a_repeated_link(self):
+        page = """
+        <script type="application/json" id="serialized-server-data">
+        {"data":[{"data":{"sections":[{"items":[
+          {"title":"Wrong link","contentDescriptor":{"kind":"artist","identifiers":{"storeAdamID":"123"}}},
+          {"title":"Another artist","contentDescriptor":{"kind":"artist","identifiers":{"storeAdamID":"456"}},
+           "bio":"Wrong biography.","circleArtwork":{}}
+        ]}]}}]}
+        </script>
+        """
+        self.assertIsNone(apple_artist_bio.parse_artist_biography(page, "Requested Artist", 123))
+
+    def test_full_artist_bio_requires_artist_content_descriptor(self):
+        page = """
+        <script type="application/json" id="serialized-server-data">
+        {"data":[{"data":{"sections":[{"items":[
+          {"title":"Not an artist","contentDescriptor":{"kind":"album","identifiers":{"storeAdamID":"123"}},
+           "bio":"Not an artist biography.","circleArtwork":{}}
+        ]}]}}]}
+        </script>
+        """
+        self.assertIsNone(apple_artist_bio.parse_artist_biography(page, "Requested Artist", 123))
+
+    def test_preserves_paragraph_breaks_in_json_ld_fallback(self):
+        page = """
+        <script type="application/ld+json">
+        {"@type":"MusicGroup","name":"Portishead","description":"First paragraph.\\n\\nSecond paragraph."}
+        </script>
+        """
+        self.assertEqual(
+            apple_artist_bio.parse_artist_biography(page, "Portishead"),
+            "First paragraph.\n\nSecond paragraph.",
+        )
+
     def test_extracts_exact_artist_json_ld_description(self):
         page = """
         <script type="application/ld+json">
@@ -58,8 +109,12 @@ class AppleArtistBioTests(unittest.TestCase):
 
     def test_lookup_uses_itunes_id_then_the_apple_artist_page(self):
         page = """
+        <script type="application/json" id="serialized-server-data">
+        {"data":[{"title":"Portishead","contentDescriptor":{"kind":"artist","identifiers":{"storeAdamID":"123"}},
+         "bio":"Long artist biography.","circleArtwork":{}}]}
+        </script>
         <script type="application/ld+json">
-        {"@type":"MusicGroup","name":"Portishead","description":"English band."}
+        {"@type":"MusicGroup","name":"Portishead","description":"Short summary."}
         </script>
         """
         calls = []
@@ -84,8 +139,8 @@ class AppleArtistBioTests(unittest.TestCase):
                 ]})
             return Response()
 
-        self.assertEqual(apple_artist_bio.lookup_artist_biography(get, "Portishead"), ("English band.", True))
-        self.assertEqual(calls[1][0], "https://music.apple.com/us/artist/-/123")
+        self.assertEqual(apple_artist_bio.lookup_artist_biography(get, "Portishead"), ("Long artist biography.", True))
+        self.assertEqual(calls[1][0], "https://music.apple.com/us/artist/x/123")
         self.assertEqual(calls[0][1]["params"]["entity"], "musicArtist")
 
     def test_provider_failure_is_not_reported_as_a_definitive_no_bio(self):
