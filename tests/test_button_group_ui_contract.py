@@ -1,4 +1,4 @@
-"""Every button on the pages below sits in an action group (icon-only, sprite icon, named by aria-label).
+"""Action-group buttons use named sprite icons with theme-specific labels where specified.
 
 The owner asked for one button style: the joined Get / Save / Not for me frame. Buttons next to each
 other share one group; a lone button gets a one-button group. `.btn-primary` is gone.
@@ -27,6 +27,7 @@ BUTTONS = {
     'id="testDiscogs"': ("Test connection", "plug-zap"),
     'id="saveRadioAddress"': ("Save", "save"),
     'id="refreshRadio"': ("Refresh", "rotate-cw"),
+    'id="clearRadioPlays"': ("Clear all", "trash-2"),
     'data-refresh-saved': ("Refresh", "rotate-cw"),
     'id="libraryMore"': ("Load more", "plus"),
     'id="dashboardPrev"': ("Previous album", "chevron-left"),
@@ -63,6 +64,14 @@ class ButtonGroupContractTests(unittest.TestCase):
                     listening_room_css = (ROOT / "static" / "listening-room" / "search.css").read_text(encoding="utf-8")
                     self.assertIn('.lr-l11-only { display: none; }', listening_room_css)
                     self.assertIn(':root[data-layout="listeningroom"] .lr-l11-only { display: revert; }', listening_room_css)
+                elif marker in ('id="saveRadioAddress"', 'id="refreshRadio"', 'id="clearRadioPlays"'):
+                    label = f'<span class="lr-l12-only">{name}</span>'
+                    self.assertIn(label, markup)
+                    self.assertNotRegex(markup.replace(label, "", 1), r">\s*[A-Za-z]")
+                    listening_room_css = (ROOT / "static" / "listening-room" / "acquisitions.css").read_text(encoding="utf-8")
+                    self.assertRegex(listening_room_css, r"\.lr-l12-only,[^{]+\{ display: none; \}")
+                    self.assertRegex(listening_room_css,
+                                     r':root\[data-layout="listeningroom"\] \{\s*\.lr-l12-only \{ display: revert; \}')
                 else:
                     self.assertNotRegex(markup, r">\s*[A-Za-z]")
 
