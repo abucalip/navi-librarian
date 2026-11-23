@@ -306,7 +306,7 @@ class CritiqueBrainzWiringTests(unittest.TestCase):
              patch.object(metadata, "_critiquebrainz_reviews", return_value=[cb_item]) as cb_mock:
             metadata._review_cache.clear()
             no_mbid = metadata.album_reviews_route(artist="Opeth", album="Watershed", mbid="")
-            self.assertEqual(no_mbid["critiquebrainz"], [])
+            self.assertEqual(no_mbid.get("critiquebrainz", []), [])
             cb_mock.assert_not_called()
 
             with_mbid = metadata.album_reviews_route(artist="Opeth", album="Watershed", mbid="rg-123")

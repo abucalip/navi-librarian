@@ -533,7 +533,7 @@ def _load_album_reviews(artist: str, album: str, allow_stale=False, mbid: str = 
     if stale:
         value = with_fetched_at(value, min(stale))
     return Loaded(value, memory_ttl=_REVIEWS_PARTIAL_TTL if short else 3600,
-                  persist=bool(value["reviews"] or value["critiquebrainz"]) and not short)
+                  persist=bool(value["reviews"] or value.get("critiquebrainz")) and not short)
 
 
 @router.get("/api/album-reviews")
@@ -541,7 +541,7 @@ def album_reviews_route(artist: str = "", album: str = "", mbid: str = ""):
     artist, album, mbid = artist.strip()[:180], album.strip()[:180], mbid.strip()[:40]
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
-    return album_reviews_for(artist, album, mbid=mbid)
+    return album_reviews_for(artist, album, mbid=mbid) if mbid else album_reviews_for(artist, album)
 
 
 @router.get("/api/album-links")

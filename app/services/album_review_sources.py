@@ -197,10 +197,9 @@ def ask_critiquebrainz(read, write, get, mbid: str, refused=()):
 
 def stored_list_value(found, failed, critiquebrainz=None, cb_failed: bool = False):
     """``(value, partial)``: the list the route answers from the outlets' answers (None for a failed one)."""
-    value = {
-        "critiquebrainz": list(critiquebrainz) if critiquebrainz else [],
-        "reviews": album_reviews.pick_reviews(found),
-    }
+    value = {"reviews": album_reviews.pick_reviews(found)}
+    if critiquebrainz:
+        value["critiquebrainz"] = list(critiquebrainz)
     partial = (failed and len(value["reviews"]) < album_reviews.MAX_REVIEWS) or cb_failed
     if partial:
         value["retryable"] = True
