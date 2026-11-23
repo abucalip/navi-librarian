@@ -72,6 +72,24 @@ struct AlbumSpreadTests {
         #expect(!AlbumSpread.sample.isEmpty)
     }
 
+    @Test func critiqueBrainzRequestUsesTheAlbumPageReleaseGroupMBID() async throws {
+        let group = "c2c0e5e7-dc91-3e4e-b5bf-a26f06328926"
+        let transport = AlbumReviewCaptureTransport()
+        let librarian = try LibrarianClient(
+            baseURL: URL(string: "https://lib.example.ts.net")!,
+            credential: Credential(username: "owner", password: "test"),
+            transport: transport
+        )
+        let album = AlbumItem(id: 99, title: "Tupelo Honey", artist: "Van Morrison", year: 1971, genre: "", format: "", owned: false, hue: 0)
+        let model = AlbumSpreadModel()
+
+        await model.load(album: album, navidrome: nil, librarian: librarian, libraryArtists: [], releaseGroupMBID: group)
+
+        let request = transport.sent.first { $0.url?.path == "/api/album-reviews" }
+        let query = request?.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems }
+        #expect(query?.first(where: { $0.name == "mbid" })?.value == group)
+    }
+
     @Test func withoutASessionTheSampleShowsAndAPickShowsNothing() async {
         let m = AlbumSpreadModel()
         let pick = AlbumItem(id: 1, title: "T", artist: "A", year: 0, genre: "", format: "", owned: false, hue: 0)
