@@ -29,6 +29,8 @@ function zineHook(name, ...args) {
 }
 
 let activePage = 'dashboard';
+const isListeningRoom = () => document.documentElement.dataset.layout === 'listeningroom';
+const listeningRoomPhone = window.matchMedia('(width < 720px)');
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
 const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];
 
@@ -44,6 +46,7 @@ function showPage(name) {
   $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
   syncNavAria();
+  syncListeningRoomShell();
   syncLocationHash();
   updateLedgerCrumb(name);
   zineHook('updateZineMast');
@@ -82,6 +85,171 @@ function syncNavAria() {
     else el.removeAttribute('aria-current');
   });
 }
+
+const lrMore = $('lrMoreButton');
+const lrSheet = $('lrMoreSheet');
+const lrSheetLinks = [...lrSheet.querySelectorAll('a')];
+const lrLinks = [...document.querySelectorAll('[data-lr-page]')];
+const lrDiscovery = $('lrDiscoveryLists');
+const lrDiscoverPages = new Set([...lrDiscovery.querySelectorAll('a')].map(link => link.dataset.lrPage));
+const lrMode = $('lrMode');
+const lrModeButtons = [...lrMode.querySelectorAll('[data-lr-mode]')];
+const lrModeStatus = $('lrModeStatus');
+const lrModeRetry = $('lrModeRetry');
+let lrModeValue = null;
+let lrModeBusy = false;
+
+function syncListeningRoomShell() {
+  const inDiscover = lrDiscoverPages.has(activePage);
+  const primary = inDiscover ? 'recommendations' : activePage;
+  for (const link of lrLinks) {
+    if (link.classList.contains('lr-brand')) continue;
+    const page = lrDiscovery.contains(link) ? activePage : primary;
+    if (link.dataset.lrPage === page) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  if (lrSheetLinks.some(link => link.dataset.lrPage === activePage)) lrMore.setAttribute('aria-current', 'page');
+  else lrMore.removeAttribute('aria-current');
+  lrDiscovery.hidden = !inDiscover;
+  lrMode.hidden = !(inDiscover || activePage === 'dashboard');
+  syncListeningRoomViewport();
+  if (isListeningRoom() && !lrMode.hidden && lrModeValue === null && lrModeRetry.hidden) {
+    updateListeningRoomMode();
+  }
+}
+
+function syncListeningRoomViewport() {
+  const enabled = isListeningRoom();
+  const phone = enabled && listeningRoomPhone.matches;
+  document.querySelector('.lr-rail').hidden = !enabled || phone;
+  document.querySelector('.lr-tabbar').hidden = !phone;
+  if (!phone && lrSheet.open) {
+    lrSheet.close();
+    if (enabled) {
+      document.querySelector('.lr-rail [aria-current="page"]')?.focus();
+    } else {
+      $('appMenuButton').focus();
+    }
+  }
+  const input = $('globalSearchInput');
+  input.placeholder = enabled ? 'Artists, albums, genres' : 'Search your library or discover new music';
+  if (enabled) input.setAttribute('aria-keyshortcuts', '/');
+  else input.removeAttribute('aria-keyshortcuts');
+}
+
+async function updateListeningRoomMode(value) {
+  if (lrModeBusy || (value && value === lrModeValue)) return;
+  lrModeBusy = true;
+  lrModeRetry.hidden = true;
+  for (const button of lrModeButtons) button.setAttribute('aria-disabled', 'true');
+  lrModeStatus.textContent = value ? 'Saving…' : 'Loading…';
+  const url = '/api/settings/discovery-mode';
+  try {
+    let data;
+    if (value) {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({discovery_mode: value}),
+      });
+      data = await response.json();
+      if (!response.ok || !data.ok) throw new Error('Could not save discovery mode');
+    } else {
+      data = await requestJSON(url);
+    }
+    if (!lrModeButtons.some(button => button.dataset.lrMode === data.discovery_mode)) {
+      throw new Error('Unknown discovery mode');
+    }
+    lrModeValue = data.discovery_mode;
+    lrModeStatus.textContent = value ? 'Saved. Applies from the next refresh.' : '';
+  } catch {
+    lrModeStatus.textContent = value ? 'Could not save discovery mode.' : 'Could not load discovery mode.';
+    lrModeRetry.hidden = Boolean(value);
+  } finally {
+    lrModeBusy = false;
+    for (const button of lrModeButtons) {
+      button.disabled = lrModeValue === null;
+      button.removeAttribute('aria-disabled');
+      button.setAttribute('aria-pressed', String(button.dataset.lrMode === lrModeValue));
+    }
+  }
+}
+
+for (const button of lrModeButtons) {
+  button.addEventListener('click', () => updateListeningRoomMode(button.dataset.lrMode));
+}
+lrModeRetry.addEventListener('click', async () => {
+  await updateListeningRoomMode();
+  if (isListeningRoom() && !lrMode.hidden && document.activeElement === document.body) {
+    (lrMode.querySelector('[aria-pressed="true"]') || lrModeRetry).focus();
+  }
+});
+
+for (const link of lrLinks) {
+  link.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (lrSheet.open) lrSheet.close();
+    navigateTo(link.dataset.lrPage);
+    if (link === document.activeElement && lrDiscovery.contains(link)) return;
+    window.scrollTo(0, 0);
+    $('content').focus({preventScroll: true});
+  });
+}
+document.querySelector('.skip-link').addEventListener('click', event => {
+  if (!isListeningRoom()) return;
+  event.preventDefault();
+  $('content').focus();
+});
+lrMore.addEventListener('click', () => {
+  closeGlobalSearch();
+  lrSheet.showModal();
+  lrMore.setAttribute('aria-expanded', 'true');
+  lrSheetLinks[0].focus();
+});
+lrSheet.addEventListener('close', () => {
+  lrMore.setAttribute('aria-expanded', 'false');
+});
+lrSheet.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    event.stopPropagation();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const first = lrSheetLinks[0];
+  const last = lrSheetLinks[lrSheetLinks.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+
+let lrSheetPointer = null;
+lrSheet.addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0) return;
+  const grip = event.target.closest('.lr-sheet-grip');
+  if (grip) grip.setPointerCapture(event.pointerId);
+  if (event.target === lrSheet || grip) {
+    lrSheetPointer = {id: event.pointerId, y: event.clientY, onScrim: event.target === lrSheet};
+  }
+});
+lrSheet.addEventListener('pointerup', event => {
+  if (lrSheetPointer?.id !== event.pointerId) return;
+  const {y, onScrim} = lrSheetPointer;
+  lrSheetPointer = null;
+  const box = lrSheet.getBoundingClientRect();
+  const outside = event.clientY < box.top || event.clientY > box.bottom;
+  if ((onScrim && outside && y < box.top) || (!onScrim && event.clientY - y >= 56)) lrSheet.close();
+});
+lrSheet.addEventListener('pointercancel', () => { lrSheetPointer = null; });
+listeningRoomPhone.addEventListener('change', syncListeningRoomViewport);
+new MutationObserver(syncListeningRoomShell).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ['data-layout'],
+});
 
 const initializedPages = new Set(['dashboard']);
 
@@ -214,6 +382,7 @@ document.querySelectorAll('button[data-go]').forEach(button =>
 // Place the indicator once layout is settled, and keep it aligned when the rail is
 // resized. offsetTop is only meaningful after layout, so the first move waits a frame.
 syncNavAria();
+syncListeningRoomShell();
 requestAnimationFrame(moveNavIndicator);
 window.addEventListener('resize', moveNavIndicator);
 // Web fonts change row metrics after first paint; re-align once they are ready.
@@ -682,6 +851,13 @@ function updateActiveDownloadBadge(data) {
   badge.textContent = String(count);
   badge.hidden = count === 0;
   badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
+  for (const marker of document.querySelectorAll('.lr-badge')) {
+    marker.textContent = String(count);
+    marker.hidden = count === 0;
+    const link = marker.parentElement;
+    const label = link.querySelector('.lr-nav-label').textContent;
+    link.setAttribute('aria-label', count ? label + ', ' + count + ' active' : label);
+  }
   updateLedgerStats(jobs, count);
   updateTapeDecks(jobs);
   zineHook('updateZineTicker', jobs);
@@ -1410,8 +1586,15 @@ document.addEventListener('click', event => {
 const searchShortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
 document.querySelectorAll('.search-shortcut').forEach(hint => { hint.textContent = searchShortcutLabel; });
 document.addEventListener('keydown', event => {
+  const plainSlash = event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey
+    && !event.target.closest?.('input, textarea, select, [contenteditable]');
+  if (isListeningRoom() && plainSlash && !lrSheet.open && $('albumModalBackdrop').hidden) {
+    event.preventDefault();
+    $('globalSearchInput').focus();
+    return;
+  }
   if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k'
-      && document.documentElement.dataset.layout) {
+      && document.documentElement.dataset.layout && !lrSheet.open) {
     event.preventDefault();
     setSearchExpanded(true, {focus: true});
     $('globalSearchInput').select();
@@ -4460,7 +4643,7 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
-document.getElementById('logoutButton').addEventListener('click', async event => {
+async function logOut(event) {
   // Prevent a second submission while the request is in flight. The redirect in finally
   // ends the page either way, so the disabled state never needs to be cleared.
   const button = event.currentTarget;
@@ -4468,7 +4651,10 @@ document.getElementById('logoutButton').addEventListener('click', async event =>
   button.setAttribute('aria-busy', 'true');
   try { await fetch('/api/auth/logout', {method: 'POST', cache: 'no-store'}); }
   finally { window.location.replace('/login'); }
-});
+}
+
+$('logoutButton').addEventListener('click', logOut);
+$('lrLogout').addEventListener('click', logOut);
 
 for (const id of ['shelfNewReleases', 'shelfNewest', 'shelfRecent', 'shelfFrequent']) makeScrollTrackFocusable($(id));
 
@@ -6408,7 +6594,7 @@ $('globalSearch').addEventListener('keydown', event => {
   } else if (event.key === 'Escape' && !$('globalSearchRecent').hidden) {
     event.preventDefault();
     closeGlobalSearch({focusInput: true});
-  } else if (event.key === 'Escape' && $('globalSearch').classList.contains('is-expanded')) {
+  } else if (event.key === 'Escape' && !isListeningRoom() && $('globalSearch').classList.contains('is-expanded')) {
     event.preventDefault();
     setSearchExpanded(false);
     $('searchToggle').focus();
