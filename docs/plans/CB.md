@@ -1,6 +1,6 @@
 # CritiqueBrainz Inline Album Reviews (`CB.md`)
 
-**Status:** Proposed plan (not started)
+**Status:** Implemented across server and all three clients (CB-1–CB-5 merged); web MBID forwarding correction in progress
 **Created:** 2026-11-23
 **Scope:** Server (`integrations/critiquebrainz/`, `app/services/`, `app/api/metadata.py`) and clients (Web, macOS, Android)
 
@@ -122,3 +122,11 @@ All three clients follow the same presentation rules (domain formatting stays se
 | **CB-3** | Web client: pass `mbid`, render CritiqueBrainz block above press blurbs with cycling chevron, RTL support, and CC attribution (Listening Room + existing themes). | Local UI check (`docs/LOCAL_UI_TESTING.md`) |
 | **CB-4** | macOS client: pass `mbid`, render CritiqueBrainz block above press blurbs in Album Reviews tab with cycling chevron (matching Booklet cycling), RTL support, CC attribution. | Focused `swift test --filter ...` |
 | **CB-5** | Android client: pass `mbid`, render CritiqueBrainz block above press blurbs across themes with cycling chevron, RTL support, CC attribution. | Focused Gradle unit tests |
+
+
+### Implementation and verification status (2026-11-23)
+
+- CB-1 through CB-5 are implemented and merged in PRs [#1240](https://github.com/abucalip/navi-librarian/pull/1240), [#1241](https://github.com/abucalip/navi-librarian/pull/1241), [#1242](https://github.com/abucalip/navi-librarian/pull/1242), [#1243](https://github.com/abucalip/navi-librarian/pull/1243), and [#1244](https://github.com/abucalip/navi-librarian/pull/1244).
+- A web client defect was found after integration: the album-page response exposes `release_group_mbid`, but `static/app.js` read `album.mbid`, so the web request omitted the identifier and the server correctly skipped CritiqueBrainz. A focused correction and regression test are being prepared.
+- Bitches Brew (release group `a9e30282-5b37-3f92-b897-b9659a1a312b`) has no CritiqueBrainz review, so its empty result is expected and it is not a valid positive smoke test. A positive control is Tupelo Honey by Van Morrison (release group `c2c0e5e7-dc91-3e4e-b5bf-a26f06328926`), which has one CritiqueBrainz review by Chris Jones.
+- Provider runtime verification and client UI verification remain separate from implementation and automated tests; do not infer deployment or runtime success from merged code.
