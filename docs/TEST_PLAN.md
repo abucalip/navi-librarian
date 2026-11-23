@@ -148,7 +148,7 @@ Manual (owner): artist page for an owned and an unowned artist; album page for a
 
 ## Artist biography provider priority
 
-For the shared artist biography resolver, run the direct Apple parser/provider tests, artist-page section tests, metadata route and cache tests, and persistent-cache restart tests. The fixtures must cover exact iTunes artist matching, ambiguous same-name IDs, exact JSON-LD page identity, placeholder rejection, provider failure versus a definitive miss, Apple Music priority, Wikipedia second, and Navidrome only as the final owned-library fallback.
+For the shared artist biography resolver, run the direct Apple parser/provider tests, artist-page section tests, metadata route and cache tests, and persistent-cache restart tests. The fixtures must cover exact iTunes artist matching, ambiguous same-name IDs, exact JSON-LD page identity, placeholder rejection, provider failure versus a definitive miss, Apple Music priority, Wikipedia second, Navidrome only as the final owned-library fallback, invalidation of persisted v2 biographies when the full-page Apple parser changes, and a new browser URL version when changing cached bio responses.
 
 ```sh
 python -m unittest discover -s tests -p 'test_apple_artist_bio.py' -v

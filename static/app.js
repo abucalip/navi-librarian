@@ -1106,7 +1106,7 @@ const yearQueue = createRequestQueue(1);
 
 function cachedBioRequest(key, artist, urgent = false) {
   if (!artistBioRequests.has(key)) {
-    const url = '/api/artist-bio?artist=' + encodeURIComponent(artist);
+    const url = '/api/artist-bio?artist=' + encodeURIComponent(artist) + '&v=3';
     artistBioRequests.set(key, bioQueue.run(() => fetchJSONOrNull(url), urgent).then(data => {
       if (data === null) artistBioRequests.delete(key);
       return data;
