@@ -64,9 +64,8 @@ class RailStructureTests(unittest.TestCase):
 
     def test_rail_icons_are_decorative(self):
         icons = re.findall(r'<svg class="icon"[^>]*>', self.rail)
-        # Nine sprite icons plus the inline More disclosure icon on the phone bottom bar
-        # (UI_BACKLOG_EXECUTION section 36). The count of sprite references above is unchanged.
-        self.assertEqual(len(icons), 10)
+        # Nine navigation icons, the phone's More disclosure and the update badge.
+        self.assertEqual(len(icons), 11)
         for tag in icons:
             self.assertIn('aria-hidden="true"', tag)
             self.assertIn('focusable="false"', tag)
