@@ -1,8 +1,7 @@
 import DiscairCore
 import Foundation
 
-// Internet radio calls (docs/plans/RADIO_PLAYBACK_PROPOSAL.md S2.4; macOS stage 2, slice S2-1 item 2). Every call is deployed on the
-// server; none is added. The stream address (`playableURL`) is never put in a request path, an error or a log line here.
+// Internet radio calls. Relay addresses are kept out of request paths, errors and logs.
 
 /// `GET /api/radio/settings`: the address Navidrome clients reach the app at. Shown read only on the Mac.
 public struct RadioSettings: Decodable, Equatable, Sendable {
@@ -49,6 +48,17 @@ extension LibrarianClient {
     public func radioNowAll() async throws -> RadioNowAll {
         let (data, http) = try await authedSendPublic("GET", "api/radio/now", body: nil)
         return try decodePublic(RadioNowAll.self, data, http)
+    }
+
+    public func updateRadioStation(station: String, name: String, streamURL: String, homepageURL: String) async throws {
+        let body = try JSONSerialization.data(withJSONObject: [
+            "name": name, "stream_url": streamURL, "homepage_url": homepageURL
+        ])
+        try await radioWrite("PUT", Self.stationPath(station), body: body)
+    }
+
+    public func deleteRadioStation(station: String) async throws {
+        try await radioWrite("DELETE", Self.stationPath(station), body: nil)
     }
 
     /// `PUT /api/radio/stations/{id}/favourite`.

@@ -121,6 +121,38 @@ def _update(api_call, station: dict, stream_url: str) -> None:
     api_call("updateInternetRadioStation", **params)
 
 
+def update_station(api_call, store, station_id: str, name, stream_url, homepage_url) -> dict:
+    if not all(isinstance(value, str) for value in (name, stream_url, homepage_url)):
+        raise StationError("Station details must be text.")
+    name, stream_url, homepage_url = (value.strip() for value in (name, stream_url, homepage_url))
+    if not name:
+        raise StationError("Enter a station name.")
+    try:
+        valid_urls = _http_url(stream_url) and (not homepage_url or _http_url(homepage_url))
+    except ValueError:
+        valid_urls = False
+    if not valid_urls:
+        raise StationError("Enter valid HTTP or HTTPS station addresses.")
+
+    station = _find(api_call, station_id)
+    local = store.get_station(station_id)
+    proxied = _is_proxied(station, local)
+    if proxied and STREAM_PATH + local["token"] in stream_url:
+        raise StationError("Enter the station’s original stream address.")
+    api_call("updateInternetRadioStation", id=station_id, name=name,
+             streamUrl=station["stream_url"] if proxied else stream_url, homepageUrl=homepage_url)
+    if proxied:
+        store.save_station(station_id, local["token"], name, stream_url)
+    return {"id": station_id}
+
+
+def delete_station(api_call, store, station_id: str) -> dict:
+    _find(api_call, station_id)
+    api_call("deleteInternetRadioStation", id=station_id)
+    store.disable_station(station_id)
+    return {"id": station_id}
+
+
 def _find(api_call, station_id: str) -> dict:
     found = next((s for s in fetch_stations(api_call) if s["id"] == station_id), None)
     if found is None:

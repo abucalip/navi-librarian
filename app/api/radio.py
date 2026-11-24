@@ -21,6 +21,7 @@ router = APIRouter()
 
 _STORES: dict[str, RadioStore] = {}
 _STORES_LOCK = threading.Lock()
+_STATION_WRITE_LOCK = threading.Lock()
 _UPSTREAM_TIMEOUT = httpx.Timeout(10.0, read=30.0)
 # Replaced in tests so the relay can be exercised without a network.
 client_factory = httpx.AsyncClient
@@ -48,6 +49,20 @@ def radio_stations(librarian=Depends(get_librarian), store=Depends(get_store)):
     return {"items": _station_call(lambda: stations.list_stations(librarian.api_call, store))}
 
 
+@router.put("/api/radio/stations/{station_id}")
+def radio_update_station(station_id: str, payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
+    with _STATION_WRITE_LOCK:
+        return _station_call(lambda: stations.update_station(
+            librarian.api_call, store, station_id, payload.get("name"), payload.get("stream_url"),
+            payload.get("homepage_url", "")))
+
+
+@router.delete("/api/radio/stations/{station_id}")
+def radio_delete_station(station_id: str, librarian=Depends(get_librarian), store=Depends(get_store)):
+    with _STATION_WRITE_LOCK:
+        return _station_call(lambda: stations.delete_station(librarian.api_call, store, station_id))
+
+
 @router.get("/api/radio/settings")
 def radio_settings(store=Depends(get_store)):
     return {"app_url": store.get_setting(stations.APP_URL_KEY)}
@@ -56,18 +71,21 @@ def radio_settings(store=Depends(get_store)):
 @router.put("/api/radio/settings")
 def radio_save_settings(payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
     """The address Navidrome clients (a phone on Tailscale, say) reach this app at."""
-    return _station_call(lambda: stations.set_app_url(librarian.api_call, store, str(payload.get("app_url") or "")))
+    with _STATION_WRITE_LOCK:
+        return _station_call(lambda: stations.set_app_url(librarian.api_call, store, str(payload.get("app_url") or "")))
 
 
 @router.post("/api/radio/stations/{station_id}/enable")
 def radio_enable(station_id: str, payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
     base_url = str(payload.get("base_url") or "")
-    return _station_call(lambda: stations.enable(librarian.api_call, store, station_id, base_url))
+    with _STATION_WRITE_LOCK:
+        return _station_call(lambda: stations.enable(librarian.api_call, store, station_id, base_url))
 
 
 @router.post("/api/radio/stations/{station_id}/disable")
 def radio_disable(station_id: str, librarian=Depends(get_librarian), store=Depends(get_store)):
-    return _station_call(lambda: stations.disable(librarian.api_call, store, station_id))
+    with _STATION_WRITE_LOCK:
+        return _station_call(lambda: stations.disable(librarian.api_call, store, station_id))
 
 
 LOGO_CACHE_CONTROL = "private, max-age=300"

@@ -424,6 +424,30 @@ public final class AppState {
         return nil
     }
 
+    func editStation(_ station: RadioStation, draft: StationRules.NewStation) async -> String? {
+        guard let librarian = session?.librarian else { return "Not connected to Librarian." }
+        do {
+            try await librarian.updateRadioStation(station: station.id, name: draft.name,
+                                                   streamURL: draft.streamURL, homepageURL: draft.homepageURL)
+        } catch {
+            return StationsModel.message(error)
+        }
+        await stations.reload(afterWrite: true)
+        return nil
+    }
+
+    func deleteStation(_ station: RadioStation) async -> String? {
+        guard let librarian = session?.librarian else { return "Not connected to Librarian." }
+        do {
+            try await librarian.deleteRadioStation(station: station.id)
+        } catch {
+            return StationsModel.message(error)
+        }
+        player.stationDeleted(station.id)
+        await stations.reload(afterWrite: true)
+        return nil
+    }
+
     /// The Download control's state for a heard song: what the server says, then what this window sent.
     func downloadState(playID: Int) -> DownloadState {
         guard let play = radioPlays.first(where: { $0.id == playID }) else {
