@@ -22,7 +22,8 @@ struct CupertinoPlayerBar: View {
 
     var body: some View {
         display
-            .padding(.leading, Self.sidebarSlot).padding(.trailing, 16)
+            .padding(.leading, CU.Shell.contentLeading - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
+            .padding(.trailing, 16)
             .frame(height: Self.height)
             .foregroundStyle(ink)
             .animation(RenderMode.offscreenScreenshot ? nil : .easeInOut(duration: 0.5), value: tint)
@@ -48,9 +49,6 @@ struct CupertinoPlayerBar: View {
                 }
             }
     }
-
-    /// The width left of the player for the artwork square (or the connection text), in line with the sidebar.
-    static let sidebarSlot: CGFloat = 236
 
     private var coverItem: AlbumItem? {
         guard let c = p.current, !(c.coverArt ?? "").isEmpty else { return nil }
@@ -118,8 +116,19 @@ struct CupertinoPlayerBar: View {
                 VStack(alignment: .leading, spacing: 4) {
                     let line = p.liveLine
                     Text(line.headline(station: live.name)).font(CU.Font.body.weighted(.semibold)).lineLimit(1)
-                    Group { if live.phaseSentence != nil { LivePhaseText(live: live) } else { Text(barSecondLine(live, line)) } }
-                        .foregroundStyle(secondary).lineLimit(1)
+                    Group {
+                        if live.phaseSentence != nil {
+                            LivePhaseText(live: live)
+                        } else if let artist = line.artist, line.hasSong {
+                            HStack(spacing: 4) {
+                                LiveArtistLink(artist: artist, open: state.openArtist(named:)).layoutPriority(1)
+                                Text("· \(live.name)")
+                            }
+                        } else {
+                            Text(line.hasSong ? live.name : (line.sentence ?? "On air"))
+                        }
+                    }
+                    .foregroundStyle(secondary).lineLimit(1)
                 }
                 .font(CU.Font.callout.weighted(.regular)).frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -141,13 +150,6 @@ struct CupertinoPlayerBar: View {
         .overlay(alignment: .bottom) { Rectangle().fill(CU.onMedia.opacity(0.22)).frame(height: 3).accessibilityHidden(true) }
         .clipShape(shape)
         .accessibilityElement(children: .contain)
-    }
-
-    /// "Artist · Station" for a song, else the state sentence; the connection phase wins while it is not plain playing.
-    private func barSecondLine(_ live: LiveSession, _ line: LiveSongLine) -> String {
-        if let phase = live.phaseSentence { return phase }
-        if line.hasSong { return line.artist.map { "\($0) · \(live.name)" } ?? live.name }
-        return line.sentence ?? "On air"
     }
 
     /// Download beside the time, only while a song can be asked for or its state is worth showing.

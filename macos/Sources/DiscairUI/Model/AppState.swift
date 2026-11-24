@@ -94,7 +94,7 @@ public final class AppState {
     public let acquisition: AcquisitionModel
     public let discovery = DiscoveryModel()
     /// Internet radio stations, their live titles and the tag filter.
-    public let stations = StationsModel()
+    public let stations: StationsModel
     /// What Download sent for each heard song, shared by every place the live song is shown (S2-3 item 2).
     public let radioDownloads = RadioDownloads()
     /// Settings › Radio: scrobbling, the app address and the logo overrides (S2-4 item 3).
@@ -105,10 +105,6 @@ public final class AppState {
     public let stationLogos: StationLogoStore
     /// The ⌘K command palette.
     public let palette = PaletteModel()
-    /// Songs the server found for the text being searched (the palette and the Library search), whole library.
-    public private(set) var songHits: [SongRow] = []
-    /// Artists, albums and songs the Librarian found that the library does not hold: the palette's "Not in your library". Never read by the Library search.
-    private(set) var catalogHits = CatalogHits()
     public let lyrics = LyricsModel()
     /// Facts about the playing song, album and artist for the player bar, and the two switches that show them.
     public let facts = FactsModel()
@@ -171,12 +167,14 @@ public final class AppState {
     public var highlightedSong: String?
     /// The Discover group of the Cupertino sidebar is folded or open.
     public var discoverOpen = true
+    public var sidebarCompact = false
 
     public init(themeID: ThemeID = .cupertino, screen: Screen = .home, actions: DiscairActions? = nil, session: SessionModel? = nil, output: AudioOutput? = nil) {
         // Previews and screenshot tests get their own throwaway settings, so they never read or write the real ones.
         let defaults = session == nil ? (UserDefaults(suiteName: "discair-preview-\(UUID().uuidString)") ?? .standard) : UserDefaults.standard
         let acquisition = AcquisitionModel(defaults: defaults)
         self.acquisition = acquisition
+        self.stations = StationsModel(defaults: defaults)
         self.homeDefaults = defaults
         self.appearance = AppearanceModel(defaults: defaults)
         self.services = ServicesController(defaults: defaults)
@@ -247,11 +245,17 @@ public final class AppState {
         artwork.configure(librarian: session.librarian)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
-        stations.configure(source: session.librarian)
+        let stationHistoryScope = session.activeProfile.map { "\($0.id.uuidString)|\(session.navidromeUsername ?? "")" }
+        stations.configure(source: session.librarian, historyScope: stationHistoryScope)
         radioDownloads.configure(source: session.librarian)
         acquisition.onImported = { [weak self] in await self?.reloadLibraryAfterImport() }
         radioDownloads.onSuccess = { [weak self] in await self?.loadHeard() }
         player.onLivePlay = { [weak self] in Task { await self?.loadHeard() } }
+        player.onStationPlayed = { [weak self] stationID in
+            guard let self, let session = self.session,
+                  session.activeProfile.map({ "\($0.id.uuidString)|\(session.navidromeUsername ?? "")" }) == stationHistoryScope else { return }
+            self.stations.recordPlayback(stationID: stationID)
+        }
         player.liveNowSource = session.librarian
         stationLogos.configure(source: session.librarian)
         radioSettings.configure(source: session.librarian)
@@ -754,8 +758,14 @@ public final class AppState {
     }
 
     public func open(artist: ArtistItem) {
-        if screen != .artist && screen != .nowPlaying { artistBack = Self.listScreen(screen) }
+        if screen != .artist { artistBack = Self.listScreen(screen) }
         selectedArtist = artist; screen = .artist
+    }
+
+    func closeArtist() {
+        let previousNowPlayingReturn = nowPlayingReturn
+        screen = artistBack
+        if artistBack == .nowPlaying { nowPlayingReturn = previousNowPlayingReturn }
     }
 
     /// Goes to a screen. Up Next in Cupertino opens the inspector over the current screen instead.
@@ -774,7 +784,7 @@ public final class AppState {
                               hue: LibraryModel.hue(for: c.album), remoteID: c.albumID, coverArt: c.coverArt))
     }
 
-    /// Opens the artist of the song playing now, when the library has them.
+    /// Opens the artist of the song playing now.
     public func openCurrentArtist() {
         guard let c = player.current else { return }
         openArtist(named: c.artist)
@@ -835,14 +845,14 @@ public final class AppState {
 
     /// Opens a similar artist: their library page when owned, otherwise a page built from the Librarian's data.
     public func open(similar a: SimilarArtistEntry) {
-        if let own = library.artist(named: a.name) { open(artist: own); return }
-        open(artist: ArtistItem(id: 100_000 + abs(a.name.lowercased().hashValue % 800_000), name: a.name, albumCount: 0))
+        openArtist(named: a.name)
     }
 
-    /// Opens an artist by name when the library has them; otherwise nothing happens.
+    /// Prefer the library identity, then use the Librarian's artist page.
     public func openArtist(named name: String) {
-        if let a = library.artist(named: name) { open(artist: a) }
-        else if !library.isLive { open(artist: selectedArtist) }
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        open(artist: library.artist(named: name) ?? .catalogArtist(named: name))
     }
 }
 
@@ -854,31 +864,38 @@ struct NoMounter: ShareMounter {
 // MARK: Command palette
 
 extension AppState {
-    /// What the palette lists for what is typed, from the library as loaded now.
-    func paletteResults() -> [PaletteCommand] {
-        PaletteCatalog.results(query: palette.query, playing: player.isPlaying,
-                               albums: visible(library.searchableAlbums + library.missing), artists: library.artists, songs: songHits, catalog: catalogHits)
+    func searchLibrarySnapshot() -> SearchLibrarySnapshot {
+        let all = library.allAlbums
+        return SearchLibrarySnapshot(artists: library.artists, albums: all.isEmpty ? library.albums : all,
+                                     recent: all.isEmpty ? library.recent : [],
+                                     dismissed: acquisition.dismissed, dismissedArtists: acquisition.dismissedArtists)
+    }
+
+    /// Capture value snapshots here, without copying or ranking the album collection on the main actor.
+    func paletteSearchRequest(query: String, songs: [SongRow], catalog: CatalogHits) -> PaletteSearchRequest {
+        let playing = player.isPlaying
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return PaletteSearchRequest(query: query, playing: playing) }
+        return PaletteSearchRequest(query: query, playing: playing, library: searchLibrarySnapshot(), missing: library.missing,
+                                    songs: songs, catalog: catalog)
     }
 
     /// Asks the server for songs matching `query` after a short pause; a newer query cancels this one (call it from `.task(id:)`).
-    func searchSongHits(_ query: String) async {
+    func searchSongHits(_ query: String) async -> [SongRow] {
         let q = LibrarySearch.fold(query)
-        guard q.count >= 2, library.isLive, let nav = session?.navidrome else { songHits = []; return }
+        guard q.count >= 2, library.isLive, let nav = session?.navidrome else { return [] }
         try? await Task.sleep(for: .milliseconds(250))
-        guard !Task.isCancelled else { return }
-        if let found = try? await nav.searchSongs(q, count: 8), !Task.isCancelled {
-            songHits = found.enumerated().map { LibraryModel.row($0.element, id: 2_000_000 + $0.offset) }
-        }
+        guard !Task.isCancelled, let found = try? await nav.searchSongs(q, count: 8), !Task.isCancelled else { return [] }
+        return found.enumerated().map { LibraryModel.row($0.element, id: 2_000_000 + $0.offset) }
     }
 
     /// Asks the Librarian for music beyond the library matching `query`, after a pause longer than the song search's, because the
-    /// server asks outside services. A newer query cancels this one (call it from `.task(id:)`). Failures leave the rows as they were.
-    func searchCatalogHits(_ query: String) async {
+    /// server asks outside services. A newer query cancels this one (call it from `.task(id:)`).
+    func searchCatalogHits(_ query: String) async -> CatalogHits {
         let q = LibrarySearch.fold(query)
-        guard q.count >= 2, library.isLive, let librarian = session?.librarian else { catalogHits = CatalogHits(); return }
+        guard q.count >= 2, library.isLive, let librarian = session?.librarian else { return CatalogHits() }
         try? await Task.sleep(for: .milliseconds(450))
-        guard !Task.isCancelled else { return }
-        if let found = try? await librarian.searchCatalog(query.trimmingCharacters(in: .whitespaces)), !Task.isCancelled { catalogHits = found }
+        guard !Task.isCancelled else { return CatalogHits() }
+        return (try? await librarian.searchCatalog(query.trimmingCharacters(in: .whitespaces))) ?? CatalogHits()
     }
 
     /// Runs one palette line and closes the palette.

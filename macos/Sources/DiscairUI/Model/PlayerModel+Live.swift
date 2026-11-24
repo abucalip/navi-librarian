@@ -163,13 +163,14 @@ extension PlayerModel {
     var liveLine: LiveSongLine { LiveSongLine.of(liveNow, phase: live?.phase ?? .playing) }
 
     func liveStateChanged(_ state: LiveState) {
-        guard live != nil, !systemAsleep else { return }
+        guard let session = live, !systemAsleep else { return }
         switch state {
         case .playing:
             reconnectPolicy.sound()
             cancelReconnectWork()
             live?.phase = .playing
             live?.reconnect = nil
+            if session.phase != .playing { onStationPlayed?(session.stationID) }
         case .connecting:
             // A try in flight keeps its "Reconnecting…" words; a first connection says "Connecting…".
             if live?.reconnect == nil { live?.phase = .connecting }

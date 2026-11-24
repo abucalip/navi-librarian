@@ -6,14 +6,29 @@ import SwiftUI
 struct CupertinoLibraryHub: View {
     @Bindable var state: AppState
     @FocusState private var searchFocused: Bool
+    @State private var matches: (query: String, tab: LibraryTab, rows: LibrarySearchResults)?
+    @State private var songHits: (query: String, rows: [SongRow])?
 
     private var query: String { state.librarySearch }
-    private var results: LibrarySearchResults {
-        LibrarySearch.results(query: query, artists: state.library.artists, albums: state.visible(state.library.searchableAlbums),
-                              songs: state.library.songs, serverSongs: state.songHits)
+    private func searchRequest(query: String, tab: LibraryTab) -> LibrarySearchRequest {
+        guard !query.isEmpty else { return LibrarySearchRequest(query: query, tab: tab) }
+        var snapshot = state.searchLibrarySnapshot()
+        if tab == .albums, state.neverPlayedOnly {
+            snapshot.albums = state.library.neverPlayedAlbums
+            snapshot.recent = []
+        }
+        return LibrarySearchRequest(query: query, tab: tab, library: snapshot,
+                                    songs: tab == .overview || tab == .songs ? state.library.songs : [],
+                                    serverSongs: songHits?.query == query ? songHits?.rows ?? [] : [])
     }
 
     var body: some View {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let tab = state.libraryTab
+        let request = searchRequest(query: text, tab: tab)
+        let appliedQuery = !text.isEmpty && matches?.tab == tab ? matches?.query ?? "" : ""
+        let filtered = text.isEmpty ? nil : (matches?.tab == tab ? matches?.rows ?? LibrarySearchResults() : LibrarySearchResults())
+        let remoteQuery = tab == .overview ? text : ""
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 16) {
                 Text("Library").font(CU.title(34)).accessibilityAddTraits(.isHeader)
@@ -26,18 +41,19 @@ struct CupertinoLibraryHub: View {
             .padding(.horizontal, CU.Space.xl).padding(.top, 4).padding(.bottom, 16)
             .zIndex(2)
             .overlay(alignment: .topTrailing) {
-                if state.libraryTab == .overview, !query.trimmingCharacters(in: .whitespaces).isEmpty {
-                    sheet.padding(.top, 52).padding(.trailing, CU.Space.xl)
+                if tab == .overview, !text.isEmpty {
+                    sheet(results: appliedQuery == text ? filtered : nil, searching: appliedQuery != text)
+                        .padding(.top, 52).padding(.trailing, CU.Space.xl)
                 }
             }
             .zIndex(2)
 
             Group {
-                switch state.libraryTab {
+                switch tab {
                 case .overview: overview
-                case .artists: CupertinoArtistsIndex(state: state, query: query, showHeader: false)
-                case .albums: CupertinoAlbumsGrid(state: state, query: query, showHeader: false)
-                case .songs: CupertinoLibrary(state: state, query: query, embedded: true)
+                case .artists: CupertinoArtistsIndex(state: state, showHeader: false, filtered: filtered?.artists)
+                case .albums: CupertinoAlbumsGrid(state: state, query: appliedQuery, showHeader: false, filtered: filtered?.albums)
+                case .songs: CupertinoLibrary(state: state, query: appliedQuery, embedded: true, filtered: filtered?.songs)
                 }
             }
             .zIndex(1)
@@ -45,6 +61,21 @@ struct CupertinoLibraryHub: View {
         .onAppear(perform: syncTab)
         .onChange(of: state.screen) { _, _ in syncTab() }
         .task(id: state.library.isLive) { await state.loadAllSongs() }
+        .task(id: request) {
+            guard !text.isEmpty else { matches = nil; return }
+            let rows = await request.results()
+            guard !Task.isCancelled, state.libraryTab == tab,
+                  state.librarySearch.trimmingCharacters(in: .whitespacesAndNewlines) == text else { return }
+            matches = (text, tab, rows)
+        }
+        .task(id: remoteQuery) {
+            songHits = nil
+            guard !remoteQuery.isEmpty else { return }
+            let rows = await state.searchSongHits(remoteQuery)
+            guard !Task.isCancelled, state.libraryTab == .overview,
+                  state.librarySearch.trimmingCharacters(in: .whitespacesAndNewlines) == remoteQuery else { return }
+            songHits = (remoteQuery, rows)
+        }
     }
 
     /// The old screens (Albums, Artists, Recently Added) are tabs of this page now.
@@ -91,50 +122,19 @@ struct CupertinoLibraryHub: View {
                 .padding(.leading, CU.Space.xl).padding(.trailing, 16)
             }
             .scrollEdgeEffectStyle(.hard, for: .top)
-            recentlyPlayed
+            LibraryRecentlyPlayed(state: state)
         }
-    }
-
-    private var recentlyPlayed: some View {
-        let songs = state.recentlyPlayed
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Recently played").font(CU.title(20)).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
-            if songs.isEmpty {
-                Text(state.library.songsLoading ? "Reading your songs…" : "Nothing played yet.").foregroundStyle(CU.textSecondary)
-            }
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(songs) { s in
-                        Button { state.open(album: s.albumItem, highlighting: s.title) } label: {
-                            HStack(spacing: 8) {
-                                CoverView(album: s.albumItem).frame(width: 36).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(s.title).fontWeight(.semibold).lineLimit(1)
-                                    Text(s.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.vertical, 4).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(s.title), \(s.artist)")
-                    }
-                }
-            }
-        }
-        .font(CU.Font.body.weighted(.regular))
-        .padding(.leading, 16).padding(.trailing, 24).padding(.bottom, 16)
-        .frame(width: 270)
-        .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
     }
 
     // MARK: Search sheet
 
-    private var sheet: some View {
-        let r = results
+    private func sheet(results: LibrarySearchResults?, searching: Bool) -> some View {
+        let r = results ?? LibrarySearchResults()
         return ScrollView {
             VStack(alignment: .leading, spacing: 4) {
-                if r.isEmpty { Text("Nothing in your library matches.").foregroundStyle(CU.textSecondary).padding(8) }
+                if r.isEmpty {
+                    Text(searching ? "Searching…" : "Nothing in your library matches.").foregroundStyle(CU.textSecondary).padding(8)
+                }
                 if !r.artists.isEmpty {
                     sectionTitle("Artists")
                     ForEach(r.artists) { a in
@@ -189,6 +189,43 @@ struct CupertinoLibraryHub: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(detail)")
+    }
+}
+
+private struct LibraryRecentlyPlayed: View {
+    let state: AppState
+
+    var body: some View {
+        let songs = state.recentlyPlayed
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Recently played").font(CU.title(20)).padding(.bottom, 8).accessibilityAddTraits(.isHeader)
+            if songs.isEmpty {
+                Text(state.library.songsLoading ? "Reading your songs…" : "Nothing played yet.").foregroundStyle(CU.textSecondary)
+            }
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(songs) { s in
+                        Button { state.open(album: s.albumItem, highlighting: s.title) } label: {
+                            HStack(spacing: 8) {
+                                CoverView(album: s.albumItem).frame(width: 36).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous)).accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(s.title).fontWeight(.semibold).lineLimit(1)
+                                    Text(s.artist).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 4).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(s.title), \(s.artist)")
+                    }
+                }
+            }
+        }
+        .font(CU.Font.body.weighted(.regular))
+        .padding(.leading, 16).padding(.trailing, 24).padding(.bottom, 16)
+        .frame(width: 270)
+        .overlay(alignment: .leading) { Rectangle().fill(CU.text.opacity(0.08)).frame(width: 1) }
     }
 }
 

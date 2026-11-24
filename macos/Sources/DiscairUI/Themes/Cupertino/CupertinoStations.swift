@@ -285,7 +285,7 @@ struct OnAirPanel: View {
                     }
                 }
                 Text(live.name).cuRole(CU.Font.title2).foregroundStyle(CU.onMedia).lineLimit(2)
-                if live.phase == .playing { LiveSongBlock(player: player, downloads: downloads) }
+                if live.phase == .playing { LiveSongBlock(player: player, downloads: downloads, openArtist: state.openArtist(named:)) }
                 else if live.phaseSentence != nil { LivePhaseText(live: live, role: CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)) }
                 HStack(spacing: 8) {
                     if live.phase == .unreachable { RetryStationButton(player: player) }

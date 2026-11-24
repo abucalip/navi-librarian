@@ -36,7 +36,8 @@ struct CupertinoAlbumBanner: View {
                                      back: { state.screen = state.albumBack },
                                      play: { state.actions.play(album: a) },
                                      picture: { CoverView(album: a).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous)) },
-                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
+                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl,
+                                     leadingInset: CupertinoArtistLayout.heroLeadingInset - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
             }
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.albumBack), onDark: true) { state.screen = state.albumBack }.padding(.bottom, 8)
@@ -87,7 +88,8 @@ struct CupertinoAlbumBanner: View {
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, CupertinoArtistLayout.heroLeadingInset).padding(.top, CupertinoArtistLayout.heroTopInset)
+            .padding(.leading, CupertinoArtistLayout.heroLeadingInset - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
+            .padding(.top, CupertinoArtistLayout.heroTopInset)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + CU.Space.xl : CU.Space.xl)
             .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }

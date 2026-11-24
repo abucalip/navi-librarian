@@ -99,8 +99,8 @@ public final class AcquisitionModel {
 
     // MARK: Keys
 
-    static func key(artist: String, title: String) -> String { "\(artist.lowercased())|\(title.lowercased())" }
-    static func key(_ a: AlbumItem) -> String { key(artist: a.artist, title: a.title) }
+    nonisolated static func key(artist: String, title: String) -> String { "\(artist.lowercased())|\(title.lowercased())" }
+    nonisolated static func key(_ a: AlbumItem) -> String { key(artist: a.artist, title: a.title) }
 
     // MARK: Read
 

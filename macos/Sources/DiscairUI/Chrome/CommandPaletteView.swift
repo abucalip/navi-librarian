@@ -1,3 +1,4 @@
+import DiscairLibrarian
 import SwiftUI
 
 /// The ⌘K palette: a search field over a short list. Type, arrow up or down, Return to run, Escape to close.
@@ -6,10 +7,19 @@ struct CommandPaletteView: View {
     @Bindable var state: AppState
     @FocusState private var focused: Bool
     @Environment(\.colorScheme) private var colorScheme
+    @State private var matches: [PaletteCommand] = []
+    @State private var matchedQuery: String?
+    @State private var submittedQuery: String?
+    @State private var songHits: (query: String, rows: [SongRow])?
+    @State private var catalogHits: (query: String, rows: CatalogHits)?
     private var query: Binding<String> { Binding(get: { state.palette.query }, set: { state.palette.query = $0 }) }
 
     var body: some View {
-        let results = state.paletteResults()
+        let text = state.palette.query
+        let request = state.paletteSearchRequest(query: text, songs: songHits?.query == text ? songHits?.rows ?? [] : [],
+                                                 catalog: catalogHits?.query == text ? catalogHits?.rows ?? CatalogHits() : CatalogHits())
+        let isEmptyQuery = text.trimmingCharacters(in: .whitespaces).isEmpty
+        let results = isEmptyQuery ? Array(PaletteCatalog.fixed(playing: request.playing).prefix(9)) : (matchedQuery == text ? matches : [])
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         VStack(spacing: 0) {
             HStack(spacing: 8) {
@@ -19,7 +29,10 @@ struct CommandPaletteView: View {
                     .font(.system(size: 16))
                     .focused($focused)
                     .accessibilityLabel("Command palette")
-                    .onSubmit { run(results) }
+                    .onSubmit {
+                        if isEmptyQuery || matchedQuery == text { run(results) }
+                        else { submittedQuery = text }
+                    }
                     .onKeyPress(.downArrow) { state.palette.move(1, count: results.count); return .handled }
                     .onKeyPress(.upArrow) { state.palette.move(-1, count: results.count); return .handled }
                     .onKeyPress(.escape) { state.palette.close(); return .handled }
@@ -27,7 +40,7 @@ struct CommandPaletteView: View {
             .padding(14)
             Divider()
             if results.isEmpty {
-                Text("Nothing matches “\(state.palette.query)”").foregroundStyle(.secondary).padding(20)
+                Text(matchedQuery == text ? "Nothing matches “\(text)”" : "Searching…").foregroundStyle(.secondary).padding(20)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -51,6 +64,7 @@ struct CommandPaletteView: View {
         .overlay { shape.stroke(Color.primary.opacity(0.12), lineWidth: 1) }
         .shadow(color: .black.opacity(0.25), radius: 24, x: 0, y: 10)
         .onAppear { focused = true }
+        .onChange(of: text) { _, _ in submittedQuery = nil }
         // On appear the field is often not in the window yet, or the top bar field still holds the focus, so the first request is
         // lost. Ask again once the view has settled.
         .task {
@@ -60,8 +74,29 @@ struct CommandPaletteView: View {
                 focused = true
             }
         }
-        .task(id: state.palette.query) { await state.searchSongHits(state.palette.query) }
-        .task(id: state.palette.query) { await state.searchCatalogHits(state.palette.query) }
+        .task(id: request) {
+            guard !isEmptyQuery else { matchedQuery = nil; return }
+            let found = await request.results()
+            guard !Task.isCancelled, state.palette.query == text else { return }
+            matches = found
+            matchedQuery = text
+            if submittedQuery == text {
+                submittedQuery = nil
+                run(found)
+            }
+        }
+        .task(id: text) {
+            songHits = nil
+            let found = await state.searchSongHits(text)
+            guard !Task.isCancelled, state.palette.query == text else { return }
+            songHits = (text, found)
+        }
+        .task(id: text) {
+            catalogHits = nil
+            let found = await state.searchCatalogHits(text)
+            guard !Task.isCancelled, state.palette.query == text else { return }
+            catalogHits = (text, found)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }

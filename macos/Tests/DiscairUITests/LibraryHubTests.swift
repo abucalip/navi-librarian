@@ -25,6 +25,16 @@ import Testing
         #expect(LibrarySearch.results(query: " ", artists: artists, albums: [], songs: []).isEmpty)
     }
 
+    @Test func backgroundSearchUsesTheSelectedTabAndWholeLibrarySongHits() async {
+        let artists = (0..<9).map { ArtistItem(id: $0, name: "Band \($0)", albumCount: 1) }
+        let hit = song(1, "Band song", "Artist", played: nil)
+        let library = SearchLibrarySnapshot(artists: artists)
+        let overview = await LibrarySearchRequest(query: "band", tab: .overview, library: library, serverSongs: [hit]).results()
+        #expect(overview.artists.count == 5 && overview.songs == [hit])
+        let index = await LibrarySearchRequest(query: "band", tab: .artists, library: library).results()
+        #expect(index.artists == artists && index.songs.isEmpty)
+    }
+
     @Test func albumSearchSkipsAlbumsTheLibraryDoesNotOwn() {
         let owned = Fixtures.albums.first { $0.owned }!
         let missing = Fixtures.albums.first { !$0.owned }

@@ -268,6 +268,28 @@ struct ArtistPageDecodingTests {
 
 @MainActor
 struct UnownedArtistAndRetryTests {
+    @Test func anAlbumArtistOpensByNameWhenMissingFromTheLibrary() {
+        let state = AppState(screen: .album)
+        let artist = "Example Catalog Artist"
+        state.selectedAlbum = AlbumItem(id: 101, title: "Example Album", artist: artist, year: 2001,
+                                        genre: "", format: "", owned: false, hue: 0)
+        state.openArtist(named: state.selectedAlbum.artist)
+        #expect(state.screen == .artist && state.selectedArtist == .catalogArtist(named: artist))
+        state.closeArtist()
+        #expect(state.screen == .album && state.selectedAlbum.artist == artist)
+    }
+
+    @Test func artistBackRestoresNowPlayingAndItsOwnReturnScreen() {
+        let state = AppState(screen: .stations)
+        state.screen = .nowPlaying
+        state.openArtist(named: "Can")
+        #expect(state.screen == .artist)
+        state.closeArtist()
+        #expect(state.screen == .nowPlaying)
+        state.closeNowPlaying()
+        #expect(state.screen == .stations)
+    }
+
     @Test func aSimilarArtistTheLibraryLacksOpensItsOwnPage() {
         let s = AppState(screen: .album)
         s.open(similar: SimilarArtistEntry(name: "Oxmo Puccino", owned: false))

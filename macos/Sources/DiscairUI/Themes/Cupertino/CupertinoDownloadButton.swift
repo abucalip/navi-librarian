@@ -94,6 +94,7 @@ struct DownloadButton: View {
 struct LiveSongBlock: View {
     let player: PlayerModel
     let downloads: RadioDownloads
+    let openArtist: (String) -> Void
 
     var body: some View {
         let line = player.liveLine
@@ -102,8 +103,12 @@ struct LiveSongBlock: View {
             if let song = line.hasSong ? line.title : nil {
                 Text(song).cuRole(CU.Font.body).fontWeight(.semibold).foregroundStyle(CU.onMedia).lineLimit(2)
             }
-            let second = line.hasSong ? line.detail : (line.sentence ?? "")
-            if !second.isEmpty { Text(second).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(2) }
+            if let artist = line.artist, line.hasSong {
+                LiveArtistLink(artist: artist, open: openArtist)
+                    .font(CU.Font.callout.font).foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(2)
+            } else if let sentence = line.sentence {
+                Text(sentence).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia.opacity(0.85)).lineLimit(2)
+            }
             if line.sentence != nil, let raw = line.title {      // an unmatched title is still worth showing
                 Text(raw).cuRole(CU.Font.callout).foregroundStyle(CU.onMedia).lineLimit(2)
             }
@@ -122,6 +127,18 @@ struct LiveSongBlock: View {
             }
         }
         .accessibilityElement(children: .contain)
+    }
+}
+
+struct LiveArtistLink: View {
+    let artist: String
+    let open: (String) -> Void
+
+    var body: some View {
+        Button { open(artist) } label: { Text(artist).underline() }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open artist \(artist)")
+            .help("Open artist \(artist)")
     }
 }
 

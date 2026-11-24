@@ -44,6 +44,10 @@ public final class StationsModel {
     public static let nowInterval: TimeInterval = 15
 
     @ObservationIgnored private var source: (any StationsSource)?
+    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private var historyKey: String?
+    @ObservationIgnored private var localPlayback: [String: Double] = [:]
+    @ObservationIgnored private var listGeneration = UUID()
     @ObservationIgnored private let clock: @Sendable () -> Date
     @ObservationIgnored private let pause: @Sendable (TimeInterval) async -> Void
     @ObservationIgnored private var pollTask: Task<Void, Never>?
@@ -53,16 +57,40 @@ public final class StationsModel {
     @ObservationIgnored private var pendingFavourite: [String: Bool] = [:]
     @ObservationIgnored private var pendingTags: [String: [String]] = [:]
 
-    public init(clock: @escaping @Sendable () -> Date = { Date() },
+    public init(defaults: UserDefaults = .standard, clock: @escaping @Sendable () -> Date = { Date() },
                 pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }) {
+        self.defaults = defaults
         self.clock = clock
         self.pause = pause
     }
 
-    public func configure(source: (any StationsSource)?) {
+    public func configure(source: (any StationsSource)?, historyScope: String? = nil) {
         self.source = source
-        if source == nil { stop(); stations = []; nowByID = [:]; phase = .idle; loadedAt = nil }
-        else if pageVisible { startPolling() }
+        let key = historyScope.map { "discair.radio.stationPlayback.\($0)" }
+        if source == nil || historyKey != key {
+            stop()
+            listGeneration = UUID()
+            listBusy = false
+            nowBusy = false
+            historyKey = key
+            localPlayback = key.flatMap { defaults.dictionary(forKey: $0) as? [String: Double] } ?? [:]
+            stations = []; nowByID = [:]; phase = .idle; loadedAt = nil
+        }
+        if pageVisible { startPolling() }
+    }
+
+    /// A station can be heard even when the server has no song to log for it.
+    func recordPlayback(stationID: String) {
+        let timestamp = clock().timeIntervalSince1970
+        guard localPlayback[stationID].map({ $0 < timestamp }) ?? true else { return }
+        localPlayback[stationID] = timestamp
+        if let historyKey { defaults.set(localPlayback, forKey: historyKey) }
+        update(stationID) { self.includingLocalPlayback($0) }
+    }
+
+    private func includingLocalPlayback(_ station: RadioStation) -> RadioStation {
+        guard let local = localPlayback[station.id], station.lastPlayedAt.map({ $0 < local }) ?? true else { return station }
+        return station.replacing(lastPlayedAt: local)
     }
 
     // MARK: What the page reads
@@ -123,15 +151,19 @@ public final class StationsModel {
     /// Reads the list. Keeps what is on screen when the read fails, and says so.
     public func reload() async {
         guard let source, !listBusy else { return }
-        listBusy = true; defer { listBusy = false }
+        let generation = listGeneration
+        listBusy = true
+        defer { if generation == listGeneration { listBusy = false } }
         if stations.isEmpty { phase = .loading }
         do {
             let list = try await source.radioStations()
-            stations = applyPending(to: list)
+            guard generation == listGeneration else { return }
+            stations = applyPending(to: list).map(includingLocalPlayback)
             loadedAt = clock()
             phase = .loaded
             if let tagFilter, !chips.contains(where: { $0.tag?.lowercased() == tagFilter.lowercased() }) { self.tagFilter = nil }
         } catch {
+            guard generation == listGeneration else { return }
             phase = .failed(message: Self.message(error), retryable: Self.retryable(error))
         }
     }
@@ -139,8 +171,10 @@ public final class StationsModel {
     /// Reads the live titles. A failure keeps the last ones; the status sentence then goes on to say what it knew.
     public func refreshNow() async {
         guard let source, !nowBusy else { return }
-        nowBusy = true; defer { nowBusy = false }
-        if let all = try? await source.radioNowAll() { nowByID = all.byStation }
+        let generation = listGeneration
+        nowBusy = true
+        defer { if generation == listGeneration { nowBusy = false } }
+        if let all = try? await source.radioNowAll(), generation == listGeneration { nowByID = all.byStation }
     }
 
     // MARK: Favourite and tags
@@ -225,8 +259,8 @@ public final class StationsModel {
 }
 
 extension RadioStation {
-    func replacing(favourite: Bool? = nil, tags: [String]? = nil) -> RadioStation {
+    func replacing(favourite: Bool? = nil, tags: [String]? = nil, lastPlayedAt: Double? = nil) -> RadioStation {
         RadioStation(id: id, name: name, proxied: proxied, playableURL: playableURL, homepageURL: homepageURL, logoPath: logoPath,
-                     favourite: favourite ?? self.favourite, tags: tags ?? self.tags, lastPlayedAt: lastPlayedAt)
+                     favourite: favourite ?? self.favourite, tags: tags ?? self.tags, lastPlayedAt: lastPlayedAt ?? self.lastPlayedAt)
     }
 }

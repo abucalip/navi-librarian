@@ -11,6 +11,7 @@ struct CupertinoAlbumsGrid: View {
     var query = ""
     /// False inside the Library page, which has its own heading.
     var showHeader = true
+    var filtered: [AlbumItem]?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -22,8 +23,7 @@ struct CupertinoAlbumsGrid: View {
                         .buttonStyle(CapsuleButtonStyle(small: true)).padding(.bottom, 16)
                         .accessibilityHint("Shows every album again")
                 }
-                let source = recent ? state.library.recent : (state.neverPlayedOnly ? state.library.neverPlayedAlbums : state.library.searchableAlbums)
-                let shown = LibrarySearch.albums(state.visible(source), query: query)
+                let shown = filtered ?? unfilteredSource
                 if shown.isEmpty, !query.isEmpty { Text("No albums match.").foregroundStyle(CU.textSecondary) }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
                     ForEach(shown) { a in AlbumTile(state: state, album: a) }
@@ -32,6 +32,11 @@ struct CupertinoAlbumsGrid: View {
             .padding(.horizontal, CU.Space.xl)
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
+    }
+
+    private var unfilteredSource: [AlbumItem] {
+        let source = recent ? state.library.recent : (state.neverPlayedOnly ? state.library.neverPlayedAlbums : state.library.searchableAlbums)
+        return LibrarySearch.albums(state.visible(source), query: query)
     }
 }
 

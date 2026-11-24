@@ -21,6 +21,7 @@ import Testing
     }
     @Test func aStationThatIsNotRelayedHasNoTitles() {
         #expect(status(station(proxied: false), RadioNow(state: .ok, title: "x")).text == "Not relayed · no song titles")
+        #expect(status(station(proxied: false, played: at(14, 9, 5)), nil).text == "Played today, 09:05 · Not relayed")
     }
     @Test func noTitlesUnreachableAndUnknownWordsAreHonest() {
         #expect(status(station(), RadioNow(state: .noMetadata)).text == "Sends no song titles")
