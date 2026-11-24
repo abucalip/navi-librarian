@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz untagged track matching (LB-03)
+
+- Branch `feat/lb-03-untagged-track-matching` starts from GitHub `main` at `1bdd7263` (LB-02, PR #1271).
+- The matcher keeps exact recording ID priority and requires a unique artist/title candidate with agreeing release title or duration evidence for fallback. Conflicting IDs and competing versions are ambiguous.
+- The focused matcher and JSPF parser tests passed (46 tests), and both changed modules compiled. The read-only Navidrome probe could not connect, so fallback accuracy on the owner's library remains unverified.
+
 ## 2026-11-24 — Web sidebar Docker updates
 
 - Branch `web/docker-update-badge` starts from GitHub `main` at `a630e923`.

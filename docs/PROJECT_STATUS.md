@@ -1,10 +1,12 @@
 # Project status
 
-Last checked against GitHub `main` at `383a4c01031182474d65b63cf81237b898113b6c` (PR #1264 merged) on 2026-11-24.
+Last checked against GitHub `main` at `1bdd7263` (LB-02, PR #1271 merged) on 2026-11-24.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **ListenBrainz track matching (LB-03, 2026-11-24)** — Branch `feat/lb-03-untagged-track-matching` adds corroborated artist/title fallback and an ambiguous state. All 46 focused matcher and JSPF parser tests passed. The read-only Navidrome probe could not connect. Next action is PR review.
 
 - **Web Docker updates (2026-11-24)** — Branch `web/docker-update-badge` adds a lower-left version badge with GHCR update detection and optional owner-confirmed installation for the web and worker services. Five focused tests passed and the Unix socket test was skipped because the sandbox denied binding. The JavaScript fixture verified badge display, confirmation, digest submission and reload. Next action is PR review, followed by browser and Docker host verification.
 
