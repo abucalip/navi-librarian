@@ -1,0 +1,50 @@
+{
+  "playlist": {
+    "creator": "troi-bot",
+    "date": "2025-01-02T03:04:05.123456+00:00",
+    "extension": {
+      "https://musicbrainz.org/doc/jspf#playlist": {
+        "creator": "troi-bot",
+        "created_for": "fixture-listener",
+        "last_modified_at": "2025-01-03T03:04:05+00:00"
+      }
+    },
+    "identifier": "https://listenbrainz.org/playlist/00000000-0000-4000-8000-000000000001",
+    "title": "Daily Jams for fixture-listener",
+    "track": [
+      {
+        "title": "Fixture track 1",
+        "creator": "Fixture artist 1",
+        "album": "Fixture album 1",
+        "duration": 60000,
+        "identifier": [
+          "https://musicbrainz.org/recording/00000000-0000-4000-8000-000000000002"
+        ]
+      },
+      {
+        "title": "Fixture track 2",
+        "creator": "Fixture artist 2",
+        "album": "Fixture album 2",
+        "duration": 120000
+      },
+      {
+        "title": "Fixture track 3",
+        "creator": "Fixture artist 3",
+        "album": "Fixture album 3",
+        "duration": 180000,
+        "identifier": [
+          "https://musicbrainz.org/recording/00000000-0000-4000-8000-000000000004"
+        ]
+      },
+      {
+        "title": "Fixture track 1",
+        "creator": "Fixture artist 1",
+        "album": "Fixture album 1",
+        "duration": 60000,
+        "identifier": [
+          "https://musicbrainz.org/recording/00000000-0000-4000-8000-000000000002"
+        ]
+      }
+    ]
+  }
+}
