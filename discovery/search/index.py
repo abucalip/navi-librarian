@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from discovery.recommendations import is_various_artists
-from discovery.search.normalize import normalize_key
+from discovery.search.normalize import normalize_key, normalize_mbid
 from discovery.search.quality_label import album_quality_label
 
 SONG_PAGE_SIZE = 500
@@ -165,6 +165,7 @@ def _song_entry(song: Mapping[str, Any]) -> dict[str, Any]:
         "name_key": normalize_key(title),
         "album": str(song.get("album") or "").strip(),
         "album_id": str(song.get("albumId") or ""),
+        "recording_mbid": normalize_mbid(song.get("musicBrainzId")),
         "key": f"{normalize_key(artist_name)}/{normalize_key(title)}",
         "duration": int(duration) if isinstance(duration, (int, float)) else None,
         "track_number": int(track) if isinstance(track, int) and track >= 1 else None,

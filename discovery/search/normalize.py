@@ -13,6 +13,16 @@ import unicodedata
 _COMBINING_MARKS = re.compile(r"[̀-ͯ]")
 _NON_WORD = re.compile(r"[\W_]+")
 _LEADING_THE = re.compile(r"^the (?=.)")
+_MBID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def normalize_mbid(value: object) -> str | None:
+    """Return a canonical MusicBrainz ID from a bare UUID string."""
+    if isinstance(value, str):
+        mbid = value.strip().lower()
+        if _MBID.fullmatch(mbid):
+            return mbid
+    return None
 
 
 def fold(text: object) -> str:
