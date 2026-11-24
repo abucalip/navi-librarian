@@ -11,6 +11,7 @@ Paths are relative to the repository root.
 | Discovery, lenses, and feedback | `discovery/` |
 | Owned library index, search, and artist and album pages | `discovery/search/`, `app/api/search.py`, `app/api/library.py` |
 | Playlist Inbox and rolling copies | `app/api/playlist_inbox.py`, `discovery/playlist_inbox.py`, `discovery/recording_match.py`, `discovery/playlist_sync.py`, `intelligence/store/playlist_editions.py` |
+| Managed playlist reconciliation | `app/services/playlist_reconcile.py` checks scan status, builds a fresh song inventory for the same Navidrome target, and uses the shared playlist sync lock and ownership checks. |
 | Recommendation scoring and selection | `recommendation/` |
 | Acquisition, recovery, and import | `acquisition/` |
 | Knowledge store and enrichment | `intelligence/store/`, `intelligence/jobs/`, `intelligence/ingest/`, `intelligence/knowledge/` |
