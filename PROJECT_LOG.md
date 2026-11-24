@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz playlist edition storage (LB-05)
+
+- Branch `feat/lb-05-playlist-editions` starts from GitHub `main` at `23cbb776` (LB-04, PR #1273).
+- Schema v7 stores ordered snapshots, a current edition per source, and a separate Navidrome link per recurring feed. Publication checks the edition observed before fetching, so a competing refresh cannot overwrite the winner.
+- The playlist repository, migration, store, and capabilities fixture checks passed (44 tests and 85 subtests). The partial-refresh fixture kept the failed playlist's prior edition while publishing the successful detail. The tests used local fixtures.
+
 ## 2026-11-24 — ListenBrainz untagged track matching (LB-03)
 
 - Branch `feat/lb-03-untagged-track-matching` starts from GitHub `main` at `1bdd7263` (LB-02, PR #1271).
