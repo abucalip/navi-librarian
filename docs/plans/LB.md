@@ -63,12 +63,76 @@ These probes read upstream data only. Local match quality, Navidrome playlist wr
 
 **Acceptance:** Verify color normalization, result bounds, missing art, navigation for owned and unowned releases, and accessible swatch selection.
 
-## Delivery order
+## Implementation slices
 
-1. Establish the shared matcher and the automatic Inbox through one end-to-end client slice, then bring it to the other clients. Verify private Navidrome sync and the full acquisition-to-playback loop before enabling scheduled imports.
-2. Add single-seed Artist Radio. Fresh Releases can proceed independently after its overlap comparison.
-3. Add the first scheduled Troi mix and cover-color browsing. Expand radio recipes after measuring playable coverage.
+Each row is one PR. Start from current main once the listed dependencies have merged. Use the listed acceptance check as the stopping point and carry any follow-on work into its own slice. Server slices use focused tests and sanitized fixtures. Client slices use the merged server contract and test one client only. Slices with no shared dependency can proceed independently.
 
-Each slice uses focused server and client tests, shared response fixtures, and a live check with a disposable Navidrome playlist where writes are involved. Keep credentials server-side and preserve the existing worker pacing and acquisition boundaries.
+### Playlist Inbox and shared recording matching
+
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-01 · Parse playlist tracks | — | Add a JSPF parser and a sanitized generated-playlist fixture. Verify recording URLs, missing identifiers, repeated tracks, order, and generation date. |
+| LB-02 · Match exact recording IDs | LB-01 | Build the recording MBID lookup from Navidrome song data. Verify ordered owned and missing results, including duplicate playlist occurrences. |
+| LB-03 · Match untagged tracks | LB-02 | Add conservative artist/title fallback with release or duration evidence. Fixtures must distinguish a safe match from ambiguous live, studio, and remastered versions. |
+| LB-04 · Read Created for Me | LB-01 | Add the paced upstream adapter for listing and fetching generated playlists. Verify pagination, an empty account, and failed detail reads. |
+| LB-05 · Store playlist editions | LB-04 | Persist full source snapshots by upstream ID, with generation and refresh times. Verify retry, repeat import, and retention of previous data after a partial refresh. |
+| LB-06 · Read the Inbox | LB-03, LB-05 | Add authenticated list and detail endpoints with shared fixtures for owned, missing, ambiguous, empty, and stale results. Verify that the owned IDs retain source order. |
+| LB-07 · Save private copies | LB-06 | Create the playable subset in Navidrome and record the managed ID. Check empty-playlist behavior with a disposable playlist. Verify that a retry after an uncertain create produces a single copy and never adopts an unrelated playlist. |
+| LB-08 · Reconcile managed copies | LB-07 | Update the playable subset when the Navidrome library changes. Verify that a newly indexed track is inserted in source order, repeats survive, and unrelated playlists stay untouched. |
+| LB-09 · Download an Inbox track | LB-06 | Add the server action for a stored track occurrence. Reuse existing acquisition and status handling. Verify current ownership, safe refusal of unresolved identity, and deduplication of simultaneous requests. |
+| LB-10 · Schedule hosted import | LB-08, LB-12 | Register one worker job to refresh hosted editions and reconcile copies. Prove a manual run on a disposable Navidrome playlist, including the download-to-index-to-playlist loop. Use a real Daily Jams edition if present and the fixture for automated tests. Enable recurring import only after the live check. |
+| LB-11 · Web Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
+| LB-12 · Web Inbox downloads | LB-09, LB-11 | Connect per-track Download, status and retry. Verify an unresolved row explains why acquisition cannot start and a completed track becomes playable after refresh. |
+| LB-13 · Android Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
+| LB-14 · Android Inbox downloads | LB-09, LB-13 | Wire per-track Download, status and retry to the existing acquisition UI. Verify unresolved and newly playable rows. |
+| LB-15 · macOS Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
+| LB-16 · macOS Inbox downloads | LB-09, LB-15 | Wire per-track Download, status and retry to the existing acquisition UI. Verify unresolved and newly playable rows. |
+
+### Artist Radio
+
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-17 · Generate owned queues | LB-03 | Add authenticated generation for artist MBID and tag seeds, typed mode, short caching, and request coalescing. Verify empty, auth, throttle, and error responses. Record coverage and wrong-version matches for representative artist, tag, and recommendation seeds before expanding the UI. |
+| LB-18 · Web Artist Radio | LB-17 | Add Start Artist Radio with existing queue controls. Verify generation failure or zero playable tracks preserves the queue. |
+| LB-19 · Android Artist Radio | LB-17 | Add the artist-page action and playable coverage state. Verify failure and zero matches preserve the queue. |
+| LB-20 · macOS Artist Radio | LB-17 | Add the artist-page action and playable coverage state. Verify failure and zero matches preserve the queue. |
+| LB-21 · Web tag and depth controls | LB-18 | Add tag seeds in Discover and the three familiarity modes. Verify seed/mode selection and playback with the same server contract. |
+| LB-22 · Android tag and depth controls | LB-19 | Add tag seeds and the three modes to Android Discover. Verify selection and queue behavior. |
+| LB-23 · macOS tag and depth controls | LB-20 | Add tag seeds and the three modes to macOS Discover. Verify selection and queue behavior. |
+| LB-24 · Weighted prompts | LB-17 | Extend the server contract with structured weighted seeds once single-seed queues have acceptable coverage. Verify bounds, encoding, order, and a mixed artist/tag result. |
+| LB-25 · Saved radio recipes | LB-24 | Persist and expose reusable validated seed combinations through the server API. Verify save, reopen, and regeneration of a queue from a recipe. |
+| LB-26 · Playlist continuation | LB-24, LB-06 | Accept an Inbox edition as a continuation seed with a related artist or tag. Verify that the resulting queue can include playable tracks beyond the source playlist. |
+| LB-27 · Web radio recipes | LB-21, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
+| LB-28 · Android radio recipes | LB-22, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
+| LB-29 · macOS radio recipes | LB-23, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
+
+### Fresh Releases
+
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-30 · Fetch and compare release feeds | — | Add bounded, cached personal and global reads. Capture an aggregate comparison of overlap, unique eligible entries, and dates against the existing MusicBrainz list. Keep the global feed optional. |
+| LB-31 · Serve personal and upcoming releases | LB-30 | Add the Discover read model with release-group deduplication, date precision, ownership, and album/EP/single filters. Verify timezone boundaries and provider failure alongside the existing library feed. |
+| LB-32 · Web Fresh Releases | LB-31 | Add personal and upcoming views to New Releases. Verify type filters, ownership, and existing album navigation. |
+| LB-33 · Android Fresh Releases | LB-31 | Add the views and filters to Android Discover. Verify upcoming and owned entries open the right destination. |
+| LB-34 · macOS Fresh Releases | LB-31 | Add the views and filters to macOS Discover. Verify upcoming and owned entries open the right destination. |
+
+### Discair-generated Troi mixes
+
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-35 · Evaluate Rediscover your library | LB-02 | Add a reproducible, unscheduled recipe evaluation. Record dependency version, external inputs, playable coverage, and variety compared with existing Discair selection. Verify eligibility against fixed inputs. |
+| LB-36 · Save Troi editions to the Inbox | LB-08, LB-35 | Route the first supported recipe through the shared snapshot and managed-copy services. Use recipe plus scheduled edition as identity. Verify retry, source labels, and reuse of the same Navidrome copy. |
+| LB-37 · Schedule the first Troi mix | LB-10, LB-36 | Register the recipe in the worker with its own cadence. Verify an upstream failure or empty generation retains the last playable edition and that clients display its Troi attribution. |
+
+### Browse by cover color
+
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-38 · Serve cover-color results | — | Add a bounded, cached server read by normalized color. Preserve similarity order, join ownership, and test missing art and malformed input. |
+| LB-39 · Web cover-color browser | LB-38 | Add accessible swatches and result cards in Discover. Verify keyboard selection and owned/unowned album navigation. |
+| LB-40 · Android cover-color browser | LB-38 | Add the swatches and results in Android Discover. Verify screen-reader labels, selection, and retry. |
+| LB-41 · macOS cover-color browser | LB-38 | Add the swatches and results in macOS Discover. Verify keyboard and VoiceOver selection, retry, and album navigation. |
+
+Start with LB-01. Fresh Releases and cover color can begin independently. Use the web Inbox as the first end-to-end client for the live check before enabling recurring import. World Trip, artist deep cuts, a release watchlist, and a Friday digest remain follow-up candidates to scope after the first relevant feature is evaluated.
 
 [ListenBrainz API](https://listenbrainz.readthedocs.io/en/latest/users/api/index.html) · [Playlists](https://listenbrainz.readthedocs.io/en/latest/users/api/playlist.html) · [Fresh Releases and cover color](https://listenbrainz.readthedocs.io/en/latest/users/api/misc.html) · [Troi](https://troi.readthedocs.io/en/latest/) · [LB Radio prompts](https://troi.readthedocs.io/en/latest/lb_radio.html)
