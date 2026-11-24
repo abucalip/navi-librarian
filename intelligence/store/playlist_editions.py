@@ -148,6 +148,17 @@ def get_managed_copy(db: sqlite3.Connection, feed_key: str) -> ManagedCopy | Non
     return ManagedCopy(row["feed_key"], row["playlist_id"], bool(row["unlinked"])) if row else None
 
 
+def list_linked_feed_keys(db: sqlite3.Connection, target_key: str) -> tuple[str, ...]:
+    """Find active managed copies for this Navidrome connection."""
+    rows = db.execute(
+        "SELECT c.feed_key FROM playlist_managed_copies AS c "
+        "JOIN playlist_copy_intents AS i ON i.feed_key = c.feed_key "
+        "WHERE c.unlinked = 0 AND i.target_key = ? ORDER BY c.feed_key",
+        (target_key,),
+    )
+    return tuple(row["feed_key"] for row in rows)
+
+
 def save_managed_copy(db: sqlite3.Connection, copy: ManagedCopy, *, expected: ManagedCopy | None) -> bool:
     """Change a feed's link only if it still matches the state the caller observed."""
     with db:

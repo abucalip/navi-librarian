@@ -1,12 +1,14 @@
 # Project status
 
-Last checked against GitHub `main` at `076d1e72` (LB-06, PR #1275 merged) on 2026-11-24.
+Last checked against GitHub `main` at `9f9606a8` on 2026-11-24.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
-- **ListenBrainz rolling private copies (LB-07, 2026-11-24)** — Branch `feat/lb-07-rolling-playlists` adds the server sync service and schema-v8 creation intents. The next action is PR review before LB-08 reconciliation.
+- **ListenBrainz managed-copy reconciliation (LB-08, 2026-11-24)** — Branch `feat/lb-08-reconcile-playlists` adds a worker entry point that refreshes existing copies after indexing and records confirmed deletions as unlinked. Next action is PR review. The recurring job registration and live Navidrome check belong to LB-10.
+
+- **ListenBrainz rolling private copies (LB-07, 2026-11-24)** — PR #1276 merged as `35ef1d9c`, adding the server sync service and schema-v8 creation intents.
 
 - **ListenBrainz Playlist Inbox reads (LB-06, 2026-11-24)** — Branch `feat/lb-06-inbox-read` adds authenticated read-only list and detail routes. Six focused HTTP tests passed, and a smoke check on a migrated copy of the supplied schema-v4 test store verified seeded editions, stable track order, and acquisition status. Next action is PR review before the client Inbox slices.
 

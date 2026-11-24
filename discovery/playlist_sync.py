@@ -1,7 +1,7 @@
 """Save an Inbox feed's owned tracks as one rolling private Navidrome playlist."""
 
-from contextlib import closing
-from dataclasses import dataclass
+from contextlib import closing, contextmanager
+from dataclasses import dataclass, replace
 from fcntl import LOCK_EX, LOCK_NB, flock
 from pathlib import Path
 from typing import Literal
@@ -20,6 +20,7 @@ from intelligence.store.playlist_editions import (
     get_copy_intent,
     get_edition,
     get_managed_copy,
+    list_linked_feed_keys,
     record_copy_intent,
     save_managed_copy,
 )
@@ -29,6 +30,21 @@ from intelligence.store.playlist_editions import (
 class SyncResult:
     state: Literal["synced", "busy", "pending", "conflict", "missing", "unlinked", "superseded", "index_unavailable"]
     playlist_id: str | None = None
+
+
+@contextmanager
+def _locked_writer(store_path):
+    path = Path(store_path).resolve()
+    # Web and worker share this directory. Closing the descriptor releases the
+    # lock without holding a SQLite write transaction over HTTP.
+    with path.with_suffix(".playlist-sync.lock").open("a") as lock:
+        try:
+            flock(lock, LOCK_EX | LOCK_NB)
+        except BlockingIOError:
+            yield None
+            return
+        with closing(open_writer(path)) as db:
+            yield db
 
 
 def sync_edition(store_path, navidrome: PlaylistClient, *, feed_key: str, edition_id: int,
@@ -43,25 +59,62 @@ def sync_edition(store_path, navidrome: PlaylistClient, *, feed_key: str, editio
         raise ValueError("A feed key and playlist name are required.")
     if owned is None:
         return SyncResult("index_unavailable")
-    path = Path(store_path).resolve()
-
-    # Web and worker share this directory. Closing the descriptor (including on
-    # process exit) releases the lock without holding a SQLite write transaction over HTTP.
-    with path.with_suffix(".playlist-sync.lock").open("a") as lock:
-        try:
-            flock(lock, LOCK_EX | LOCK_NB)
-        except BlockingIOError:
+    with _locked_writer(store_path) as db:
+        if db is None:
             return SyncResult("busy")
-        with closing(open_writer(path)) as db:
-            edition = get_edition(db, edition_id)
-            if edition is None:
-                raise ValueError("Playlist Inbox edition does not exist.")
-            snapshot = edition.snapshot
-            if current_edition_id(db, snapshot.source_kind, snapshot.source_key) != edition_id:
-                return SyncResult("superseded")
-            matches = match_recordings(edition_tracks(edition), owned)
-            song_ids = tuple(match.song_id for match in matches if match.song_id is not None)
-            return _sync(db, navidrome, feed_key, edition_id, name, song_ids)
+        edition = get_edition(db, edition_id)
+        if edition is None:
+            raise ValueError("Playlist Inbox edition does not exist.")
+        return _sync_current(db, navidrome, feed_key, edition, name, owned)
+
+
+def reconcile_linked(store_path, navidrome: PlaylistClient, owned: OwnedData, *, scan_marker) -> bool:
+    """Refresh existing copies. Return False when some part of the pass needs retry."""
+    with _locked_writer(store_path) as db:
+        # Check under the write lock so a slower pass cannot overwrite a
+        # newer pass with an inventory it read before the latest scan.
+        if db is None or navidrome.scan_marker() != scan_marker:
+            return False
+        complete = True
+        for feed_key in list_linked_feed_keys(db, navidrome.target_key):
+            try:
+                result = _reconcile_feed(db, navidrome, feed_key, owned)
+            except PlaylistProviderError:
+                complete = False
+            else:
+                complete &= result.state in ("synced", "unlinked")
+        return complete
+
+
+def _reconcile_feed(db, navidrome, feed_key, owned):
+    intent = get_copy_intent(db, feed_key)
+    previous = get_edition(db, intent.edition_id)
+    if previous is None:
+        return SyncResult("conflict")
+    # A feed can move to a different upstream source key. Only the publisher
+    # knows that association. Here we follow revisions of the last linked source.
+    snapshot = previous.snapshot
+    edition_id = current_edition_id(db, snapshot.source_kind, snapshot.source_key)
+    if edition_id is None:
+        return SyncResult("conflict")
+    edition = get_edition(db, edition_id)
+    link = get_managed_copy(db, feed_key)
+    name = edition.snapshot.metadata.get("title") or feed_key
+    result = _sync_current(db, navidrome, feed_key, edition, name, owned)
+    if result.state == "missing":
+        if save_managed_copy(db, replace(link, unlinked=True), expected=link):
+            return SyncResult("unlinked")
+        return SyncResult("conflict")
+    return result
+
+
+def _sync_current(db, navidrome, feed_key, edition, name, owned):
+    snapshot = edition.snapshot
+    if current_edition_id(db, snapshot.source_kind, snapshot.source_key) != edition.id:
+        return SyncResult("superseded")
+    matches = match_recordings(edition_tracks(edition), owned)
+    song_ids = tuple(match.song_id for match in matches if match.song_id is not None)
+    return _sync(db, navidrome, feed_key, edition.id, name, song_ids)
 
 
 def _sync(db, navidrome, feed_key, edition_id, name, song_ids):

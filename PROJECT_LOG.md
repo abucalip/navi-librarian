@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz managed-copy reconciliation (LB-08)
+
+- Branch `feat/lb-08-reconcile-playlists` starts from GitHub `main` at `9f9606a8`.
+- Reconciliation checks the scan marker before and after reading the song inventory, updates the existing private copy in source order, and records confirmed missing copies as unlinked while retaining their Inbox editions.
+- All 24 focused playlist sync and edition repository tests passed. LB-10 registers the recurring job and verifies the import, scan, and reconcile flow on a disposable live playlist.
+
 ## 2026-11-24 — ListenBrainz rolling private copies (LB-07)
 
 - Branch `feat/lb-07-rolling-playlists` starts from GitHub `main` at `076d1e72` (LB-06, PR #1275).

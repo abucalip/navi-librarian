@@ -71,6 +71,31 @@ class PlaylistClient:
         root = self._call("getPlaylist", id=playlist_id)
         return _playlist(root.get("playlist")) if root else None
 
+    def scan_marker(self):
+        """Return the idle scan marker, or None while the scanner is busy or failed."""
+        status = self._call("getScanStatus").get("scanStatus")
+        if not isinstance(status, dict) or type(status.get("scanning")) is not bool:
+            raise PlaylistProviderError("Navidrome did not return valid scan status.")
+        if status["scanning"] or status.get("error"):
+            return None
+        last_scan, count = status.get("lastScan"), status.get("count")
+        if (last_scan is not None and not isinstance(last_scan, str)) or type(count) is not int or count < 0:
+            raise PlaylistProviderError("Navidrome did not return a valid scan marker.")
+        return last_scan, count
+
+    def search_songs(self, _method, **params):
+        """Read a search3 inventory page from the same target as the playlist writes."""
+        root = self._call("search3", **params)
+        result = root.get("searchResult3")
+        if not isinstance(result, dict) or any(
+            not isinstance(song, dict)
+            or not isinstance(song.get("id"), str) or not song["id"]
+            or not isinstance(song.get("title"), str) or not song["title"]
+            for song in items(result.get("song"))
+        ):
+            raise PlaylistProviderError("Navidrome did not return a valid song inventory page.")
+        return root
+
     def create_empty(self, name):
         return _playlist(self._call("createPlaylist", name=name).get("playlist"))
 
