@@ -34,7 +34,7 @@ const listeningRoomPhone = window.matchMedia('(width < 720px)');
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
 const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];
 
-function showPage(name) {
+function showPage(name, hash) {
   activePage = name;
   document.querySelectorAll('.page').forEach(el =>
     el.classList.toggle('hidden', el.id !== name));
@@ -47,7 +47,7 @@ function showPage(name) {
   moveNavIndicator();
   syncNavAria();
   syncListeningRoomShell();
-  syncLocationHash();
+  syncLocationHash({hash});
   updateLedgerCrumb(name);
   zineHook('updateZineMast');
 }
@@ -115,7 +115,7 @@ function syncListeningRoomShell() {
   lrDiscovery.hidden = !inDiscover;
   window.listeningRoomHome?.syncGettingVisibility();
   window.listeningRoomDiscover?.sync(activePage);
-  lrMode.hidden = !(inDiscover || activePage === 'dashboard');
+  lrMode.hidden = !(inDiscover || activePage === 'dashboard') || activePage === 'playlistInbox';
   syncListeningRoomViewport();
   if (isListeningRoom() && !lrMode.hidden && lrModeValue === null && lrModeRetry.hidden) {
     updateListeningRoomMode();
@@ -280,8 +280,9 @@ function initializePage(name) {
 
 // One navigation path for the rail and the header menu, so Settings in the menu still runs
 // initializePage('settings') and loads its panels rather than opening an empty page.
-function navigateTo(name) {
-  showPage(name);
+function navigateTo(name, {inboxEdition = null} = {}) {
+  const hash = inboxEdition ? '#playlistInbox/' + inboxEdition : undefined;
+  showPage(name, hash);
   initializePage(name);
   // Saved is read on every visit: saves made on other pages since the last visit must appear.
   if (name === 'saved') loadSaved();
@@ -295,6 +296,7 @@ function navigateTo(name) {
   else stopAcquisitionStream();
   // Grab the radio (static/radio.js): the log changes while the owner listens, so every visit reloads.
   if (name === 'radio') loadRadio();
+  if (name === 'playlistInbox') window.playlistInbox?.load(inboxEdition);
 }
 
 document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>
@@ -5835,9 +5837,8 @@ function currentLocationHash() {
 // skips that, or a refresh would show the browser's focus ring around the heading.
 let applyingHash = false;
 
-function syncLocationHash({replace = false} = {}) {
+function syncLocationHash({replace = false, hash = currentLocationHash()} = {}) {
   if (applyingHash) return;
-  const hash = currentLocationHash();
   if (window.location.hash === hash) return;
   try {
     const url = window.location.pathname + window.location.search + hash;
@@ -5857,7 +5858,8 @@ function applyHash(hash) {
   applyingHash = true;
   try {
     if (!$('albumModalBackdrop').hidden) closeAlbumModal();
-    navigateTo(page);
+    const inboxEdition = /^#playlistInbox\/([1-9]\d{0,18})$/.exec(hash)?.[1];
+    navigateTo(page, {inboxEdition});
     if (page === 'radio' && hash === '#radio/heard') focusRadioHeard();
     if (page !== 'library') return;
     const target = decodeLibraryHash(hash);
@@ -7551,7 +7553,8 @@ buildLedgerFilters();
 buildShelfArrows();
 updateLedgerCrumb(activePage);
 // Radio and the Listening Room renderers load in deferred scripts after this one.
-if (window.location.hash === '#radio' || window.location.hash === '#radio/heard') {
+if (window.location.hash === '#radio' || window.location.hash === '#radio/heard'
+    || /^#playlistInbox(?:\/|$)/.test(window.location.hash)) {
   document.addEventListener('DOMContentLoaded', () => applyHash(window.location.hash), {once: true});
 } else if (isListeningRoom() && (lrDiscoverPages.has(window.location.hash.slice(1).split(/[/?]/)[0])
     || /^#library\/(artist|album|genre)\?/.test(window.location.hash))) {

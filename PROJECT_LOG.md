@@ -1,3 +1,9 @@
+## 2026-11-25 — Listening Room Playlist Inbox browse (LB-11)
+
+- Branch `feat/lb-11-web-inbox` starts from GitHub `main` at `fbd758a2` (LB-10, PR #1279).
+- The Discover shelf and edition detail use the authenticated read API and display recorded Navidrome copy linkage for the selected edition and connection. Edition links preserve source track order and repeats.
+- All 28 focused API, edition store, and Listening Room shell tests passed. Chrome fixtures covered the shelf and mixed and zero-owned editions at desktop and phone widths, with keyboard return to the shelf. The post-CI browser acceptance checklist remains open.
+
 ## 2026-11-25 — Schedule ListenBrainz Playlist Inbox import (LB-10)
 
 - Branch `feat/lb-10-schedule-inbox` starts from GitHub `main` at `0f127acb` (LB-09, PR #1278).

@@ -159,6 +159,20 @@ def list_linked_feed_keys(db: sqlite3.Connection, target_key: str) -> tuple[str,
     return tuple(row["feed_key"] for row in rows)
 
 
+def edition_copy_states(db: sqlite3.Connection, target_key: str) -> dict[int, str]:
+    """Read recorded copy linkage for the exact editions on this connection."""
+    rows = db.execute(
+        "SELECT i.edition_id, MAX(c.unlinked = 0) AS linked, MAX(c.feed_key IS NULL) AS pending "
+        "FROM playlist_copy_intents AS i LEFT JOIN playlist_managed_copies AS c ON c.feed_key = i.feed_key "
+        "WHERE i.target_key = ? GROUP BY i.edition_id",
+        (target_key,),
+    )
+    return {
+        row["edition_id"]: "linked" if row["linked"] else "pending" if row["pending"] else "unlinked"
+        for row in rows
+    }
+
+
 def save_managed_copy(db: sqlite3.Connection, copy: ManagedCopy, *, expected: ManagedCopy | None) -> bool:
     """Change a feed's link only if it still matches the state the caller observed."""
     with db:

@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/static/listening-room/shell.css">
 <link rel="stylesheet" href="/static/listening-room/home.css">
 <link rel="stylesheet" href="/static/listening-room/discover.css">
+<link rel="stylesheet" href="/static/listening-room/playlist-inbox.css">
 <link rel="stylesheet" href="/static/listening-room/album.css">
 <link rel="stylesheet" href="/static/listening-room/artist.css">
 <link rel="stylesheet" href="/static/listening-room/library.css">
@@ -263,7 +264,24 @@
     <a href="#artistDeepDive" data-lr-page="artistDeepDive">Artist Deep Dives</a>
     <a href="#classics" data-lr-page="classics">Add to your collection</a>
     <a href="#newReleases" data-lr-page="newReleases">New releases</a>
+    <a href="#playlistInbox" data-lr-page="playlistInbox">Playlist Inbox</a>
   </div>
+
+  <section id="playlistInbox" class="page hidden lr-inbox" aria-labelledby="playlistInboxHeading">
+    <div id="inboxShelf">
+      <h2 id="playlistInboxHeading" tabindex="-1">Playlist Inbox</h2>
+      <ul id="inboxEditions" class="lr-inbox-shelf" role="list" hidden></ul>
+    </div>
+    <div id="inboxDetail" hidden>
+      <a class="lr-inbox-action" href="#playlistInbox"><svg class="lr-icon" aria-hidden="true" focusable="false"><use href="#lr-back"></use></svg>Back to Playlist Inbox</a>
+      <h2 id="inboxDetailHeading" tabindex="-1">Playlist Details</h2>
+      <div id="inboxDetailMeta"></div>
+      <ol id="inboxTracks" class="lr-inbox-tracks" aria-label="Playlist tracks" hidden></ol>
+    </div>
+    <p id="inboxStatus" class="lr-inbox-status" role="status"></p>
+    <a id="inboxSettings" class="lr-inbox-action" href="#settings" hidden>Open Settings</a>
+    <button id="inboxRetry" class="lr-inbox-action" type="button" hidden>Try Again</button>
+  </section>
 
   <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
     <div id="ledgerStats" class="ledger-stats" role="group" aria-label="Acquisition summary" hidden>
@@ -989,6 +1007,7 @@
 <script src="/static/app.js" defer></script>
 <script src="/static/listening-room/home.js" defer></script>
 <script src="/static/listening-room/discover.js" defer></script>
+<script src="/static/listening-room/playlist-inbox.js" defer></script>
 <script src="/static/layout-zine.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>

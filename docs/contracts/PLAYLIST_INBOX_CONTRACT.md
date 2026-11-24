@@ -13,6 +13,16 @@ The response contains `state`, `listenbrainz_configured`, `index_state`, and `it
 
 Each summary includes `edition_id`, `source_kind`, `source_key`, `identifier`, `title`, `creator`, `source_patch`, `generated_at`, `last_modified_at`, `fetched_at`, `stale`, `total_count`, and `owned_count`. Source metadata may be `null`. Dates are ISO 8601 in UTC when present. Counts include repeated occurrences. `owned_count` is `null` when ownership is unknown.
 
+List summaries and edition details also include `navidrome_sync_state`. This reports the recorded managed copy for the exact edition and configured Navidrome server and account.
+
+- `linked` means a managed copy ID is recorded for this edition.
+- `pending` means a creation intent is recorded and awaits a copy ID.
+- `unlinked` means a previously linked copy was marked unlinked.
+- `not_linked` means the store has no intent for this edition and connection. An older edition can have this state after the rolling copy advances.
+- `unconfigured` means the app lacks a valid Navidrome connection configuration.
+
+This field comes from SQLite. It describes linkage rather than current playlist contents or availability. Clients should label `linked` as “Navidrome copy linked.”
+
 `stale` means at least seven days have elapsed since the edition's saved `fetched_at`. That timestamp belongs to the immutable edition. A refresh that sees identical content keeps the timestamp. The age flag reports the age of this snapshot. Provider refresh outcomes are tracked separately from edition age and are outside this contract.
 
 ## GET /api/playlists/inbox/{edition_id}

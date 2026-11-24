@@ -23,7 +23,10 @@ from discovery.playlist_sync import sync_edition
 from discovery.recommendations import music_key
 from discovery.search.index import IndexView, OwnedData
 from intelligence.store import ensure_store, open_writer
-from intelligence.store.playlist_editions import PlaylistSnapshot, publish_edition
+from intelligence.store.playlist_editions import (
+    CopyIntent, ManagedCopy, PlaylistSnapshot, publish_edition, record_copy_intent, save_managed_copy,
+)
+from integrations.navidrome.playlists import PlaylistClient
 from test_acquisition_track import FakeLibrarian as AcquisitionLibrarian, peer
 from test_playlist_sync import CONFIG, Navidrome
 
@@ -46,6 +49,7 @@ class FakeLibrarian:
         self.settings.update(values)
 
     _music_key = staticmethod(music_key)
+    _navidrome_config = staticmethod(lambda: CONFIG)
 
 
 @pytest.fixture
@@ -138,8 +142,12 @@ def test_empty_unconfigured_and_missing_ids(inbox):
 def test_mixed_stale_and_zero_owned_contract(inbox):
     sign_in(inbox.client)
     seed_jobs(inbox.librarian.DISCOVERY_DB)
-    old = publish(inbox.store, make_snapshot(), NOW - SNAPSHOT_MAX_AGE)
-    assert publish(inbox.store, make_snapshot(), expected=old) == old
+    snapshot = replace(make_snapshot(), metadata={"title": "A mix", "generated_at": "2027-01-08T08:00:00+00:00"})
+    old = publish(inbox.store, snapshot, NOW - SNAPSHOT_MAX_AGE)
+    assert publish(inbox.store, snapshot, expected=old) == old
+    with closing(open_writer(inbox.store)) as db:
+        record_copy_intent(db, "daily", CopyIntent(PlaylistClient(CONFIG).target_key, "private-token", old))
+        assert save_managed_copy(db, ManagedCopy("daily", "fixture-private"), expected=None)
     zero_snapshot = replace(make_snapshot("local", "rediscover"), tracks=(
         {"position": 0, "title": "Elsewhere", "artist": "Artist", "album": "Album"},
         {"position": 1, "title": "Album job", "artist": "Artist", "album": "Album"},
@@ -165,6 +173,36 @@ def test_mixed_stale_and_zero_owned_contract(inbox):
     zero_detail = inbox.client.get(f"{URL}/{zero}").json()
     assert zero_detail == EXAMPLES["zero_owned_detail"]
     assert all(row["acquisition_status"] is None for row in zero_detail["tracks"])
+
+
+def test_copy_state_is_bound_to_target_and_exact_edition(inbox, monkeypatch):
+    sign_in(inbox.client)
+    snapshot = make_snapshot()
+    earlier = publish(inbox.store, snapshot)
+    current = publish(inbox.store, replace(snapshot, tracks=()), expected=earlier)
+    target = PlaylistClient(CONFIG).target_key
+    link = ManagedCopy("daily", "copy-id")
+    with closing(open_writer(inbox.store)) as db:
+        record_copy_intent(db, "different-server", CopyIntent("other-target", "other-token", earlier))
+        assert save_managed_copy(db, ManagedCopy("different-server", "other-copy"), expected=None)
+        record_copy_intent(db, "daily", CopyIntent(target, "pending-token", current))
+
+        def state(edition):
+            return inbox.client.get(f"{URL}/{edition}").json()["navidrome_sync_state"]
+
+        assert inbox.client.get(URL).json()["items"][0]["navidrome_sync_state"] == "pending"
+        assert state(current) == "pending"
+        assert state(earlier) == "not_linked"
+        assert save_managed_copy(db, link, expected=None)
+        assert state(current) == "linked"
+        assert save_managed_copy(db, replace(link, unlinked=True), expected=link)
+        assert state(current) == "unlinked"
+
+    def unconfigured():
+        raise ValueError("Navidrome unconfigured")
+
+    monkeypatch.setattr(inbox.librarian, "_navidrome_config", unconfigured)
+    assert state(current) == "unconfigured"
 
 
 def test_historical_and_empty_editions_and_unavailable_index(inbox):
