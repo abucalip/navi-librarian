@@ -32,6 +32,7 @@ from app.api.discovery import router as discovery_router
 from app.api.capabilities import router as capabilities_router
 from app.api.feedback import router as feedback_router
 from app.api.smart_playlists import router as smart_playlists_router
+from app.api.docker_update import router as docker_update_router
 from app.api.diagnostics import router as diagnostics_router
 from app.api.insights import router as insights_router
 from app.api.paths_warm import router as paths_warm_router
@@ -233,6 +234,7 @@ app.include_router(smart_playlists_router)
 app.include_router(taste_playlist_router)
 app.include_router(insights_router)
 app.include_router(diagnostics_router)
+app.include_router(docker_update_router)
 app.include_router(popularity_router)
 app.include_router(taste_refresh_router)
 app.include_router(insight_lens_status_router)
@@ -257,7 +259,7 @@ app.include_router(radio_router)
 
 from app.version import app_version
 
-PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8").replace("__APP_VERSION__", app_version())
+PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8").replace("__APP_VERSION__", escape(app_version()))
 app.include_router(create_pages_router(
     page_html=PAGE,
     cassette_icon_path=_APP_ROOT / "cassette.png",

@@ -85,6 +85,32 @@ docker compose logs --tail=100 discair
 
 If using a source checkout instead of a registry image, follow [DOCKER.md](../DOCKER.md); do not mix source-build and registry-image procedures without checking the Compose configuration.
 
+## Sidebar Docker updates
+
+A release image built with `APP_VERSION` shows its version in the desktop sidebar. Discair reads the public GHCR `latest` image configuration for its platform and offers an update when that image has a newer stable version. Source builds without a release version skip the registry check. The badge provides a release-tag link even on deployments that use manual updates.
+
+Direct installation is optional. It requires a Compose project with the `discair` and `worker` services both using `ghcr.io/abucalip/navi-librarian:latest` and both configured with health checks. The Docker host needs Python with `httpx` and Docker Compose with `up --wait`. The example uses the repository's Compose files. For an existing stack, substitute its actual project directory and Compose files in both commands and keep its `.env`, service configuration, and volumes.
+
+On the host, use a dedicated socket directory writable only by the updater account. The container runs as UID/GID 1000 by default. Give that group traversal and socket access, with the host account as the directory owner. Set the setgid bit so a new socket inherits the correct group. The following example assumes the host account is in GID 1000 and can already run Docker. Keep `DISCAIR_UPDATER_DIR` in the Compose project's environment for later commands.
+
+```sh
+export DISCAIR_UPDATER_DIR=/opt/discair-updater/socket
+install -d -m 2750 -g 1000 "$DISCAIR_UPDATER_DIR"
+python3 -m scripts.docker_updater \
+  --socket "$DISCAIR_UPDATER_DIR/update.sock" \
+  --project-directory "$PWD" \
+  --compose-file compose.yaml --compose-file compose.updater.yaml
+```
+
+Run the host process under a supervisor for normal use, with the same working directory, account and environment. In another terminal on the host, with the same directory and environment, enable the socket mount for the first time.
+
+```sh
+docker compose -f compose.yaml -f compose.updater.yaml config --quiet
+docker compose -f compose.yaml -f compose.updater.yaml up -d --no-deps --no-build discair
+```
+
+The web container receives a read-only socket-directory mount. Docker access stays with the host process. When the signed-in owner confirms an update, the host independently checks the digest, pulls the immutable image, recreates both services with their existing volumes, and waits for health checks. The web UI polls the host for completion through the restart. A successful update also refreshes the local `latest` tag. Set up a backup before updating if a rollback might require restoring data after migrations. On failure, check the host updater log and `docker compose ps`. The log records the previous web image ID before attempting the restart.
+
 ## Post-deployment verification
 
 The user reports the current server installation was tested successfully, including first-run account creation, entering service credentials through Settings, downloads, and imports. Treat these as manually verified baseline workflows; this document update did not independently access the host or repeat the tests.

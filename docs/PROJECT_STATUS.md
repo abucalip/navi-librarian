@@ -6,6 +6,8 @@ Last checked against GitHub `main` at `383a4c01031182474d65b63cf81237b898113b6c`
 
 ## Current state
 
+- **Web Docker updates (2026-11-24)** — Branch `web/docker-update-badge` adds a lower-left version badge with GHCR update detection and optional owner-confirmed installation for the web and worker services. Five focused tests passed and the Unix socket test was skipped because the sandbox denied binding. The JavaScript fixture verified badge display, confirmation, digest submission and reload. Next action is PR review, followed by browser and Docker host verification.
+
 - **macOS radio, sidebar and search (2026-11-24)** — PR #1265 adds artist links during radio playback, fixes album-to-artist navigation for artists outside the library, and adds an icon-only sidebar with artwork scaled to its column. The Mac records confirmed station playback, and search ranking and filtering run off the main actor. The initial focused Swift run passed 160 tests. The artwork follow-up passed 21 focused tests, including a render at the minimum window size. Next action is review, followed by a live playback and typing check in the installed client.
 
 - **Listening Room Library (L10, 2026-11-24)** — The PR branch `web/listening-room-l10` is based on `main` at `430e0538` (L9 merged in #1258). Artists shows the three owned-album shelves. Albums opens at Browse as drawn in the mockup. The focused Library, button-group and Listening Room shell contract tests passed (62 tests, 48 subtests). Next action is review and the browser comparison against the exact PR head after CI.

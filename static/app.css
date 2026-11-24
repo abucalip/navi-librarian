@@ -1289,3 +1289,32 @@ button.inline-link:focus-visible { outline: 2px solid var(--focus); outline-offs
     max-height: calc(3 * var(--title-leading) * 1em); overflow: hidden; overflow-wrap: anywhere;
   }
 }
+
+.version-footer { margin-top: auto; padding: var(--space-3) 0 0; }
+.version-footer :is(.app-version, .lr-app-version) {
+  margin: 0; padding: 0 0 0 6px; color: var(--text-subtle);
+  font: 500 var(--text-xs)/1.4 var(--mono); overflow-wrap: anywhere;
+}
+nav .version-update-badge:not([hidden]) {
+  display: inline-flex; width: auto; max-width: 100%; min-height: 32px; margin-top: 5px;
+  padding: 4px 8px; gap: 5px; color: var(--accent-text); background: var(--accent-dim);
+  border: 1px solid var(--edge); border-radius: 999px; font-size: var(--text-xs);
+}
+.version-footer:has(.version-update-badge:not([hidden])) > p { display: none; }
+.version-badge-current { font-family: var(--mono); }
+nav .version-update-badge[hidden] { display: none; }
+nav .version-update-badge > .icon { display: block; width: 14px; height: 14px; }
+#dockerUpdateDialog {
+  width: min(420px, calc(100% - 32px)); padding: 22px; color: var(--text);
+  background: var(--surface-raised); border: 1px solid var(--edge); border-radius: var(--radius-panel);
+}
+#dockerUpdateDialog::backdrop { background: rgb(0 0 0 / 55%); }
+#dockerUpdateDialog h2 { margin: 0; }
+#dockerUpdateDialog p { margin: 10px 0; }
+.version-update-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.version-update-actions a { margin-inline-end: auto; }
+@media (max-width: 900px) {
+  nav .version-update-badge > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+@media (max-width: 620px) { .version-footer { display: none; } }
+.lr-rail .lr-app-version { color: var(--lr-text-muted, var(--text-muted)); }
