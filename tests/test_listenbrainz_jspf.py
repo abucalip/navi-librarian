@@ -52,6 +52,9 @@ def test_sanitized_daily_jams():
 def test_recording_identifier(identifier, expected):
     playlist = parse_playlist({"playlist": {"track": [{"identifier": identifier}]}})
     assert playlist.tracks[0].recording_mbid == expected
+    assert playlist.tracks[0].conflicting_recording_mbids == (
+        identifier == [RECORDING_URL + FIRST_MBID, RECORDING_URL + THIRD_MBID]
+    )
 
 
 @pytest.mark.parametrize("date", [None, 123, "bad-date", "2025-01-02", "2025-01-02T03:04:05"])

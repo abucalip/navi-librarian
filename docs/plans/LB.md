@@ -1,6 +1,6 @@
 # ListenBrainz discovery and playlists
 
-**Status:** Implementation plan (revised with live probe) · 2026-11-24 · `LB-01` merged (`#1270`)
+**Status:** Implementation plan (revised with live probe) · 2026-11-24 · `LB-01` and `LB-02` merged (`#1270`, `#1271`)
 
 Discair will automatically bring ListenBrainz mixes (`Created for Me` and collaborative-filtering recommendations) and Discair-generated local mixes into Navidrome as private, managed rolling playlists. In Discair, each mix shows its full track list, owned/missing state, and a per-track Download action for unowned tracks; Android and macOS play the owned subset in order through their native queues, while Web manages browsing, downloads, and Navidrome sync (Web has no audio player). The same server-side recording matcher will support owned-first Artist Radio, an LB Radio discovery mix, Fresh Releases (personal + upcoming), ListenBrainz feedback/essentials features, and an optional cover-color browser.
 
@@ -53,7 +53,7 @@ Discair will automatically bring ListenBrainz mixes (`Created for Me` and collab
 
 - `LB-01` (`integrations/listenbrainz/jspf.py`) is merged. Extend it in `LB-04` to also parse JSPF playlist/track extensions (`last_modified_at`, `source_patch`, `creator`, `artist_identifiers`, `release_identifier`, `caa_id`).
 - Extend `discovery/search/index.py::_song_entry` to retain normalized `recording_mbid` (from `musicBrainzId`), and build the pure track matcher over `OwnedData.songs` (worker builds `OwnedData` synchronously like `app/services/similar_precompute.py`).
-- Match `recording_mbid` first (covers ~86.6% of the library directly). For remaining tracks, apply conservative normalized artist-credit + title fallback corroborated by release title/MBID or duration (`duration_ms` vs `duration * 1000` within a tight tolerance). Treat conflicting identities and ambiguous versions (live, remix, remaster, multiple candidates) as `ambiguous`, never guessing.
+- Match `recording_mbid` first (covers ~86.6% of the library directly). LB-03 requires a unique normalized artist credit and full title, corroborated by release title or a duration difference of at most 2 seconds (`duration_ms` vs `duration * 1000`). When both forms of evidence are available, both must agree. Conflicting IDs, conflicting metadata, insufficient corroboration, or competing versions yield `ambiguous`. Release identifiers are parsed in LB-04.
 - Return source identity, zero-based track position, display metadata, match state (`owned`, `missing`, `ambiguous`), owned Navidrome `song_id` when owned, and acquisition state separately.
 - Every unowned row exposes Download. The server resolves the track from its stored edition and position, rechecks ownership on click, and reuses any active acquisition. If `album` is missing, resolve via ListenBrainz `/1/metadata/lookup/` first, then MusicBrainz via `musicbrainz_lane()`; refuse safely with a clear explanation if identity remains ambiguous or no album can be resolved.
 - Track acquisition is safety-critical: keep existing canonical-path, destination, and import checks untouched, and test both safe success and unsafe refusal.
@@ -125,8 +125,8 @@ Each row is one PR. Start from current `main` once the listed dependencies have 
 | Slice | Status | Depends on | PR scope and acceptance |
 | --- | --- | --- | --- |
 | LB-01 · Parse playlist tracks | **Merged (`#1270`)** | — | Added `integrations/listenbrainz/jspf.py` and sanitized fixture `tests/fixtures/listenbrainz_daily_jams.json`. |
-| LB-02 · Match exact recording IDs | Next | LB-01 | Add `recording_mbid` to `discovery/search/index.py::_song_entry` and add pure recording-MBID matching over `OwnedData.songs` (86.6% live `search3` coverage verified). Test ordered owned/missing results and duplicate occurrences. |
-| LB-03 · Match untagged tracks | Ready after LB-02 | LB-02 | Add conservative artist/title fallback with release and duration (`duration_ms` vs `duration * 1000`) corroboration. Fixtures must separate safe matches from ambiguous live, studio, and remastered versions. |
+| LB-02 · Match exact recording IDs | **Merged (`#1271`)** | LB-01 | Added `recording_mbid` to `discovery/search/index.py::_song_entry` and pure recording-MBID matching over `OwnedData.songs`. Tests cover ordered owned/missing results and duplicate occurrences. |
+| LB-03 · Match untagged tracks | Ready | LB-02 | Accept a unique artist/title candidate with agreeing release title or duration evidence. Fixtures separate safe matches from ambiguous live, studio, and remastered versions. |
 | LB-04 · Read Created for Me & CF Recs | Ready | LB-01 | Add paced `httpx` upstream adapter for paginated `Created for Me`, `/1/cf/recommendation/user/{u}/recording`, and JSPF extension parsing (`last_modified_at`, `source_patch`, `creator`, track MBIDs/CAA). Verify pagination, unconfigured account, empty account, and failed detail reads. |
 | LB-05 · Store playlist editions | Ready after LB-04 | LB-04 | Add `intelligence.sqlite3` migration and repository for full source snapshots and managed-copy metadata (no `navidrome_server.py` additions). Verify idempotent retry, change detection, and retention of prior snapshots on partial refresh. |
 | LB-06 · Read the Inbox | Ready after LB-03, LB-05 | LB-03, LB-05 | Add authenticated Inbox list and detail endpoints (read-only store access) with shared fixtures for owned, missing, ambiguous, unconfigured, empty, and stale results, preserving source order and acquisition state. |
@@ -191,6 +191,6 @@ Scope these only after Phase 1 is evaluated in daily use:
 
 ## Execution order
 
-`LB-01` is merged and `D1`–`D4` are approved. Next server slices are `LB-02` (song index + exact MBID matching) and `LB-04` (`Created for Me` + `CF Recs` adapter), which can proceed in parallel; `LB-22` (Fresh Releases) can also begin independently.
+`LB-01` and `LB-02` are merged and `D1`–`D4` are approved. `LB-03` (untagged recordings), `LB-04` (`Created for Me` + `CF Recs` adapter), and `LB-22` (Fresh Releases) can proceed independently.
 
 [ListenBrainz API](https://listenbrainz.readthedocs.io/en/latest/users/api/index.html) · [Playlists](https://listenbrainz.readthedocs.io/en/latest/users/api/playlist.html) · [Fresh Releases and cover color](https://listenbrainz.readthedocs.io/en/latest/users/api/misc.html) · [LB Radio prompts](https://troi.readthedocs.io/en/latest/lb_radio.html)

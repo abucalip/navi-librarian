@@ -22,6 +22,7 @@ class PlaylistTrack:
     artist: str | None
     album: str | None
     duration_ms: int | None
+    conflicting_recording_mbids: bool = False
 
 
 @dataclass(frozen=True)
@@ -38,7 +39,7 @@ def _text(value: object) -> str | None:
     return value if isinstance(value, str) and value.strip() else None
 
 
-def _recording_mbid(value: object) -> str | None:
+def _recording_mbids(value: object) -> set[str]:
     identifiers = value if isinstance(value, list) else [value]
     mbids = set()
     for identifier in identifiers:
@@ -46,7 +47,7 @@ def _recording_mbid(value: object) -> str | None:
             match = _RECORDING_URL.fullmatch(identifier)
             if match:
                 mbids.add(match[1].lower())
-    return mbids.pop() if len(mbids) == 1 else None
+    return mbids
 
 
 def _generated_at(value: object) -> datetime | None:
@@ -79,13 +80,15 @@ def parse_playlist(payload: object) -> ParsedPlaylist:
         if not isinstance(track, dict):
             raise ValueError(f"JSPF track at position {position} must be an object")
         duration = track.get("duration")
+        mbids = _recording_mbids(track.get("identifier"))
         tracks.append(PlaylistTrack(
             position=position,
-            recording_mbid=_recording_mbid(track.get("identifier")),
+            recording_mbid=next(iter(mbids)) if len(mbids) == 1 else None,
             title=_text(track.get("title")),
             artist=_text(track.get("creator")),
             album=_text(track.get("album")),
             duration_ms=duration if type(duration) is int and duration >= 0 else None,
+            conflicting_recording_mbids=len(mbids) > 1,
         ))
 
     return ParsedPlaylist(
