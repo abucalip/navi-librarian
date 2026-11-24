@@ -318,6 +318,39 @@ _V6 = (
     """,
 )
 
+_V7 = (
+    """
+    CREATE TABLE playlist_editions (
+        id INTEGER PRIMARY KEY,
+        source_kind TEXT NOT NULL CHECK (source_kind IN ('hosted', 'cf', 'local')),
+        source_key TEXT NOT NULL CHECK (length(source_key) > 0),
+        edition_key TEXT NOT NULL CHECK (length(edition_key) > 0),
+        content_hash TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        fetched_at REAL NOT NULL,
+        UNIQUE (source_kind, source_key, id)
+    )
+    """,
+    """
+    CREATE TABLE playlist_current_editions (
+        source_kind TEXT NOT NULL,
+        source_key TEXT NOT NULL,
+        edition_id INTEGER NOT NULL,
+        PRIMARY KEY (source_kind, source_key),
+        FOREIGN KEY (source_kind, source_key, edition_id)
+            REFERENCES playlist_editions (source_kind, source_key, id)
+    )
+    """,
+    """
+    CREATE TABLE playlist_managed_copies (
+        feed_key TEXT PRIMARY KEY NOT NULL CHECK (length(feed_key) > 0),
+        playlist_id TEXT UNIQUE CHECK (length(playlist_id) > 0),
+        unlinked INTEGER NOT NULL CHECK (unlinked IN (0, 1)),
+        CHECK (unlinked = 1 OR playlist_id IS NOT NULL)
+    )
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
@@ -325,6 +358,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(4, "context facts and the event entity type", _V4, rebuilds_tables=True),
     Migration(5, "release group types", _V5),
     Migration(6, "manual update requests", _V6),
+    Migration(7, "playlist editions and managed copies", _V7),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 

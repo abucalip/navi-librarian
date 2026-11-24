@@ -1,10 +1,12 @@
 # Project status
 
-Last checked against GitHub `main` at `1bdd7263` (LB-02, PR #1271 merged) on 2026-11-24.
+Last checked against GitHub `main` at `23cbb776` (LB-04, PR #1273 merged) on 2026-11-24.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **ListenBrainz playlist edition storage (LB-05, 2026-11-24)** — Branch `feat/lb-05-playlist-editions` adds schema v7, atomic publication of complete snapshots, and recurring Navidrome feed links. The 44 focused tests and 85 contract subtests passed. Next action is PR review before LB-06 and LB-07.
 
 - **ListenBrainz track matching (LB-03, 2026-11-24)** — Branch `feat/lb-03-untagged-track-matching` adds corroborated artist/title fallback and an ambiguous state. All 46 focused matcher and JSPF parser tests passed. The read-only Navidrome probe could not connect. Next action is PR review.
 
