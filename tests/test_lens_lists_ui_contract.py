@@ -45,14 +45,17 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn('aria-pressed="false">Obsessions</button>', self.html)
         self.assertIn('aria-pressed="false">Current Tastes</button>', self.html)
 
-    def test_one_lens_button_per_stored_lens_with_pressed_state(self):
+    def test_base_lens_buttons_have_pressed_state(self):
         for lens in ("repeated_tracks", "deep_cuts", "obsessions", "current_tastes"):
             self.assertIn(f'data-lens="{lens}"', self.html)
         self.assertIn('role="group" aria-label="Lens"', self.html)
         self.assertIn('data-lens="repeated_tracks" aria-pressed="true"', self.html)
-        # The server lens names must match the list the page offers.
-        self.assertIn("LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)", (
-            ROOT / "discovery" / "lens_lists.py").read_text(encoding="utf-8"))
+
+    def test_listening_room_probes_the_genre_spread_lens(self):
+        discover = (ROOT / "static" / "listening-room" / "discover.js").read_text(encoding="utf-8")
+        self.assertIn("requestJSON('/api/discovery/genre_spread?count=1')", self.js)
+        self.assertIn("window.listeningRoomDiscover?.showGenreSpread()", self.js)
+        self.assertIn("tab.hidden = lens === 'genre_spread';", discover)
 
     def test_daily_lists_is_on_the_phone_bar_and_new_releases_moved_to_more(self):
         # Daily lists is a daily-use list, so it takes a bar slot; New releases moves to More.

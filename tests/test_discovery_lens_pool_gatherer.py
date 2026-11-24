@@ -8,8 +8,8 @@ from unittest import mock
 
 from discovery import lens_pool_gatherer as gatherer
 from discovery.batch_metadata import LISTENBRAINZ_ARTIST_URL
-from discovery.lens_lists import LENS_LIST_SIZE, build_lens_lists
-from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
+from discovery.lens_lists import LENS_LIST_ORDER, LENS_LIST_SIZE, LENS_SUPPLY_ORDER, build_lens_lists
+from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, GENRE_SPREAD, OBSESSIONS, REPEATED_TRACKS
 from discovery.artist_links import LISTENBRAINZ_RADIO_URL, MUSICBRAINZ_ARTIST_URL
 from discovery.artist_profiles import MUSICBRAINZ_ARTIST_SEARCH_URL
 from discovery.artist_tag_fallback import DISCOGS_SEARCH_URL, MUSICBRAINZ_GENRE_URL
@@ -169,7 +169,7 @@ class GatherTests(_Harness):
         out = self.gather()
         self.assertEqual(out["status"], "gathered")
         self.assertEqual([c["lens"] for c in self.supply_calls],
-                         [lens.name for lens in gatherer.LENS_LIST_ORDER])
+                         [lens.name for lens in LENS_SUPPLY_ORDER])
         self.assertEqual({c["day"] for c in self.supply_calls}, {DAY})
         self.assertTrue(all(c["queries"] == ["tag-a", "tag-b"] for c in self.supply_calls))
         self.assertTrue(all(c["headers"] == HEADERS for c in self.supply_calls))
@@ -250,8 +250,26 @@ class GatherTests(_Harness):
             out["pools"], day=out["day"], popularity=out["popularity"],
             artist_tags=out["artist_tags"], library_by_title={}, fallback_tags=out["fallback_tags"],
             seeds=out["seeds"], count=LENS_LIST_SIZE)
-        self.assertEqual(set(lists), {lens.name for lens in gatherer.LENS_LIST_ORDER})
+        self.assertEqual(set(lists), {lens.name for lens in LENS_LIST_ORDER})
         self.assertTrue(all(payload["day"] == DAY for payload in lists.values()))
+
+    def test_genre_spread_reuses_candidates_metadata_and_listening_seeds(self):
+        jazz = {**_album(1, "a1", "g1"), "seed_tags": ["dream pop", "jazz"]}
+        rock = {**_album(2, "a2", "g2"), "seed_tags": ["rock"]}
+        self.pools = {DEEP_CUTS.name: [jazz], CURRENT_TASTES.name: [jazz, rock]}
+        self.net.album = {"g1": 900}
+        self.net.artist_genres = {"history": ["jazz"], "a1": ["jazz"], "a2": ["rock"]}
+        out = self.gather([_listen(1_700_000_000 + i, "history") for i in range(8)])
+
+        shared = out["pools"][GENRE_SPREAD.name]
+        self.assertEqual([(album["album"], album["seed_tag"], album["discovery_category"])
+                          for album in shared],
+                         [("Album 1", "jazz", "adjacent"), ("Album 2", None, "adventurous")])
+        self.assertEqual(out["pools"][DEEP_CUTS.name], [jazz])
+        self.assertEqual([call["lens"] for call in self.supply_calls],
+                         [lens.name for lens in LENS_SUPPLY_ORDER])
+        self.assertEqual(self.net.posts_to(LISTENBRAINZ_POPULARITY_URL),
+                         [{"release_group_mbids": ["g1"]}, {"release_group_mbids": ["g2"]}])
 
 
 if __name__ == "__main__":

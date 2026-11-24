@@ -32,6 +32,7 @@ class LensStorageNamesTests(unittest.TestCase):
     def test_storage_name_round_trips_only_known_lenses(self):
         self.assertEqual(lens_storage.lens_storage_name("deep_cuts"), "lens:deep_cuts")
         self.assertEqual(lens_storage.lens_name_from_storage("lens:obsessions"), "obsessions")
+        self.assertEqual(lens_storage.lens_name_from_storage("lens:genre_spread"), "genre_spread")
         self.assertIsNone(lens_storage.lens_name_from_storage("lens:unknown"))
         self.assertIsNone(lens_storage.lens_name_from_storage("personal"))
 
@@ -344,7 +345,7 @@ class LensReadGatingTests(unittest.TestCase):
     def test_read_while_off_touches_neither_store_nor_library(self):
         from app.api import discovery
 
-        for lens in ("deep_cuts", "repeated_tracks", "obsessions"):
+        for lens in ("deep_cuts", "repeated_tracks", "obsessions", "genre_spread"):
             with self.subTest(lens=lens):
                 body = json.loads(lens_service.list_response(_librarian(), lens, 5))
                 self.assertTrue(body["disabled"])
@@ -378,6 +379,59 @@ class LensRouteDispatchTests(unittest.TestCase):
         served.assert_called_once_with(librarian, "deep_cuts", 5)
         self.assertEqual(body, {"list": "deep_cuts"})
         librarian.discovery_get_list.assert_not_called()
+
+    def test_genre_spread_is_due_when_missing_and_serves_after_daily_refresh(self):
+        from unittest import mock
+
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from app.api import discovery
+
+        today = lens_storage.lens_day(datetime.now())
+        store = {
+            lens_storage.lens_storage_name(name): {"payload": {"day": today}, "generated_at": 1.0}
+            for name in lens_service.lens_names() if name != "genre_spread"
+        }
+
+        def write_list(name, payload):
+            store[name] = {"payload": payload, "generated_at": 2.0}
+
+        librarian = _librarian(
+            _discovery_settings_read=dict,
+            _discovery_read_list=store.get,
+            _discovery_write_list=write_list,
+            _discovery_library_snapshot=lambda: {"albums": []},
+            _discovery_feedback_rows=list,
+            _music_key=lambda value: value.casefold(),
+        )
+        app = FastAPI()
+        app.include_router(discovery.router)
+        app.dependency_overrides[discovery.get_librarian] = lambda: librarian
+        client = TestClient(app)
+
+        path = "/api/discovery/genre_spread"
+        empty = client.get(path)
+        self.assertEqual(empty.status_code, 200)
+        self.assertEqual(empty.json()["items"], [])
+        self.assertTrue(lens_service._due(librarian))
+
+        album = {**_album(1, "A", "X"), "lens": "genre_spread", "seed_tag": "jazz"}
+        with mock.patch.object(lens_service, "build", return_value={
+            "status": "built", "day": today, "lists": {"genre_spread": {
+                **_payload([album], today), "lens": "genre_spread", "label": "Genre spread",
+            }},
+        }):
+            self.assertTrue(lens_service.refresh(librarian)["lists"]["genre_spread"]["replaced"])
+        self.assertFalse(lens_service._due(librarian))
+
+        response = client.get(path, params={"count": 1})
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual((body["list"], body["label"], body["count"]), ("genre_spread", "Genre spread", 1))
+        item, = body["items"]
+        self.assertEqual((item["album"], item["rank"], item["why"]["sentence"]),
+                         ("X", 1, "Through the jazz you play"))
 
 
 class ManualLensRefreshTests(unittest.TestCase):

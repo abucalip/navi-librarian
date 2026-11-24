@@ -4,10 +4,10 @@ import json
 import unittest
 
 from discovery.lens_lists import (
-    LENS_LIST_ORDER, LENS_LIST_SIZE, build_lens_lists, history_artist_mbids, lens_seed_queries,
+    LENS_LIST_ORDER, LENS_LIST_SIZE, LENS_SUPPLY_ORDER, build_lens_lists, history_artist_mbids, lens_seed_queries,
     merge_artist_tags,
 )
-from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS, Lens
+from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, GENRE_SPREAD, OBSESSIONS, REPEATED_TRACKS, Lens
 from discovery.tag_queries import tag_from_query
 
 DAY = "2026-01-15"
@@ -71,8 +71,9 @@ class RecordedFixtureTests(unittest.TestCase):
         pools, popularity, tags, library = self.fixture()
         lists = build(pools, popularity=popularity, tags=tags, library=library,
                       known_artist_mbids={"mbid-o0"})
-        self.assertEqual(list(lists), ["repeated_tracks", "deep_cuts", "obsessions", "current_tastes"])
-        self.assertEqual([lists[n]["label"] for n in lists], ["Repeated tracks", "Deep cuts", "Obsessions", "Current tastes"])
+        self.assertEqual(list(lists), ["repeated_tracks", "deep_cuts", "obsessions", "current_tastes", "genre_spread"])
+        self.assertEqual([payload["label"] for payload in lists.values()],
+                         ["Repeated tracks", "Deep cuts", "Obsessions", "Current tastes", "Genre spread"])
         # Seed cap of 2: seed_r0 holds r0, r3 (owned), r6; seed_r1 holds r1 (too few
         # listeners), r4, r7; seed_r2 holds r2, r5.
         self.assertEqual(picked(lists, "repeated_tracks"),
@@ -161,7 +162,30 @@ class PartitionTests(unittest.TestCase):
         self.assertEqual(picked(reordered, "repeated_tracks"), [])
 
     def test_default_order_is_scarcest_supply_first(self):
-        self.assertEqual(LENS_LIST_ORDER, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES))
+        self.assertEqual(LENS_LIST_ORDER, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES, GENRE_SPREAD))
+
+    def test_genre_spread_covers_distinct_families_after_other_lenses(self):
+        shared, rock, more_rock, jazz, owned, blocked = [lane(n) for n in range(6)]
+        jazz["seed_tag"] = "jazz"
+        tags = {
+            shared["artist_mbid"]: ["folk", "folk music"],
+            rock["artist_mbid"]: ["rock"],
+            more_rock["artist_mbid"]: ["rock"],
+            jazz["artist_mbid"]: ["jazz"],
+            owned["artist_mbid"]: ["classical"],
+            blocked["artist_mbid"]: ["metal"],
+        }
+        lists = build(
+            {"deep_cuts": [shared], "genre_spread": [shared, owned, blocked, rock, more_rock, jazz]},
+            count=2, tags=tags, library={"album4": [{"artist": "Artist 4"}]},
+            blocked_genres=frozenset({"metal"}),
+        )
+        self.assertEqual(picked(lists, "deep_cuts"), ["Album 0"])
+        self.assertEqual(picked(lists, "genre_spread"), ["Album 1", "Album 3"])
+        genre_spread = lists["genre_spread"]
+        self.assertEqual(genre_spread["seed_tags"], ["jazz"])
+        self.assertEqual(genre_spread["albums"][1]["lens"], "genre_spread")
+        self.assertEqual(genre_spread["albums"][1]["seed_tag"], "jazz")
 
 
 class KnownArtistTests(unittest.TestCase):
@@ -261,7 +285,7 @@ class InvalidArgumentTests(unittest.TestCase):
         for count in (0, 21, True, 2.0):
             with self.assertRaises(ValueError):
                 self.call(count=count)
-        self.assertEqual(len(self.call(count=20)), 4)
+        self.assertEqual(len(self.call(count=20)), 5)
 
     def test_day(self):
         for day in ("2026-13-01", "20260115", "2026-1-15", "", 20260115, None):
@@ -276,7 +300,7 @@ class InvalidArgumentTests(unittest.TestCase):
 
     def test_pools(self):
         with self.assertRaises(ValueError):
-            self.call(pools={"genre_spread": []})
+            self.call(pools={"unknown": []})
         with self.assertRaises(ValueError):
             self.call(pools={"obsessions": []}, lenses=(DEEP_CUTS,))
         with self.assertRaises(ValueError):
@@ -298,7 +322,7 @@ class SeedTests(unittest.TestCase):
             + [listen("burst", 400 + i % 10) for i in range(25)]
         )
         seeds = lens_seed_queries(listens, self.TAGS)
-        self.assertEqual(list(seeds), [lens.name for lens in LENS_LIST_ORDER])
+        self.assertEqual(list(seeds), [lens.name for lens in LENS_SUPPLY_ORDER])
         tags = {name: [tag_from_query(q) for q, _f, _s in queries] for name, queries in seeds.items()}
         self.assertEqual(tags["deep_cuts"], ["tag dense"])
         self.assertIn("tag burst", tags["obsessions"])
