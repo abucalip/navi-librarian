@@ -37,7 +37,10 @@ struct LiveSongLine: Equatable {
         guard let now else { return .waiting }
         switch now.state {
         case .ok:
-            if let title = now.title { return LiveSongLine(title: title, artist: now.artist, sentence: nil) }
+            if let title = now.title {
+                let artist = now.artist?.trimmingCharacters(in: .whitespacesAndNewlines)
+                return LiveSongLine(title: title, artist: artist?.isEmpty == false ? artist : nil, sentence: nil)
+            }
             if let raw = now.rawTitle { return LiveSongLine(title: raw, artist: nil, sentence: nil) }
             return LiveSongLine(title: nil, artist: nil, sentence: "This station sends no song titles.")
         case .unparsed:

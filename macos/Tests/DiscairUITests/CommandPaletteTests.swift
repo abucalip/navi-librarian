@@ -74,14 +74,27 @@ struct CommandPaletteTests {
         #expect(titles("dummy", albums: [a, b]).filter { $0.hasPrefix("Open Dummy") }.count == 1)
     }
 
-    @Test func performGoesToScreenAndCloses() {
+    @Test func performGoesToScreenAndCloses() async throws {
         let state = AppState(themeID: .cupertino, screen: .home)
         state.palette.open()
         state.palette.query = "settings"
-        let first = try! #require(state.paletteResults().first)
+        let request = state.paletteSearchRequest(query: state.palette.query, songs: [], catalog: CatalogHits())
+        let results = await request.results()
+        let first = try #require(results.first)
         state.perform(first)
         #expect(state.screen == .settings)
         #expect(!state.palette.isOpen)
+    }
+
+    @Test func backgroundSearchKeepsOwnedAndCatalogRowsAndHidesDismissedAlbums() async {
+        let owned = album(1, "Portishead Live", "Portishead")
+        let dismissed = album(2, "Portishead 2008", "Portishead")
+        let library = SearchLibrarySnapshot(albums: [owned, dismissed], dismissed: [AcquisitionModel.key(dismissed)])
+        let request = PaletteSearchRequest(query: "portis", playing: false, library: library, catalog: found)
+        let rows = await request.results()
+        #expect(rows.first?.action == .openAlbum(owned))
+        #expect(!rows.contains { $0.action == .openAlbum(dismissed) })
+        #expect(rows.contains { $0.name == "Third" && $0.notInLibrary })
     }
 
     @Test func highlightWrapsAndResetsOnTyping() {

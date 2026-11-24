@@ -8,6 +8,7 @@ struct CupertinoLibrary: View {
     var query = ""
     /// Inside the Library page: no heading or source switch of its own.
     var embedded = false
+    var filtered: [SongRow]?
     @State private var sortKey: SongColumn = .title
     @State private var ascending = true
     @State private var selected = 1
@@ -18,7 +19,11 @@ struct CupertinoLibrary: View {
     @State private var page = 0
     static let pageSize = 100
 
-    private var rows: [SongRow] { SongTable.sorted(LibrarySearch.songs(state.library.songs, query: query).filter { state.tasteFilter?.matches($0) ?? true }, by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID) }
+    private var rows: [SongRow] {
+        let source = filtered ?? LibrarySearch.songs(state.library.songs, query: query)
+        return SongTable.sorted(source.filter { state.tasteFilter?.matches($0) ?? true },
+                                by: sortKey, ascending: ascending, onlyMissingMBID: onlyMissingMBID)
+    }
 
     var body: some View {
         ScrollView {

@@ -69,6 +69,19 @@ private func make(favourites: [RadioStation] = []) throws -> (PlayerModel, FakeL
 
 @MainActor
 struct LiveSessionTests {
+    @Test func onlyConfirmedAudioRecordsAStationPlay() throws {
+        let (player, output, _, _) = try make()
+        var heard: [String] = []
+        player.onStationPlayed = { heard.append($0) }
+        player.playStation(station("relay"))
+        #expect(heard.isEmpty)
+        player.stopStation()
+        player.playStation(station("direct", proxied: false, url: "https://example.invalid/live"))
+        output.report(.playing)
+        output.report(.playing)
+        #expect(heard == ["direct"])
+    }
+
     @Test func startingAStationOpensItsResolvedAddressAndShowsConnecting() throws {
         let (p, live, _, defaults) = try make()
         p.playStation(station("7"))

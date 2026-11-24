@@ -58,6 +58,7 @@ struct CupertinoCompactHero<Picture: View>: View {
     let play: (() -> Void)?
     @ViewBuilder let picture: Picture
     let trailingInset: CGFloat
+    var leadingInset: CGFloat = CupertinoArtistLayout.heroLeadingInset
 
     var body: some View {
         HStack(spacing: 16) {
@@ -70,7 +71,7 @@ struct CupertinoCompactHero<Picture: View>: View {
             }
         }
         .foregroundStyle(CU.onMedia)
-        .padding(.leading, 236 + CU.Space.xl).padding(.trailing, trailingInset).padding(.top, 54)
+        .padding(.leading, leadingInset).padding(.trailing, trailingInset).padding(.top, 54)
     }
 }
 
@@ -132,13 +133,14 @@ struct CupertinoArtistBanner: View {
 
             if p > 0.5 {
                 CupertinoCompactHero(backTitle: AppState.title(of: state.artistBack), title: state.selectedArtist.name,
-                                     back: { state.screen = state.artistBack },
+                                     back: { state.closeArtist() },
                                      play: state.selectedArtistIsUnowned ? nil : { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) },
                                      picture: { ArtistPhoto(name: state.selectedArtist.name, size: 36) },
-                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
+                                     trailingInset: state.queueOpen ? CupertinoQueueInspector.width + 40 : 40,
+                                     leadingInset: CupertinoArtistLayout.heroLeadingInset - CU.Shell.contentReduction(for: state))
             }
             VStack(alignment: .leading, spacing: 0) {
-                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.screen = state.artistBack }.padding(.bottom, 14)
+                BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.closeArtist() }.padding(.bottom, 14)
                 HStack(alignment: .center, spacing: 28) {
                     ArtistPhoto(name: state.selectedArtist.name, size: 210)
                         .overlay(Circle().stroke(CU.onMedia.opacity(0.85), lineWidth: 4))
@@ -189,7 +191,8 @@ struct CupertinoArtistBanner: View {
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, CupertinoArtistLayout.heroLeadingInset).padding(.top, CupertinoArtistLayout.heroTopInset)
+            .padding(.leading, CupertinoArtistLayout.heroLeadingInset - CU.Shell.contentReduction(for: state))
+            .padding(.top, CupertinoArtistLayout.heroTopInset)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
             .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)
         }

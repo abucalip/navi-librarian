@@ -1,3 +1,4 @@
+import DiscairLibrarian
 import SwiftUI
 
 /// Cupertino (macOS, Day or Night). Spec: `docs/design/macos-m4/mockups.html`, `R.cupertino`.
@@ -141,6 +142,12 @@ enum CU {
     /// would move every screen and the shared chrome.
     enum Shell {
         static let sidebarWidth: CGFloat = 216
+        static let compactSidebarWidth: CGFloat = 88
+        static func sidebarReduction(compact: Bool) -> CGFloat { compact ? sidebarWidth - compactSidebarWidth : 0 }
+        /// Reserve the full artwork column while its square is on screen, so it cannot cover page controls.
+        @MainActor static func contentReduction(for state: AppState) -> CGFloat {
+            CupertinoArtworkSlot.showsArtwork(in: state) ? 0 : sidebarReduction(compact: state.sidebarCompact)
+        }
         /// Gap between the window edge and the floating sidebar; the artwork slot uses the same column.
         static let inset: CGFloat = 10
         static let contentLeading: CGFloat = 236
@@ -229,12 +236,15 @@ struct CupertinoWindow: View {
 
     private var library: some View {
         let panelWidth = Self.trailingPanelWidth(for: state)
+        let sidebarReduction = CU.Shell.sidebarReduction(compact: state.sidebarCompact)
+        let artworkClearance = CupertinoArtworkSlot.showsArtwork(in: state)
+            ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0
         return VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
                 // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
                 content
                     .padding(.trailing, state.screen != .artist && state.screen != .album ? panelWidth : 0)
-                    .padding(.leading, CU.Shell.contentLeading)
+                    .padding(.leading, CU.Shell.contentLeading - CU.Shell.contentReduction(for: state))
                     .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.compactHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(CU.content)
@@ -247,9 +257,9 @@ struct CupertinoWindow: View {
                 if state.screen == .album { CupertinoAlbumBanner(state: state, offset: heroOffset) }   // under the sidebar and toolbar
 
                 CupertinoSidebar(state: state)
-                    .padding(.bottom, state.player.current != nil ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0)
+                    .padding(.bottom, artworkClearance)
                 CupertinoToolbar(state: state)
-                    .padding(.leading, CU.Shell.toolbarLeading).padding(.trailing, panelWidth > 0 ? panelWidth + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
+                    .padding(.leading, CU.Shell.toolbarLeading - sidebarReduction).padding(.trailing, panelWidth > 0 ? panelWidth + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
                 trailingInspector
             }
             .overlay(alignment: .bottom) { CupertinoNotice(state: state).padding(.bottom, CU.Space.l) }
@@ -314,6 +324,8 @@ struct CupertinoWindow: View {
 /// Owned music first (Home, Library), then the Discover group, then the tools. Playlists stay below.
 struct CupertinoSidebar: View {
     let state: AppState
+    private var compact: Bool { state.sidebarCompact }
+    private var toggleTitle: String { compact ? "Expand sidebar" : "Compact sidebar" }
     private var selected: String {
         switch state.screen {
         case .home: "Home"
@@ -347,7 +359,12 @@ struct CupertinoSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            TrafficLights().padding(.leading, CU.Space.s).padding(.bottom, CU.Space.m)
+            TrafficLights()
+                .padding(.leading, compact ? 0 : CU.Space.s)
+                .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
+                .overlay(alignment: .trailing) { if !compact { compactToggle } }
+                .padding(.bottom, compact ? CU.Space.xs : CU.Space.m)
+            if compact { compactToggle.frame(maxWidth: .infinity) }
             ScrollView {
                 VStack(alignment: .leading, spacing: CU.Space.xs) {
                     row("house", "Home", .home)
@@ -356,16 +373,20 @@ struct CupertinoSidebar: View {
                     Button { state.discoverOpen.toggle() } label: {
                         HStack(spacing: CU.Space.s) {
                             Image(systemName: state.discoverOpen ? "chevron.down" : "chevron.right").font(CU.Icon.small(.bold)).frame(width: 18)
-                            Text("Discover").font(Self.groupHeaderFont)
-                            Spacer()
+                            if !compact {
+                                Text("Discover").font(Self.groupHeaderFont)
+                                Spacer()
+                            }
                         }
                         .foregroundStyle(CU.textSecondary).padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
+                        .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .padding(.top, Self.groupGap)
                     .accessibilityLabel("Discover").accessibilityValue(state.discoverOpen ? "expanded" : "collapsed")
                     .accessibilityHint("Shows or hides the discovery pages")
+                    .help("Discover")
                     if state.discoverOpen {
                         ForEach(discover, id: \.1) { icon, label, screen in row(icon, label, screen, indent: Self.subItemIndent) }
                     }
@@ -373,29 +394,47 @@ struct CupertinoSidebar: View {
                         .padding(.top, Self.groupGap)
                     row("arrow.down.circle", "Downloads", .downloads)
                     row("gearshape", "Settings", .settings)
-                    Text("Playlists").font(Self.groupHeaderFont).foregroundStyle(CU.textSecondary)
-                        .padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
-                        .padding(.top, Self.groupGap)
+                    if !compact {
+                        Text("Playlists").font(Self.groupHeaderFont).foregroundStyle(CU.textSecondary)
+                            .padding(.horizontal, CU.Space.s).padding(.vertical, CU.Space.xs)
+                            .padding(.top, Self.groupGap)
+                    }
                     ForEach(state.smart.lists) { list in
                         Button { state.smart.selectedID = list.id; state.screen = .smartPlaylists } label: {
                             HStack(spacing: CU.Space.s) {
                                 Image(systemName: "music.note.list").foregroundStyle(CU.textSecondary).frame(width: 18)
-                                Text(list.name).lineLimit(1)
+                                if !compact { Text(list.name).lineLimit(1) }
                             }
                             .font(CU.Font.body.weighted(.regular)).foregroundStyle(CU.text)
                             .padding(.horizontal, CU.Space.s).frame(height: 32, alignment: .leading)
+                            .frame(maxWidth: compact ? .infinity : nil)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(list.name)
+                        .help(list.name)
                     }
                 }
             }
             .scrollIndicators(.hidden)
         }
         .padding(CU.Shell.inset).padding(.top, CU.Space.s)
-        .frame(width: CU.Shell.sidebarWidth)
+        .frame(width: compact ? CU.Shell.compactSidebarWidth : CU.Shell.sidebarWidth)
         .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
         .padding(CU.Shell.inset)
+    }
+
+    private var compactToggle: some View {
+        Button { state.sidebarCompact.toggle() } label: {
+            Image(systemName: compact ? "chevron.right" : "chevron.left")
+                .font(CU.Icon.small(.semibold))
+                .foregroundStyle(CU.textSecondary)
+                .frame(width: 28, height: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(toggleTitle)
+        .help(toggleTitle)
     }
 
     private func row(_ icon: String, _ label: String, _ screen: Screen, indent: CGFloat = 0) -> some View {
@@ -405,20 +444,25 @@ struct CupertinoSidebar: View {
         return Button { state.screen = screen } label: {
             HStack(spacing: CU.Space.s) {
                 Image(systemName: icon).foregroundStyle(on ? CU.accent : CU.textSecondary).frame(width: 18)
-                Text(label).fontWeight(on ? .semibold : .regular)
-                Spacer()
-                if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
-                    Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(CU.Font.eyebrow.font).foregroundStyle(CU.onAccent)
-                        .padding(.horizontal, CU.Space.s).background(CU.accent, in: Capsule())
+                if !compact {
+                    Text(label).fontWeight(on ? .semibold : .regular)
+                    Spacer()
+                    if label == "Downloads", !state.library.isLive || state.acquisition.activeCount > 0 {
+                        Text(state.library.isLive ? String(state.acquisition.activeCount) : "2").font(CU.Font.eyebrow.font).foregroundStyle(CU.onAccent)
+                            .padding(.horizontal, CU.Space.s).background(CU.accent, in: Capsule())
+                    }
                 }
             }
             .font(CU.Font.body.weighted(.regular))
             .foregroundStyle(on ? CU.accentStrong : CU.text)
-            .padding(.leading, CU.Space.s + indent).padding(.trailing, CU.Space.s).frame(height: 32)
+            .padding(.leading, CU.Space.s + (compact ? 0 : indent)).padding(.trailing, CU.Space.s).frame(height: 32)
+            .frame(maxWidth: .infinity)
             .background(on ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .help(label)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
@@ -488,9 +532,17 @@ struct CupertinoNotice: View {
 struct CupertinoArtworkSlot: View {
     let state: AppState
     static let side: CGFloat = CU.Shell.sidebarWidth
+    private static func liveStation(in state: AppState) -> RadioStation? {
+        guard let live = state.player.live else { return nil }
+        return state.stations.stations.first { $0.id == live.stationID }
+    }
+
+    static func showsArtwork(in state: AppState) -> Bool {
+        state.player.current != nil || liveStation(in: state) != nil
+    }
 
     var body: some View {
-        if let live = state.player.live, let station = state.stations.stations.first(where: { $0.id == live.stationID }) {
+        if let station = Self.liveStation(in: state) {
             // A station is on air: its logo takes the square.
             StationLogo(station: station, size: Self.side, radiusFraction: CU.sidebarRadius / Self.side)
                 .shadow(color: CU.shadowInk.opacity(0.28), radius: 10, y: 4)

@@ -35,6 +35,10 @@ public struct AlbumItem: Identifiable, Equatable, Sendable {
 }
 
 public struct ArtistItem: Identifiable, Equatable, Sendable {
+    static func catalogArtist(named name: String) -> ArtistItem {
+        ArtistItem(id: 100_000 + abs(name.lowercased().hashValue % 800_000), name: name, albumCount: 0)
+    }
+
     public let id: Int
     /// Navidrome artist id (nil for sample data).
     public var remoteID: String? = nil

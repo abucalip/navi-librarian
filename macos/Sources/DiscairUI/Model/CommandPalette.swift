@@ -5,9 +5,9 @@ import Observation
 
 /// One line in the ⌘K palette: what it is called, a small line under it, and what it does. Albums, artists and songs carry
 /// the item so the row can show its artwork; an album or a song also carries a second, quieter action (a play icon).
-struct PaletteCommand: Identifiable {
-    enum Kind: Int { case artist, album, song, screen, playback }
-    enum Action: Equatable {
+struct PaletteCommand: Identifiable, Sendable {
+    enum Kind: Int, Sendable { case artist, album, song, screen, playback }
+    enum Action: Equatable, Sendable {
         case go(Screen)
         case playPause, next, previous, toggleShuffle, cycleRepeat
         case openAlbum(AlbumItem), play(AlbumItem), get(AlbumItem)
@@ -77,6 +77,7 @@ enum PaletteCatalog {
         var seen = Set<String>()
         var list: [PaletteCommand] = []
         for a in albums {
+            if Task.isCancelled { return [] }
             guard seen.insert("\(a.artist.lowercased())|\(a.title.lowercased())").inserted else { continue }
             list.append(PaletteCommand(id: "open-album-\(a.id)-\(a.title)", title: "Open \(a.title) · \(a.artist)", hint: "Album", kind: .album, action: .openAlbum(a),
                                        name: a.title, detail: [a.artist, a.year > 0 ? String(a.year) : ""].filter { !$0.isEmpty }.joined(separator: " · "), album: a,
@@ -110,7 +111,7 @@ enum PaletteCatalog {
         }
         var out: [PaletteCommand] = []
         for h in hits.artists.prefix(notInLibraryLimit[.artist] ?? 3) where !ownedKeys.contains(ownedKey(h.name)) {
-            let a = ArtistItem(id: 100_000 + abs(h.name.lowercased().hashValue % 800_000), name: h.name, albumCount: 0)
+            let a = ArtistItem.catalogArtist(named: h.name)
             out.append(PaletteCommand(id: "cat-artist-\(h.name.lowercased())", title: "Open \(h.name)", hint: "Artist", kind: .artist, action: .openArtist(a),
                                       name: h.name, detail: "Artist", artist: a, searchText: h.name, notInLibrary: true))
         }
@@ -142,12 +143,15 @@ enum PaletteCatalog {
     /// 0 = no match. Higher is better: starts with the query, then a word starts with it, then it appears inside, then
     /// its letters appear in order. Every word of the query must match somewhere.
     static func score(_ title: String, query: String) -> Int {
-        let q = fold(query).split(separator: " ").map(String.init)
-        guard !q.isEmpty else { return 1 }
+        score(title, words: fold(query).split(separator: " "))
+    }
+
+    private static func score(_ title: String, words query: [Substring]) -> Int {
+        guard !query.isEmpty else { return 1 }
         let t = fold(title)
-        let words = t.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        let words = t.split(separator: " ")
         var total = 0
-        for part in q {
+        for part in query {
             if t.hasPrefix(part) || words.first?.hasPrefix(part) == true { total += 40 }
             else if words.contains(where: { $0.hasPrefix(part) }) { total += 30 }
             else if t.contains(part) { total += 20 }
@@ -157,7 +161,7 @@ enum PaletteCatalog {
         return total
     }
 
-    private static func isSubsequence(_ small: String, of big: String) -> Bool {
+    private static func isSubsequence(_ small: Substring, of big: String) -> Bool {
         var it = big.makeIterator()
         return small.allSatisfy { ch in while let c = it.next() { if c == ch { return true } }; return false }
     }
@@ -171,9 +175,14 @@ enum PaletteCatalog {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         let fixed = fixed(playing: playing)
         if trimmed.isEmpty { return Array(fixed.prefix(limit)) }
+        let queryWords = fold(trimmed).split(separator: " ")
         let all = library(albums: albums, artists: artists) + songs(rows) + fixed
         let scored = all.enumerated()
-            .compactMap { i, c -> (Int, Int, PaletteCommand)? in let s = score(c.searchText.isEmpty ? c.title : c.searchText, query: trimmed); return s > 0 ? (s, i, c) : nil }
+            .compactMap { i, c -> (Int, Int, PaletteCommand)? in
+                guard !Task.isCancelled else { return nil }
+                let s = score(c.searchText.isEmpty ? c.title : c.searchText, words: queryWords)
+                return s > 0 ? (s, i, c) : nil
+            }
             .sorted { $0.0 != $1.0 ? $0.0 > $1.0 : $0.1 < $1.1 }
             .map { $0.2 }
         // Three blocks: what the library holds, then music it lacks (the Librarian's picks and what its search found), then pages.
@@ -189,6 +198,22 @@ enum PaletteCatalog {
         return top(owned, [.artist, .album, .song]) { perSection[$0] ?? 4 }
             + top(lacking, [.artist, .album, .song]) { notInLibraryLimit[$0] ?? 3 }
             + Array(pages.prefix(perSection[.screen] ?? 4))
+    }
+}
+
+struct PaletteSearchRequest: Equatable, Sendable {
+    let query: String
+    let playing: Bool
+    var library = SearchLibrarySnapshot()
+    var missing: [AlbumItem] = []
+    var songs: [SongRow] = []
+    var catalog = CatalogHits()
+
+    func results() async -> [PaletteCommand] {
+        await LibrarySearch.inBackground {
+            PaletteCatalog.results(query: query, playing: playing, albums: library.visibleAlbums(including: missing),
+                                   artists: library.artists, songs: songs, catalog: catalog)
+        }
     }
 }
 

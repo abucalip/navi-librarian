@@ -37,7 +37,10 @@ enum StationRules {
     /// The row's sentence. `now` is the station's live answer from `GET /api/radio/now` (nil when nobody listens or nothing
     /// was read yet). A station that is not relayed never has a title, whatever `now` says.
     static func status(for station: RadioStation, now live: RadioNow?, at date: Date, calendar: Calendar = .current) -> Status {
-        if !station.proxied { return Status(text: "Not relayed · no song titles", isLiveTitle: false) }
+        if !station.proxied {
+            let text = station.lastPlayedAt.map { playedText($0, at: date, calendar: calendar) + " · Not relayed" }
+            return Status(text: text ?? "Not relayed · no song titles", isLiveTitle: false)
+        }
         switch live?.state {
         case .ok:
             if let song = liveTitle(live) { return Status(text: song, isLiveTitle: true) }

@@ -60,6 +60,33 @@ final class TestClock: @unchecked Sendable {
         await m.reload()
         #expect(m.phase == .loaded && m.stations.map(\.id) == ["b", "a"] && !m.isEmpty)
     }
+
+    @Test func playbackPersistsAndKeepsTheNewestTimestampAcrossReloads() async throws {
+        let source = FakeStationsSource()
+        source.stations = [station("id")]
+        let clock = TestClock()
+        let defaults = try #require(UserDefaults(suiteName: "discair-station-history-\(UUID())"))
+        let model = StationsModel(defaults: defaults, clock: { clock.now })
+        model.configure(source: source, historyScope: "first-profile")
+        await model.reload()
+        model.recordPlayback(stationID: "id")
+        #expect(model.stations.first?.lastPlayedAt == clock.now.timeIntervalSince1970)
+        #expect(model.stations.first.map { model.status(for: $0).text.hasPrefix("Played today") } == true)
+
+        let relaunched = StationsModel(defaults: defaults, clock: { clock.now })
+        relaunched.configure(source: source, historyScope: "first-profile")
+        await relaunched.reload()
+        #expect(relaunched.stations.first?.lastPlayedAt == clock.now.timeIntervalSince1970)
+        let laterServerTime = clock.now.timeIntervalSince1970 + 600
+        source.stations = [station("id").replacing(lastPlayedAt: laterServerTime)]
+        await relaunched.reload()
+        #expect(relaunched.stations.first?.lastPlayedAt == laterServerTime)
+
+        source.stations = [station("id")]
+        relaunched.configure(source: source, historyScope: "another-profile")
+        await relaunched.reload()
+        #expect(relaunched.stations.first?.lastPlayedAt == nil)
+    }
     @Test func anEmptyListIsTheEmptyState() async {
         let (m, _, _) = make([])
         await m.reload()

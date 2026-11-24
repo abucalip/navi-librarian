@@ -7,9 +7,10 @@ struct CupertinoArtistsIndex: View {
     /// Text from the Library search field; only matching artists show.
     var query = ""
     var showHeader = true
+    var filtered: [ArtistItem]?
 
     private var groups: [(letter: String, artists: [ArtistItem])] {
-        let by = Dictionary(grouping: LibrarySearch.artists(state.library.artists, query: query), by: \.letter)
+        let by = Dictionary(grouping: filtered ?? LibrarySearch.artists(state.library.artists, query: query), by: \.letter)
         return by.keys.sorted { a, b in a == "#" ? false : (b == "#" ? true : a < b) }.map { k in
             (k, (by[k] ?? []).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
         }
