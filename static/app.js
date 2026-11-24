@@ -1623,6 +1623,7 @@ function closeAlbumModal() {
   // isConnected guards the case where a lane re-rendered while the dialog was open and the
   // originating card is gone; focusing a detached node would silently do nothing.
   if (returnTo && returnTo.isConnected) returnTo.focus();
+  else if (isListeningRoom()) $('content').focus({preventScroll: true});
 }
 
 // The artist bio loads on its own, so a slow or missing bio never delays the tracklist. The
@@ -1774,21 +1775,22 @@ document.addEventListener('click', event => {
 const searchShortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
 document.querySelectorAll('.search-shortcut').forEach(hint => { hint.textContent = searchShortcutLabel; });
 document.addEventListener('keydown', event => {
+  const albumModalOpen = !$('albumModalBackdrop').hidden;
+  const listeningRoomOverlayOpen = lrSheet.open || $('lrPickMenu').open || (isListeningRoom() && albumModalOpen);
   const plainSlash = event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey
     && !event.target.closest?.('input, textarea, select, [contenteditable]');
-  if (isListeningRoom() && plainSlash && !lrSheet.open && $('albumModalBackdrop').hidden) {
+  if (isListeningRoom() && plainSlash && !listeningRoomOverlayOpen) {
     event.preventDefault();
     $('globalSearchInput').focus();
     return;
   }
   if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k'
-      && document.documentElement.dataset.layout && !lrSheet.open) {
+      && document.documentElement.dataset.layout && !listeningRoomOverlayOpen) {
     event.preventDefault();
     setSearchExpanded(true, {focus: true});
     $('globalSearchInput').select();
     return;
   }
-  const albumModalOpen = !$('albumModalBackdrop').hidden;
   const modalMenuOpen = albumModalOpen && feedbackMenuOwner?.closest('.album-modal');
   if (modalMenuOpen && event.key === 'Escape') return;
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
@@ -3878,10 +3880,22 @@ function showFeedbackToast(message) {
   if (!toast) return;
   $('feedbackToastText').textContent = message;
   toast.classList.add('is-open');
+  scheduleFeedbackToastDismissal();
+}
+
+function scheduleFeedbackToastDismissal() {
+  const toast = $('feedbackToast');
   clearTimeout(feedbackToastTimer);
-  feedbackToastTimer = setTimeout(() => toast.classList.remove('is-open'), 3600);
-  const announcer = $('appStatusAnnouncer');
-  if (announcer) announcer.textContent = message;
+  if (!toast.classList.contains('is-open')) return;
+  const listeningRoom = isListeningRoom();
+  if (listeningRoom && toast.matches(':hover, :focus-within')) return;
+  feedbackToastTimer = setTimeout(() => toast.classList.remove('is-open'), listeningRoom ? 6000 : 3600);
+}
+
+for (const event of ['pointerenter', 'pointerleave', 'focusin', 'focusout']) {
+  $('feedbackToast').addEventListener(event, () => {
+    if (isListeningRoom()) queueMicrotask(scheduleFeedbackToastDismissal);
+  });
 }
 
 function closeFeedbackMenu({focusOwner = false} = {}) {
