@@ -18,6 +18,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any
+from unicodedata import normalize
 
 import httpx
 
@@ -39,6 +40,7 @@ STALL_SECONDS = 5 * 60
 WATCH_SECONDS = 48 * 60 * 60
 MAX_FALLBACKS = 4
 RESUMABLE = frozenset({"downloading", "download_complete_waiting_for_folder", "monitor_error"})
+INBOX_BLOCKING = RESUMABLE | {"monitor_timeout", "source_switch_failed", "importing", "imported"}
 # Nothing was downloaded in these states, so dismissing has no file to remove.
 FILELESS = frozenset({"no_matches", "queue_failed", "settings_required", "slskd_error", "imported"})
 
@@ -66,11 +68,31 @@ def _context(job: dict[str, Any]) -> dict[str, Any]:
         "artist": job["artist"], "job_album": job["album"],
         "album": details.get("album_name") or "", "title": details.get("track_title") or "",
         "track_number": details.get("track_number"), "year": details.get("year"),
+        "inbox_source": details.get("inbox_source"), "recording_mbid": details.get("recording_mbid"),
     }
 
 
 def _is_track(job: dict[str, Any]) -> bool:
     return (job.get("details") or {}).get("kind") == KIND
+
+
+def _same_track(job, ctx):
+    def label(value):
+        return " ".join(normalize("NFC", value).casefold().split())
+
+    saved = _context(job)
+    saved_mbid, requested_mbid = saved["recording_mbid"], ctx["recording_mbid"]
+    return (_is_track(job) and not (saved_mbid and requested_mbid and saved_mbid != requested_mbid)
+            and all(label(saved[key]) == label(ctx[key]) for key in ("artist", "album", "title")))
+
+
+def inbox_download_job(librarian, source):
+    """Find a saved Inbox job that still owns the download or completed import."""
+    return next((
+        _context(job) for job in librarian._discovery_list_acquisition_jobs()
+        if job["status"] in INBOX_BLOCKING and _is_track(job)
+        and job["details"].get("inbox_source") == source
+    ), None)
 
 
 def _find_job(librarian: Any, artist: str, job_album: str) -> dict[str, Any] | None:
@@ -85,6 +107,8 @@ def _details(ctx: dict[str, Any], candidate: dict[str, Any] | None = None, **ext
         "kind": KIND, "album_name": ctx["album"], "track_title": ctx["title"],
         "track_number": ctx.get("track_number"), "year": ctx.get("year"),
     }
+    if ctx.get("inbox_source"):
+        details.update(inbox_source=ctx["inbox_source"], recording_mbid=ctx["recording_mbid"])
     if candidate:
         file = candidate.get("track_file") or {}
         details.update({
@@ -125,19 +149,28 @@ def _candidate_record(found: dict[str, Any]) -> dict[str, Any]:
 def request_track(
     librarian: Any, artist: str, album: str, title: str,
     track_number: int | None = None, year: Any = None, metadata: dict[str, Any] | None = None,
+    *, inbox_source: str | None = None, recording_mbid: str | None = None,
 ) -> dict[str, Any]:
     """Search slskd for one song and start downloading the best clear match."""
     artist, album, title = artist.strip(), album.strip(), title.strip()
     if not artist or not album or not title:
         return {"ok": False, "error": "Artist, album and title are required."}
     ctx = {"artist": artist, "job_album": track_job_album(album, title), "album": album,
-           "title": title, "track_number": track_number, "year": year}
+           "title": title, "track_number": track_number, "year": year,
+           "inbox_source": inbox_source, "recording_mbid": recording_mbid}
     metadata = dict(metadata or {})
     identity = (librarian._music_key(artist), librarian._music_key(ctx["job_album"]))
     lock = librarian._DISCOVERY_IMPORT_TRANSITION_LOCK
     reply = {"artist": artist, "album": ctx["job_album"]}
 
     with lock:
+        if inbox_source and (existing := _find_job(librarian, artist, ctx["job_album"])):
+            if not _same_track(existing, ctx):
+                return {**reply, "ok": False, "status": "identity_conflict",
+                        "message": "A different acquisition already uses this job key."}
+            if existing["status"] in INBOX_BLOCKING - {"downloading", "importing", "imported"}:
+                return {**reply, "ok": False, "status": "already_in_progress",
+                        "message": "Check the existing download before requesting another copy."}
         if librarian._discovery_is_dismissed(artist, ctx["job_album"]) and not \
                 librarian._discovery_reactivate_dismissed_acquisition(artist, ctx["job_album"], metadata):
             return {**reply, "ok": False, "status": "dismissed", "message": (

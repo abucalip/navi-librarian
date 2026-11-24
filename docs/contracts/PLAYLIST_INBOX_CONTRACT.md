@@ -21,6 +21,18 @@ The response contains the edition summary, `listenbrainz_configured`, `index_sta
 
 - `match_state` is `owned`, `missing`, `ambiguous`, or `null` when the index has no usable data. `song_id` is set only for `owned`.
 - `acquisition_status` is the saved status of an existing single-track job, or `null`. A job can be attached only for a known, unambiguous match state and when the recording has artist, album, and full title. Both the existing normalized job key and the saved artist, album, and title must agree. Label comparison ignores case, whitespace, and Unicode composition while preserving punctuation and title qualifiers. Repeated occurrences can refer to the same job. Ownership and job status are independent.
-- Job settings, candidates, and message details are omitted. Download actions and Navidrome sync are covered by later slices.
+- Job settings, candidates, and message details are omitted. For a row saved without an album, the download response supplies the acquisition polling key.
 
 Both routes return `401` without an owner session. A missing edition returns `404`. An invalid edition ID returns `422`. An unavailable snapshot store or unreadable acquisition store returns `503`.
+
+## POST /api/playlists/inbox/{edition_id}/tracks/{position}/download
+
+The owner session is required. The request needs no body. The server selects the immutable stored occurrence by edition ID and zero-based position, including historical editions. It checks a complete current Navidrome inventory and verifies that the connection and idle scan marker stayed stable before starting acquisition.
+
+- A track already owned returns `200` with `edition_id`, `position`, `ok: true`, `status: "owned"`, and `song_id`.
+- Otherwise the action returns `200` with `edition_id`, `position`, the single-track acquisition outcome (`ok`, `status`, `message`), `artist`, the display `album`, and the synthetic `job_album` used for acquisition polling. `already_in_progress`, `importing`, and `imported` refer to the existing acquisition. `identity_conflict` means the normalized job key belongs to a different acquisition. Successful HTTP responses use `Cache-Control: no-store`.
+- An invalid ID or negative position returns `422`. An unknown edition or position returns `404`.
+- `409` means the track is ambiguous (`ambiguous_track`), lacks artist or title (`unresolved_track`), or has no confirmed album (`unresolved_album`). For an albumless track, ListenBrainz can confirm the album of a known recording ID. Otherwise, paced MusicBrainz search must identify one recording and one release title or confirm the stored or mapped release ID.
+- `503` means ownership cannot be checked against a stable inventory (`ownership_unavailable`) or a required store cannot be read. A failed metadata fallback or acquisition request returns `502` with `metadata_unavailable` or `acquisition_unavailable`. The named error codes appear in `detail.code` with readable text in `detail.message`.
+
+Concurrent requests for the same stored track metadata share one action in the web process. The acquisition service also guards the normalized artist and job album key, including when the request arrives through a different route.

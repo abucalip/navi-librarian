@@ -1,7 +1,22 @@
 import unittest
 from unittest.mock import patch
 
-from integrations.listenbrainz.client import USER_AGENT, recent_listens, request_headers, set_token_source
+import httpx
+
+from integrations.listenbrainz.client import USER_AGENT, lookup_recording, recent_listens, request_headers, set_token_source
+
+
+def test_recording_mapper_uses_authenticated_bulk_endpoint():
+    def post(url, **options):
+        assert url == "https://api.listenbrainz.org/1/metadata/lookup/"
+        assert options["json"] == {"recordings": [{"artist_name": "Artist", "recording_name": "Song"}]}
+        assert options["headers"]["Authorization"] == "Token fixture"
+        assert not options["follow_redirects"]
+        return httpx.Response(200, request=httpx.Request("POST", url),
+                              json=[{"index": 0, "release_name": "Album"}])
+
+    assert lookup_recording("Artist", "Song", token="fixture", post=post)["release_name"] == "Album"
+    assert lookup_recording("Artist", "Song", token="", post=post) == {}
 
 
 class FakeResponse:
