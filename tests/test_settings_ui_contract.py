@@ -87,12 +87,28 @@ class SettingsSecretContractTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
     def test_secret_inputs_are_never_rendered_with_a_value(self):
-        for field_id in ("navidromePassword", "slskdApiKey", "listenbrainzToken"):
+        for field_id in ("navidromePassword", "slskdApiKey", "listenbrainzToken", "discogsToken"):
             with self.subTest(field=field_id):
                 match = re.search(rf'<input id="{field_id}"[^>]*>', self.html)
                 self.assertIsNotNone(match)
                 self.assertNotIn(" value=", match.group(0))
                 self.assertIn('type="password"', match.group(0))
+
+    def test_saved_secret_hints_start_hidden_and_follow_configuration_metadata(self):
+        fields = {
+            "navidromePassword": "data.password_configured",
+            "slskdApiKey": "data.api_key_configured",
+            "listenbrainzToken": "data.token_configured",
+            "discogsToken": "data.source === 'settings'",
+        }
+        for field_id, condition in fields.items():
+            with self.subTest(field=field_id):
+                hint = f"{field_id}Saved"
+                self.assertNotRegex(self.html, rf'<input id="{field_id}"[^>]*aria-describedby=')
+                self.assertIn(f'id="{hint}" class="settings-secret" hidden', self.html)
+                self.assertIn(f"setSavedSecretHint('{field_id}', {condition});", self.js)
+        self.assertIn("field.setAttribute('aria-describedby', hint.id);", self.js)
+        self.assertIn("field.removeAttribute('aria-describedby');", self.js)
 
     def test_lastfm_settings_ui_is_removed(self):
         for token in ("tabLastfm", "settingsLastfm", "lastfmUsername", "lastfmApiKey", "/api/settings/lastfm"):

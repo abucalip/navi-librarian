@@ -42,6 +42,7 @@ Last reviewed: 2026-11-17. This is a map of current module ownership, not a road
 | `static/listening-room/library.css` | Listening Room Library browse (L10). Styles the shared Library controls, list and grid. `static/app.js` retains search, sort preferences, pagination and detail navigation. |
 | `static/listening-room/search.css` | Listening Room Search, Saved and Blocklist (L11). Styles the top-bar panels, bookmark grid and Blocklist rows. `static/app.js` reuses the existing search stream and action handlers. |
 | `static/listening-room/acquisitions.css`, `radio.css` | Listening Room Acquisitions and Radio (L12). The acquisition stream in `static/app.js` updates keyed rows in place. `static/radio.js` presents existing station and Heard data and reuses the existing action handlers. |
+| `static/listening-room/settings.css`, `static/login.css` | Listening Room Settings and Sign in (L13). Settings reuses the existing service handlers and browser appearance preferences. The standalone login template and script share the existing sign-in and first-run setup form. |
 
 ## Clients
 

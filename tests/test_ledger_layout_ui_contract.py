@@ -168,7 +168,8 @@ class LedgerLayoutTests(unittest.TestCase):
         self.assertNotIn(".genre-accordion", (STATIC / "app.css").read_text(encoding="utf-8"))
 
     def test_the_default_theme_is_still_ink(self):
-        self.assertIn("ink", self.script.split("var THEMES = [")[1].split("\n")[1])
+        self.assertIn("var DEFAULT = { theme: 'ink',", self.script)
+        self.assertIn("return byId(value) ? value : DEFAULT.theme;", self.script)
 
 
 if __name__ == "__main__":

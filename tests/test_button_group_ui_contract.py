@@ -22,7 +22,7 @@ BUTTONS = {
     'id="testSlskd"': ("Test connection", "plug-zap"),
     'id="saveListenbrainz"': ("Save settings", "save"),
     'id="testListenbrainz"': ("Test connection", "plug-zap"),
-    'id="saveDiscogs"': ("Save token", "save"),
+    'id="saveDiscogs"': ("Save settings", "save"),
     'id="removeDiscogs"': ("Remove saved token", "trash-2"),
     'id="testDiscogs"': ("Test connection", "plug-zap"),
     'id="saveRadioAddress"': ("Save", "save"),
@@ -64,6 +64,12 @@ class ButtonGroupContractTests(unittest.TestCase):
                     listening_room_css = (ROOT / "static" / "listening-room" / "search.css").read_text(encoding="utf-8")
                     self.assertIn('.lr-l11-only { display: none; }', listening_room_css)
                     self.assertIn(':root[data-layout="listeningroom"] .lr-l11-only { display: revert; }', listening_room_css)
+                elif marker in {
+                    'id="saveNavidrome"', 'id="checkConnection"', 'id="saveSlskd"', 'id="testSlskd"',
+                    'id="saveListenbrainz"', 'id="testListenbrainz"', 'id="saveDiscogs"', 'id="removeDiscogs"',
+                    'id="testDiscogs"',
+                }:
+                    self.assertIn(f'<span class="settings-action-label">{name}</span>', markup)
                 elif marker in ('id="saveRadioAddress"', 'id="refreshRadio"', 'id="clearRadioPlays"'):
                     label = f'<span class="lr-l12-only">{name}</span>'
                     self.assertIn(label, markup)

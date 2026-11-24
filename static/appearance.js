@@ -7,6 +7,7 @@
 (function () {
   'use strict';
   var THEMES = [
+    { id: 'listeningroom', label: 'Listening Room', group: 'Listening Room', dark: true, layout: 'listeningroom', bar: '#0c0d10' },
     { id: 'ink', label: 'Ink', group: 'Dark', dark: true, bar: '#0f0e0d' },
     { id: 'vinyl', label: 'Vinyl', group: 'Dark', dark: true, bar: '#080808' },
     { id: 'nocturne', label: 'Nocturne', group: 'Dark', dark: true, bar: '#0c0a14' },
@@ -25,8 +26,7 @@
     { id: 'cratekraft', label: 'Crate \u00b7 Kraft', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#d9b98a' },
     { id: 'cratemint', label: 'Crate \u00b7 Mint', group: 'Crate Wall', dark: false, brut: true, layout: 'crate', bar: '#a9d9b4' },
     { id: 'cratenight', label: 'Crate \u00b7 Night', group: 'Crate Wall', dark: true, brut: true, layout: 'crate', bar: '#1b1713' },
-    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' },
-    { id: 'listeningroom', label: 'Listening Room', group: 'Listening Room', dark: true, layout: 'listeningroom', bar: '#0c0d10' }
+    { id: 'zine', label: 'Zine \u00b7 Yellow', group: 'Zine Spread', dark: false, brut: true, layout: 'zine', bar: '#ffde59' }
   ];
   var FONTS = [
     { id: 'discair', label: 'Discair (current)' },
