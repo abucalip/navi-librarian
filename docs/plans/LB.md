@@ -122,6 +122,8 @@ Each row is one PR. Start from current `main` once the listed dependencies have 
 
 ### Playlist Inbox and shared recording matching
 
+LB-06's shared route contract and fixtures are in [Playlist Inbox API](../contracts/PLAYLIST_INBOX_CONTRACT.md).
+
 | Slice | Status | Depends on | PR scope and acceptance |
 | --- | --- | --- | --- |
 | LB-01 · Parse playlist tracks | **Merged (`#1270`)** | — | Added `integrations/listenbrainz/jspf.py` and sanitized fixture `tests/fixtures/listenbrainz_daily_jams.json`. |
