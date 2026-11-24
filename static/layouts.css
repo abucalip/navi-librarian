@@ -39,7 +39,7 @@
   :root[data-layout="tape"] nav button > .icon { display: none; }
   :root[data-layout="tape"] nav .nav-count { margin-left: 4px; position: static; }
   /* The version label sits at the right end of the strip. */
-  :root[data-layout="tape"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
+  :root[data-layout="tape"] .version-footer { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
   :root[data-layout="tape"] main { margin-top: calc(82px + var(--tape-nav-h) + 30px); }
 
   /* ---- Search fields are plain rectangles ---- */
@@ -408,7 +408,7 @@
   :root[data-layout="crate"] nav button:focus-visible { outline-offset: 3px; }
   :root[data-layout="crate"] nav button > .icon { display: none; }
   :root[data-layout="crate"] nav .nav-count { margin-left: 4px; position: static; }
-  :root[data-layout="crate"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
+  :root[data-layout="crate"] .version-footer { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
   :root[data-layout="crate"] main { margin-top: calc(82px + var(--crate-nav-h) + 30px); }
   :root[data-layout="crate"] .search-shortcut { display: block; position: absolute; right: 52px; top: 50%; transform: translateY(-50%); padding: 0 6px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge); font: 700 var(--text-xs)/1.5 var(--mono); pointer-events: none; }
   :root[data-layout="crate"] .global-search input[type="search"] { padding-right: 120px; }
@@ -543,7 +543,7 @@
   :root[data-layout="zine"] nav button:focus-visible { outline-offset: -4px; }
   :root[data-layout="zine"] nav button > .icon { display: none; }
   :root[data-layout="zine"] nav .nav-count { margin-left: 4px; position: static; }
-  :root[data-layout="zine"] .app-version { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
+  :root[data-layout="zine"] .version-footer { margin: 0 0 0 auto; padding: 0 0 0 16px; align-self: center; flex: 0 0 auto; white-space: nowrap; }
   :root[data-layout="zine"] main { margin-top: calc(89px + var(--zine-nav-h) + 24px); }
   :root[data-layout="zine"] .search-shortcut { display: block; position: absolute; right: 52px; top: 50%; transform: translateY(-50%); padding: 0 6px; color: var(--text); background: var(--surface-raised); border: var(--bw) solid var(--edge); font: 700 var(--text-xs)/1.5 var(--mono); pointer-events: none; }
   :root[data-layout="zine"] .global-search input[type="search"] { padding-right: 120px; }

@@ -1,3 +1,9 @@
+## 2026-11-24 — Web sidebar Docker updates
+
+- Branch `web/docker-update-badge` starts from GitHub `main` at `a630e923`.
+- The desktop sidebar badge shows when the published GHCR image is newer. An opt-in host process accepts a confirmed digest from the signed-in owner's web session, pins both Compose services to that digest and waits for health checks.
+- Five focused pytest tests passed. The Unix socket integration test was skipped because the sandbox denied binding. JavaScript syntax and the isolated badge, confirmation and reload flow passed. The full suite, browser checklist and live Docker rollout were not run. No image was published or deployed.
+
 ## 2026-11-24 — macOS radio, sidebar and search
 
 - Branch `macos/playback-navigation-search` starts from GitHub `main` at `383a4c01031182474d65b63cf81237b898113b6c`.

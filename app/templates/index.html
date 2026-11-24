@@ -108,6 +108,13 @@
     </div>
     <p class="lr-meta" id="lrGettingSummary"></p>
   </section>
+  <div class="version-footer">
+    <p class="lr-app-version" title="Version">__APP_VERSION__</p>
+    <button class="version-update-badge" type="button" aria-haspopup="dialog" aria-controls="dockerUpdateDialog" aria-label="__APP_VERSION__, update available" title="Update available" hidden>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#lr-refresh"></use></svg>
+      <span class="version-badge-current">__APP_VERSION__</span><span>Update available</span>
+    </button>
+  </div>
 </nav>
 <nav class="lr-tabbar" aria-label="Main" hidden>
   <a class="lr-nav" href="#dashboard" data-lr-page="dashboard" aria-label="Home"><svg class="lr-icon" aria-hidden="true" focusable="false"><use href="#lr-home"></use></svg><span class="lr-nav-label">Home</span></a>
@@ -228,7 +235,13 @@
       <button type="button" data-page="classics" title="Add to your collection">Add to your collection</button>
       <button type="button" data-page="artistDeepDive" title="Artist Deep Dives">Artist Deep Dives</button>
     </div>
-    <p class="app-version" title="Version">__APP_VERSION__</p>
+    <div class="version-footer">
+      <p class="app-version" title="Version">__APP_VERSION__</p>
+      <button class="version-update-badge" type="button" aria-haspopup="dialog" aria-controls="dockerUpdateDialog" aria-label="__APP_VERSION__, update available" title="Update available" hidden>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#lr-refresh"></use></svg>
+        <span class="version-badge-current">__APP_VERSION__</span><span>Update available</span>
+      </button>
+    </div>
   </nav>
 
   <!-- Ledger Room layout only (static/layouts.css shows both; they are hidden in every other theme). -->
@@ -961,6 +974,17 @@
   <button id="undoSnackbarAction" type="button">Undo</button>
   <span id="undoSnackbarTimer" class="undo-snackbar-timer" aria-hidden="true"></span>
 </div>
+<dialog id="dockerUpdateDialog" aria-labelledby="dockerUpdateTitle">
+  <h2 id="dockerUpdateTitle">Discair update</h2>
+  <p id="dockerUpdateVersion"></p>
+  <p id="dockerUpdateStatus" role="status"></p>
+  <div class="version-update-actions">
+    <a id="dockerUpdateRelease" href="https://github.com/abucalip/navi-librarian/tags" target="_blank" rel="noopener" hidden>View release tag</a>
+    <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    <button id="dockerUpdateInstall" type="button" hidden>Install update</button>
+  </div>
+</dialog>
+<script src="/static/docker-update.js" defer></script>
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
 <script src="/static/listening-room/home.js" defer></script>

@@ -1,0 +1,12 @@
+# Opt-in overlay. The host updater must use this same file when recreating Discair.
+services:
+  discair:
+    environment:
+      DISCAIR_UPDATER_SOCKET: /run/discair-updater/update.sock
+    volumes:
+      - type: bind
+        source: ${DISCAIR_UPDATER_DIR:?Set DISCAIR_UPDATER_DIR to the host updater directory}
+        target: /run/discair-updater
+        read_only: true
+        bind:
+          create_host_path: false
