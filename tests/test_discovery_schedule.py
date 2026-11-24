@@ -16,19 +16,37 @@ from app.services import discovery_schedule
 from discovery import lens_service
 
 HOUR = 3600.0
+ENTRY_NAMES = ["discovery_lists", "lens_lists", "playlist_inbox_refresh", "playlist_reconcile"]
 
 
 class Entries(unittest.TestCase):
     def setUp(self):
-        self.lib = SimpleNamespace()
+        self.lib = SimpleNamespace(DATA_DIR=Path("/unused"))
         self.entries = {e.name: e for e in discovery_schedule.entries(self.lib)}
 
-    def test_two_hourly_entries_in_a_fixed_order(self):
-        self.assertEqual([e.name for e in discovery_schedule.entries(self.lib)], ["discovery_lists", "lens_lists"])
-        for entry in self.entries.values():
+    def test_entries_in_a_fixed_order(self):
+        self.assertEqual(list(self.entries), ENTRY_NAMES)
+        for name in ENTRY_NAMES[:3]:
+            entry = self.entries[name]
             self.assertTrue(entry.due(1000.0, None))                  # first start after upgrade: due at once
             self.assertFalse(entry.due(1000.0 + HOUR - 1, 1000.0))    # a restart inside the hour waits
             self.assertTrue(entry.due(1000.0 + HOUR, 1000.0))
+        reconcile = self.entries["playlist_reconcile"]
+        self.assertTrue(reconcile.due(1000, None))
+        self.assertFalse(reconcile.due(1299, 1000))
+        self.assertTrue(reconcile.due(1300, 1000))
+        self.assertEqual(reconcile.retry_seconds, 60)
+
+    def test_playlist_entries_preserve_retry_outcomes(self):
+        with mock.patch.object(discovery_schedule.playlist_inbox_refresh, "refresh_once",
+                               return_value=worker_schedule.NOT_READY) as refresh:
+            self.assertIs(self.entries["playlist_inbox_refresh"].run(), worker_schedule.NOT_READY)
+        refresh.assert_called_once_with(self.lib, self.lib.DATA_DIR / discovery_schedule.STORE_FILE)
+        with mock.patch.object(discovery_schedule, "reconcile_playlists_once",
+                               return_value=worker_schedule.NOT_READY) as reconcile:
+            self.assertIs(self.entries["playlist_reconcile"].run(), worker_schedule.NOT_READY)
+            self.assertIs(self.entries["playlist_reconcile"].run(), worker_schedule.NOT_READY)
+        self.assertIs(reconcile.call_args_list[0].args[1], reconcile.call_args_list[1].args[1])
 
     def test_the_discovery_entry_runs_one_stale_list_pass(self):
         with mock.patch.object(discovery_schedule, "refresh_stale_lists_once") as once:
@@ -93,7 +111,7 @@ class WorkerWiring(unittest.TestCase):
         names = [call.kwargs.get("name", "worker-schedule") for call in start.call_args_list]
         self.assertEqual(names, ["worker-schedule", discovery_schedule.THREAD_NAME])
         discovery_entries = start.call_args_list[1].args[0]
-        self.assertEqual([e.name for e in discovery_entries], ["discovery_lists", "lens_lists"])
+        self.assertEqual([e.name for e in discovery_entries], ENTRY_NAMES)
         main_entries = start.call_args_list[0].args[0]
         self.assertNotIn("discovery_lists", [e.name for e in main_entries])
 

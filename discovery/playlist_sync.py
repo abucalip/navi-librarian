@@ -48,7 +48,7 @@ def _locked_writer(store_path):
 
 
 def sync_edition(store_path, navidrome: PlaylistClient, *, feed_key: str, edition_id: int,
-                 name: str, owned: OwnedData | None) -> SyncResult:
+                 name: str, owned: OwnedData | None, scan_marker=None) -> SyncResult:
     """Sync the caller's selected feed edition using the target's owned index.
 
     A feed key identifies a recurring feed across upstream edition IDs. The
@@ -62,6 +62,8 @@ def sync_edition(store_path, navidrome: PlaylistClient, *, feed_key: str, editio
     with _locked_writer(store_path) as db:
         if db is None:
             return SyncResult("busy")
+        if scan_marker is not None and navidrome.scan_marker() != scan_marker:
+            return SyncResult("index_unavailable")
         edition = get_edition(db, edition_id)
         if edition is None:
             raise ValueError("Playlist Inbox edition does not exist.")

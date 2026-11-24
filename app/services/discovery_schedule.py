@@ -24,13 +24,18 @@ import logging
 import time
 
 from app import worker_schedule
+from app.api.insights import STORE_FILE
+from app.services import playlist_inbox_refresh
+from app.services.playlist_reconcile import PlaylistReconciler
 from discovery import lens_service
 from discovery import refresh as discovery_refresh
+from integrations.navidrome.playlists import PlaylistClient
 from settings import service as settings_service
 
 logger = logging.getLogger(__name__)
 
 CHECK_SECONDS = 3600     # the old scheduler loop slept this long between passes
+PLAYLIST_SCAN_SECONDS = 300
 LIST_NAMES = ("personal", "classics", "artist_deep_dive", "new_releases", "listening_profile")
 THREAD_NAME = "worker-schedule-discovery"
 
@@ -69,11 +74,26 @@ def refresh_lens_lists_once(librarian):
     return None
 
 
+def reconcile_playlists_once(librarian, reconciler):
+    try:
+        navidrome = PlaylistClient(librarian._navidrome_config())
+    except ValueError:
+        return None
+    return reconciler.run_once(navidrome)
+
+
 def entries(librarian):
-    """The discovery scheduler's entries, in the order they run when both are due."""
+    """The discovery scheduler's entries in execution order when due."""
+    path = librarian.DATA_DIR / STORE_FILE
+    reconciler = PlaylistReconciler(path, max_idle_seconds=CHECK_SECONDS)
     return (
         worker_schedule.Entry("discovery_lists", worker_schedule.interval(CHECK_SECONDS),
                               lambda: refresh_stale_lists_once(librarian)),
         worker_schedule.Entry("lens_lists", worker_schedule.interval(lens_service.DAILY_CHECK_SECONDS),
                               lambda: refresh_lens_lists_once(librarian)),
+        worker_schedule.Entry("playlist_inbox_refresh", worker_schedule.interval(CHECK_SECONDS),
+                              lambda: playlist_inbox_refresh.refresh_once(librarian, path)),
+        worker_schedule.Entry("playlist_reconcile", worker_schedule.interval(PLAYLIST_SCAN_SECONDS),
+                              lambda: reconcile_playlists_once(librarian, reconciler),
+                              retry_seconds=worker_schedule.TICK_SECONDS),
     )

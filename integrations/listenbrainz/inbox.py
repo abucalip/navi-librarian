@@ -67,15 +67,15 @@ class PlaylistInboxClient:
     def configured(self) -> bool:
         return bool(self._username and self._headers.get("Authorization"))
 
-    def _get(self, path: str, params: dict[str, int] | None = None) -> httpx.Response:
+    def _request(self, method: str, path: str, **kwargs) -> httpx.Response:
         with self._lock:
             wait = self._next_request - self._clock()
             if wait > 0:
                 self._sleep(wait)
             self._next_request = self._clock() + _REQUEST_SPACING
-            response = self._client.get(
-                f"{_API}/{path}", params=params, headers=self._headers,
-                timeout=15, follow_redirects=False,
+            response = self._client.request(
+                method, f"{_API}/{path}", headers=self._headers,
+                timeout=15, follow_redirects=False, **kwargs,
             )
         return response.raise_for_status()
 
@@ -87,9 +87,9 @@ class PlaylistInboxClient:
         seen: set[str] = set()
         for _ in range(_MAX_PLAYLIST_PAGES):
             offset = len(playlists)
-            response = self._get(
-                f"user/{self._username}/playlists/createdfor",
-                {"count": _PLAYLIST_PAGE_SIZE, "offset": offset},
+            response = self._request(
+                "GET", f"user/{self._username}/playlists/createdfor",
+                params={"count": _PLAYLIST_PAGE_SIZE, "offset": offset},
             )
             body = response.json()
             if not isinstance(body, dict) or not isinstance(body.get("playlists"), list):
@@ -116,7 +116,7 @@ class PlaylistInboxClient:
         if not self.configured:
             return None
         mbid = str(UUID(playlist_mbid))
-        playlist = parse_playlist(self._get(f"playlist/{mbid}").json())
+        playlist = parse_playlist(self._request("GET", f"playlist/{mbid}").json())
         if playlist.playlist_mbid != mbid:
             raise ValueError("ListenBrainz playlist detail does not match the requested MBID")
         return playlist
@@ -127,9 +127,9 @@ class PlaylistInboxClient:
             return None
         if count <= 0 or offset < 0:
             raise ValueError("Recommendation count must be positive and offset non-negative")
-        response = self._get(
-            f"cf/recommendation/user/{self._username}/recording",
-            {"count": count, "offset": offset},
+        response = self._request(
+            "GET", f"cf/recommendation/user/{self._username}/recording",
+            params={"count": count, "offset": offset},
         )
         if response.status_code == 204:
             return RecommendationPage(None, (), 0)
@@ -142,6 +142,16 @@ class PlaylistInboxClient:
             raise ValueError("Invalid ListenBrainz recommendations metadata")
         recordings = tuple(_parse_recommendation(item) for item in payload["mbids"])
         return RecommendationPage(updated, recordings, total)
+
+    def recording_metadata(self, mbids: tuple[str, ...]) -> dict:
+        """Enrich one bounded CF page with a single recording metadata lookup."""
+        ids = tuple(dict.fromkeys(mbids))
+        body = self._request("POST", "metadata/recording/", json={
+            "recording_mbids": ids, "inc": "artist release",
+        }).json()
+        if not isinstance(body, dict) or any(not isinstance(row, dict) for row in body.values()):
+            raise ValueError("Invalid ListenBrainz recording metadata")
+        return body
 
 
 def _parse_recommendation(item: object) -> RecordingRecommendation:

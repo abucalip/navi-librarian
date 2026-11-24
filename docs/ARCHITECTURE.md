@@ -11,6 +11,7 @@ Paths are relative to the repository root.
 | Discovery, lenses, and feedback | `discovery/` |
 | Owned library index, search, and artist and album pages | `discovery/search/`, `app/api/search.py`, `app/api/library.py` |
 | Playlist Inbox and rolling copies | `app/api/playlist_inbox.py`, `discovery/playlist_inbox.py`, `discovery/recording_match.py`, `discovery/playlist_sync.py`, `intelligence/store/playlist_editions.py` |
+| Scheduled Playlist Inbox import | `app/services/discovery_schedule.py` runs `app/services/playlist_inbox_refresh.py` to publish ListenBrainz editions and sync their private copies against an idle Navidrome inventory. |
 | Playlist Inbox downloads | `discovery/playlist_download.py` verifies tracks against the current Navidrome inventory, resolves missing album metadata, and delegates to `acquisition/track_service.py`. |
 | Managed playlist reconciliation | `app/services/playlist_reconcile.py` checks scan status, builds a fresh song inventory for the same Navidrome target, and uses the shared playlist sync lock and ownership checks. |
 | Recommendation scoring and selection | `recommendation/` |
