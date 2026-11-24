@@ -2,10 +2,11 @@
 
 - Branch `macos/playback-navigation-search` starts from GitHub `main` at `383a4c01031182474d65b63cf81237b898113b6c`.
 - The player bar, Now Playing and Radio's On Air panel link the current artist to their page. The album artist link now uses the same catalog fallback for artists outside the library.
-- A chevron switches the sidebar between its regular and icon-only layouts. While artwork is visible, the page keeps the full artwork column so the square stays in place and page controls remain clear.
+- A chevron switches the sidebar between its regular and icon-only layouts. The follow-up shrinks the artwork to fit the icon column, so pages and the player bar use the recovered width. Expanding the sidebar restores the full artwork square.
 - The Radio page uses the newer of the server timestamp and a local timestamp written after successful audio playback. An authenticated read returned timestamps for 4 of the 17 configured stations. The Mac can remember future playback when the server supplies no timestamp.
 - Palette ranking and Library filtering run outside the main actor. Results from superseded queries are discarded.
 - The focused macOS Swift run passed 160 tests. Native renders covered all three live artist links and compared the artwork area in both sidebar states. Live audio playback and installed-client typing latency remain unverified. The full suite was skipped.
+- The artwork follow-up passed 21 focused Swift tests across six suites. The 1,100 × 700 pt radio render verified the compact artwork and the player bar's new position. A separate layout test verified album artwork dimensions in both states.
 
 ## 2026-11-24 — Listening Room Library (L10)
 

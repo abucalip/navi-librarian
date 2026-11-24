@@ -1,4 +1,5 @@
 import AppKit
+import DiscairAudio
 import DiscairLibrarian
 import SwiftUI
 import Testing
@@ -13,18 +14,16 @@ struct D4SidebarHeaderTests {
         #expect(CupertinoSidebar.groupHeaderFont == CU.Font.eyebrow.font)
     }
 
-    @Test func compactSidebarLeavesTheRadioArtworkAndItsColumnInPlace() throws {
+    @Test func compactSidebarShrinksTheRadioArtworkAndMovesThePlayerIntoTheFreedSpace() throws {
         RenderMode.offscreenScreenshot = true
         let state = AppState(screen: .stations)
-        state.sidebarCompact = true
-        #expect(CU.Shell.contentReduction(for: state) == CU.Shell.sidebarWidth - CU.Shell.compactSidebarWidth)
         let station = RadioStation(id: "demo", name: "Demo FM", proxied: true, playableURL: "https://example.invalid/radio")
         state.stations.showForPreview(stations: [station])
         state.stations.recordPlayback(stationID: station.id)
         state.player.live = LiveSession(stationID: station.id, name: station.name, logoPath: "", startedAt: Date(), phase: .playing)
         state.player.liveNow = RadioNow(state: .ok, artist: "Can", title: "Vitamin C")
 
-        let size = NSSize(width: 960, height: 700)
+        let size = RootView.designSize
         func render(compact: Bool) throws -> NSBitmapImageRep {
             state.sidebarCompact = compact
             let host = NSHostingView(rootView: CupertinoWindow(state: state).frame(width: size.width, height: size.height))
@@ -45,14 +44,37 @@ struct D4SidebarHeaderTests {
 
         let expanded = try render(compact: false)
         let compact = try render(compact: true)
-        #expect(CU.Shell.contentReduction(for: state) == 0)
         let scale = CGFloat(expanded.pixelsWide) / size.width
-        for x in [35, 115, 205] {
-            for y in [510, 580, 665] {
-                let px = Int(CGFloat(x) * scale), py = Int(CGFloat(y) * scale)
-                let expected = try #require(expanded.colorAt(x: px, y: py))
-                #expect(compact.colorAt(x: px, y: py) == expected)
-            }
+        func pixel(_ image: NSBitmapImageRep, _ x: CGFloat, _ y: CGFloat) -> NSColor? {
+            image.colorAt(x: Int(x * scale), y: Int(y * scale))
+        }
+        let left = CU.Shell.inset
+        let compactSide = CU.Shell.compactSidebarWidth
+        let bottom = size.height - CU.Shell.inset
+        let artColor = try #require(pixel(expanded, left + compactSide / 2, bottom - compactSide / 2))
+        #expect(pixel(compact, left + compactSide / 2, bottom - compactSide / 2) == artColor)
+        #expect(pixel(expanded, left + compactSide / 2, bottom - compactSide - 25) == artColor)
+        #expect(pixel(compact, left + compactSide / 2, bottom - compactSide - 25) != artColor)
+        let freedPlayerX = left + compactSide + CU.Shell.inset + 7
+        let playerY = bottom - 32
+        #expect(pixel(expanded, freedPlayerX, playerY) == artColor)
+        let freedPlayerColor = try #require(pixel(compact, freedPlayerX, playerY)?.usingColorSpace(.sRGB))
+        #expect(freedPlayerColor.brightnessComponent < 0.4)
+    }
+
+    @Test func albumArtworkFitsTheSidebarColumnInEitherMode() {
+        let state = AppState()
+        state.player.play([QueueItem(songID: "fixture", title: "Song", artist: "Artist", album: "Album", duration: 180)])
+        #expect(state.player.current != nil)
+
+        for compact in [false, true] {
+            state.sidebarCompact = compact
+            let artwork = CupertinoArtworkSlot(state: state)
+            let host = NSHostingView(rootView: artwork.fixedSize())
+            let side = CU.Shell.columnWidth(compact: compact)
+            let paddedSide = side + CU.Shell.inset
+            #expect(host.fittingSize == NSSize(width: paddedSide, height: paddedSide))
+            #expect(artwork.sidebarClearance == side + 2 * CU.Shell.inset - CupertinoPlayerBar.height)
         }
     }
 

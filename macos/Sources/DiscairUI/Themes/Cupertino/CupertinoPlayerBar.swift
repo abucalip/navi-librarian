@@ -22,7 +22,8 @@ struct CupertinoPlayerBar: View {
 
     var body: some View {
         display
-            .padding(.leading, Self.sidebarSlot).padding(.trailing, 16)
+            .padding(.leading, CU.Shell.contentLeading - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
+            .padding(.trailing, 16)
             .frame(height: Self.height)
             .foregroundStyle(ink)
             .animation(RenderMode.offscreenScreenshot ? nil : .easeInOut(duration: 0.5), value: tint)
@@ -48,9 +49,6 @@ struct CupertinoPlayerBar: View {
                 }
             }
     }
-
-    /// The width left of the player for the artwork square (or the connection text), in line with the sidebar.
-    static let sidebarSlot: CGFloat = 236
 
     private var coverItem: AlbumItem? {
         guard let c = p.current, !(c.coverArt ?? "").isEmpty else { return nil }

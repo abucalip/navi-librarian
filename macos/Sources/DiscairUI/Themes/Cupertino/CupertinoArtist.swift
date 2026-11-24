@@ -137,7 +137,7 @@ struct CupertinoArtistBanner: View {
                                      play: state.selectedArtistIsUnowned ? nil : { state.actions.play(album: lib.artistAlbums.first ?? Fixtures.albums[1]) },
                                      picture: { ArtistPhoto(name: state.selectedArtist.name, size: 36) },
                                      trailingInset: state.queueOpen ? CupertinoQueueInspector.width + 40 : 40,
-                                     leadingInset: CupertinoArtistLayout.heroLeadingInset - CU.Shell.contentReduction(for: state))
+                                     leadingInset: CupertinoArtistLayout.heroLeadingInset - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
             }
             VStack(alignment: .leading, spacing: 0) {
                 BackButton(title: AppState.title(of: state.artistBack), onDark: true) { state.closeArtist() }.padding(.bottom, 14)
@@ -191,7 +191,7 @@ struct CupertinoArtistBanner: View {
                 }
             }
             .foregroundStyle(CU.onMedia)
-            .padding(.leading, CupertinoArtistLayout.heroLeadingInset - CU.Shell.contentReduction(for: state))
+            .padding(.leading, CupertinoArtistLayout.heroLeadingInset - CU.Shell.sidebarReduction(compact: state.sidebarCompact))
             .padding(.top, CupertinoArtistLayout.heroTopInset)
             .padding(.trailing, state.queueOpen ? CupertinoQueueInspector.width + 40 : 40)
             .opacity(p > 0.5 ? 0 : 1 - p * 2).allowsHitTesting(p <= 0.5)

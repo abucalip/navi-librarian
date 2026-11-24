@@ -143,14 +143,11 @@ enum CU {
     enum Shell {
         static let sidebarWidth: CGFloat = 216
         static let compactSidebarWidth: CGFloat = 88
-        static func sidebarReduction(compact: Bool) -> CGFloat { compact ? sidebarWidth - compactSidebarWidth : 0 }
-        /// Reserve the full artwork column while its square is on screen, so it cannot cover page controls.
-        @MainActor static func contentReduction(for state: AppState) -> CGFloat {
-            CupertinoArtworkSlot.showsArtwork(in: state) ? 0 : sidebarReduction(compact: state.sidebarCompact)
-        }
+        static func columnWidth(compact: Bool) -> CGFloat { compact ? compactSidebarWidth : sidebarWidth }
+        static func sidebarReduction(compact: Bool) -> CGFloat { sidebarWidth - columnWidth(compact: compact) }
         /// Gap between the window edge and the floating sidebar; the artwork slot uses the same column.
         static let inset: CGFloat = 10
-        static let contentLeading: CGFloat = 236
+        static let contentLeading = sidebarWidth + 2 * inset
         static let contentTop: CGFloat = 66
         static let toolbarLeading: CGFloat = 238
         static let toolbarTop: CGFloat = 12
@@ -237,14 +234,13 @@ struct CupertinoWindow: View {
     private var library: some View {
         let panelWidth = Self.trailingPanelWidth(for: state)
         let sidebarReduction = CU.Shell.sidebarReduction(compact: state.sidebarCompact)
-        let artworkClearance = CupertinoArtworkSlot.showsArtwork(in: state)
-            ? CupertinoArtworkSlot.side + 20 - CupertinoPlayerBar.height : 0
+        let artwork = CupertinoArtworkSlot(state: state)
         return VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
                 // Opaque content; flows under the floating sidebar and toolbar (content is never glass).
                 content
                     .padding(.trailing, state.screen != .artist && state.screen != .album ? panelWidth : 0)
-                    .padding(.leading, CU.Shell.contentLeading - CU.Shell.contentReduction(for: state))
+                    .padding(.leading, CU.Shell.contentLeading - sidebarReduction)
                     .padding(.top, state.screen == .artist || state.screen == .album ? CupertinoArtistLayout.compactHeight : CU.Shell.contentTop)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(CU.content)
@@ -257,7 +253,7 @@ struct CupertinoWindow: View {
                 if state.screen == .album { CupertinoAlbumBanner(state: state, offset: heroOffset) }   // under the sidebar and toolbar
 
                 CupertinoSidebar(state: state)
-                    .padding(.bottom, artworkClearance)
+                    .padding(.bottom, artwork.sidebarClearance)
                 CupertinoToolbar(state: state)
                     .padding(.leading, CU.Shell.toolbarLeading - sidebarReduction).padding(.trailing, panelWidth > 0 ? panelWidth + CU.Space.m : CU.Space.m).padding(.top, CU.Shell.toolbarTop)
                 trailingInspector
@@ -267,7 +263,7 @@ struct CupertinoWindow: View {
             CupertinoPlayerBar(state: state)
         }
         // Left of the player, under the sidebar: the playing cover as a large square, or the connection when nothing plays.
-        .overlay(alignment: .bottomLeading) { CupertinoArtworkSlot(state: state) }
+        .overlay(alignment: .bottomLeading) { artwork }
         .background(CU.backdrop)
         .foregroundStyle(CU.text)
         .onChange(of: state.screen) { _, _ in heroOffset = 0 }
@@ -419,7 +415,7 @@ struct CupertinoSidebar: View {
             .scrollIndicators(.hidden)
         }
         .padding(CU.Shell.inset).padding(.top, CU.Space.s)
-        .frame(width: compact ? CU.Shell.compactSidebarWidth : CU.Shell.sidebarWidth)
+        .frame(width: CU.Shell.columnWidth(compact: compact))
         .glassEffect(CU.glass, in: RoundedRectangle(cornerRadius: CU.sidebarRadius, style: .continuous))
         .padding(CU.Shell.inset)
     }
@@ -527,24 +523,26 @@ struct CupertinoNotice: View {
     }
 }
 
-/// Bottom left of the window, in the space the travel buttons used to take: the large cover of the song playing (it covers the
-/// connection text), or that text when nothing is playing.
+/// The playing cover or station logo fits the sidebar's column. The connection indicator fills the slot when playback is idle.
 struct CupertinoArtworkSlot: View {
     let state: AppState
-    static let side: CGFloat = CU.Shell.sidebarWidth
-    private static func liveStation(in state: AppState) -> RadioStation? {
+    private var compact: Bool { state.sidebarCompact }
+    private var side: CGFloat { CU.Shell.columnWidth(compact: compact) }
+    private var radiusFraction: CGFloat { CU.sidebarRadius / CU.Shell.sidebarWidth }
+    private var liveStation: RadioStation? {
         guard let live = state.player.live else { return nil }
         return state.stations.stations.first { $0.id == live.stationID }
     }
 
-    static func showsArtwork(in state: AppState) -> Bool {
-        state.player.current != nil || liveStation(in: state) != nil
+    var sidebarClearance: CGFloat {
+        guard state.player.current != nil || liveStation != nil else { return 0 }
+        return max(0, side + 2 * CU.Shell.inset - CupertinoPlayerBar.height)
     }
 
     var body: some View {
-        if let station = Self.liveStation(in: state) {
+        if let station = liveStation {
             // A station is on air: its logo takes the square.
-            StationLogo(station: station, size: Self.side, radiusFraction: CU.sidebarRadius / Self.side)
+            StationLogo(station: station, size: side, radiusFraction: radiusFraction)
                 .shadow(color: CU.shadowInk.opacity(0.28), radius: 10, y: 4)
                 .padding(.leading, CU.Shell.inset).padding(.bottom, CU.Shell.inset)
                 .accessibilityElement(children: .ignore)
@@ -552,24 +550,26 @@ struct CupertinoArtworkSlot: View {
                 .accessibilityAddTraits(.isImage)
         } else if let c = state.player.current {
             // The large cover turns over on hover and opens the album's booklet on click (Now Playing when it has none).
-            PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: false, side: Self.side, cornerRadius: CU.sidebarRadius,
+            PlayerBarCover(artist: c.artist, album: c.album, disc: c.disc, spinning: false, side: side, cornerRadius: side * radiusFraction,
                            showsDisc: false, fallback: { state.screen = .nowPlaying }) {
                 CoverView(album: AlbumItem(id: -1, title: c.album, artist: c.artist, year: 0, genre: "", format: "", owned: true, hue: 200, remoteID: c.albumID, coverArt: c.coverArt), px: 600)
             }
             .shadow(color: CU.shadowInk.opacity(0.28), radius: 10, y: 4)
-            // The sidebar's glass starts 10 points in and is 216 wide: the cover takes the same column.
             .padding(.leading, CU.Shell.inset).padding(.bottom, CU.Shell.inset)
         } else {
             HStack(spacing: CU.Space.xs) {
                 // A bad connection is danger with its own icon and the label's words; never the accent.
                 Image(systemName: state.connectionIsGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(state.connectionIsGood ? CU.success : CU.danger).accessibilityHidden(true)
-                Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8)
+                if !compact { Text(state.connectionLabel).lineLimit(1).minimumScaleFactor(0.8) }
             }
             .font(CU.Font.caption.weighted(.regular)).foregroundStyle(CU.textSecondary)
-            .frame(width: Self.side, alignment: .leading).padding(.leading, CU.Shell.inset + CU.Space.m).padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
+            .frame(width: side, alignment: compact ? .center : .leading)
+            .padding(.leading, CU.Shell.inset + (compact ? 0 : CU.Space.m))
+            .padding(.bottom, (CupertinoPlayerBar.height - 14) / 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Connection: \(state.connectionLabel)")
+            .help(state.connectionLabel)
         }
     }
 }
