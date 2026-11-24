@@ -1,138 +1,196 @@
 # ListenBrainz discovery and playlists
 
-**Status:** Implementation plan · 2026-11-24
+**Status:** Implementation plan (revised with live probe) · 2026-11-24 · `LB-01` merged (`#1270`)
 
-Discair will automatically bring ListenBrainz Created for Me playlists and Discair-generated Troi mixes into Navidrome. In Discair, each mix shows its full track list, plays owned tracks in order, and gives each unowned track a Download action. The same server-side recording matcher will support Artist Radio. Discover will also gain personal and upcoming releases and a cover-color browser.
+Discair will automatically bring ListenBrainz mixes (`Created for Me` and collaborative-filtering recommendations) and Discair-generated local mixes into Navidrome as private, managed rolling playlists. In Discair, each mix shows its full track list, owned/missing state, and a per-track Download action for unowned tracks; Android and macOS play the owned subset in order through their native queues, while Web manages browsing, downloads, and Navidrome sync (Web has no audio player). The same server-side recording matcher will support owned-first Artist Radio, an LB Radio discovery mix, Fresh Releases (personal + upcoming), ListenBrainz feedback/essentials features, and an optional cover-color browser.
 
-## Probe evidence
+## Owner decisions (approved 2026-11-24)
+
+- **D1 · Navidrome playlist retention:** Maintain one rolling private Navidrome playlist per recurring feed (for example `Discair · Daily Jams`, `Discair · Weekly Exploration`) updated in place to the latest edition, while keeping recent dated snapshots in Discair's Inbox.
+- **D2 · Owner deletes a managed Navidrome playlist:** Treat manual deletion in Navidrome as opt-out (mark unlinked in Discair, keep the Inbox snapshot, and do not silently recreate unless the owner re-enables sync).
+- **D3 · Artist Radio unowned tracks and coverage:** Return the full matched track list (owned + unowned) and base playback design on live library coverage (see probe finding below: raw LB Radio matched only 0–5% of the library, so playable Artist Radio must be owned-first, with LB Radio positioned as a discovery mix).
+- **D4 · Global Fresh Releases feed:** Omit the 1,879-entry global `/1/explore/fresh-releases` feed from initial scope; ship only the personal ListenBrainz feed (`past` + `future`) alongside existing MusicBrainz library-artist New Releases.
+
+## Live probe evidence (2026-11-24)
+
+### Navidrome (`0.64.2`, OpenSubsonic `true`)
 
 | Check | Result |
 | --- | --- |
-| Token and Created for Me | Token validation succeeded. The configured profile returned HTTP 200 with zero playlists on two reads. A separate public profile returned Daily Jams, Weekly Jams, and Weekly Exploration in the initial probe. The weekly jobs were about 93 days old when checked. |
-| LB Radio | Authenticated jazz-tag, Portishead artist MBID, and personal unlistened-recommendation prompts each returned 50 JSPF tracks. An unparenthesized artist-name prompt returned 400. Use structured seeds and prefer artist MBIDs. |
-| Fresh Releases | The personal 30-day query returned 38 entries (16 albums, 18 singles, 4 EPs). The global seven-day query returned 1,879 entries. Both are raw counts before deduplication or ownership matching. |
-| Cover color | A blue swatch query returned 12 releases with cover art IDs, color distances, and recording data. |
+| Song inventory (`search3`) | 13,205 songs total; **11,439 (86.6%) already carry `musicBrainzId`** directly in `search3`. 13,204 have `duration`, 13,205 have `album`. `isrc`, `bpm`, `moods`, and `artists` are also present. |
+| Empty playlist creation | `createPlaylist(name=...)` with 0 songs succeeded (`status: ok`, returned playlist ID). Discair can create managed playlists immediately even when 0 tracks are owned. |
+| Privacy (`public=false`) | `updatePlaylist(playlistId=..., public="false")` succeeded (`status: ok`; Navidrome omits `public` / returns `null` for private playlists). |
+| Atomic replace, order & repeats | `createPlaylist(playlistId=..., songId=[s0, s1, s0])` atomically replaced the playlist in exact order and preserved duplicate `songId` entries (3 entries). A follow-up `createPlaylist(playlistId=..., songId=[s1, s0])` shrank and reordered atomically (2 entries). Disposable playlist deleted cleanly afterwards. |
 
-The owner followed `troi-bot` after the probe. Following the bot opts the account into Daily Jams. Weekly Jams and Weekly Exploration are generated automatically from listening history when upstream generation is running. Check Created for Me after the next Daily Jams run and use the real playlist to verify import if it appears. Keep the fixture for repeatable tests. [ListenBrainz update schedule](https://listenbrainz.readthedocs.io/en/latest/general/data-update-intervals.html)
+### ListenBrainz (authenticated against the owner's configured account)
 
-These probes read upstream data only. Local match quality, Navidrome playlist writes, completed imports, and execution of a local Troi recipe still need verification.
+| Endpoint | Result |
+| --- | --- |
+| Token validation (`/1/validate-token`) | HTTP 200, valid. |
+| Created for Me (`/1/user/{u}/playlists/createdfor`) | HTTP 200, `playlist_count: 0` (account follows `troi-bot`; Daily Jams not yet generated). Keep sanitized fixture until the first edition arrives. |
+| **CF Recording Recs** (`/1/cf/recommendation/user/{u}/recording`) | HTTP 200, 25 tracks actively updated; **12/25 (48%) owned by exact MBID** and 13/25 unowned discovery tracks. Works immediately even while `Created for Me` is empty. |
+| Fresh Releases personal (`days=30&past=true&future=true`) | HTTP 200, 38 entries (**34 past/today, 4 upcoming**): 16 albums, 18 singles, 4 EPs. 38/38 have `release_group_mbid`; 36/38 have `caa_id`. |
+| **LB Radio real-library coverage** (`/1/explore/lb-radio`) | Portishead MBID: `easy` **1/50** (2%), `medium` **1/47** (2%), `hard` **2/39** (5%). `tag:(jazz)`: `easy` **0/50** (0%), `medium` **1/50** (2%). All tracks included `album`. **Conclusion:** LB Radio is a discovery/download mix, NOT a playable owned-library radio queue on its own. |
+| Top recordings for artist (`/1/popularity/top-recordings-for-artist/{mbid}`) | HTTP 200, **319 ranked recordings** for Portishead in a single call. Viable for owned-first Artist Radio and "Missing Essentials". |
+| MBID Mapper (`/1/metadata/lookup/`) | HTTP 200, returns `recording_mbid`, `release_mbid`, `release_name`, `artist_mbids` in one call without touching MusicBrainz's 1.1 s gate. |
+| Cover color (`/1/explore/color/3b82f6`) | HTTP 200, 12 releases with `release_mbid`, `caa_id`, `color`, `dist`, `artist_name`, `release_name`, `recordings`. |
+| User feedback (`/1/feedback/user/{u}/get-feedback`) | HTTP 200, 10 loved recordings (`score: 1`). |
+| Similar users & Feed (`/similar-users`, `/feed/events`) | HTTP 200: 25 similar users; feed returns `follow` and `recording_pin` events. |
+| Stats (`/stats/user/{u}/artist-map`, `daily-activity`) | HTTP 200: **47 countries** in artist map; full hour-of-day listening distribution available. (`release-groups` `this_year` returned 204; `pins` returned 404; `year-in-music/2025` returned empty keys.) |
+
+## Codebase constraints verified against `main`
+
+- **Web has no audio player or playback queue.** Android and macOS stream owned music directly from Navidrome (`docs/ARCHITECTURE.md`). Web manages browsing, per-track downloads, and saving/inspecting Navidrome playlists.
+- **Reuse `discovery/search/index.py` for the song index.** `OwnedData.songs` already pages and caches the full Navidrome song inventory (up to 200,000 songs, atomic swap, sanity-drop guard). Extend `_song_entry` to retain `recording_mbid` from Subsonic `musicBrainzId` (verified present on 86.6% of songs in `search3`). Subsonic `duration` is in seconds; JSPF `duration_ms` is in milliseconds.
+- **Single-track acquisition requires an album name.** `acquisition/track_service.py::request_track` rejects empty `album`. When a track omits `album`, resolve it via ListenBrainz `/1/metadata/lookup/` first, falling back to MusicBrainz through `integrations/provider_gate.py` (mirroring `app/api/radio.py::radio_get_play`), or refuse safely.
+- **Navidrome indexing is asynchronous after import.** `acquisition/import_hooks.py::notify_imported` runs before Navidrome finishes indexing. Reconcile managed playlists when Navidrome's `getScanStatus` marker advances and on scheduled worker passes.
+- **Architecture and store boundaries.** `navidrome_server.py` takes no additions (D-016). New playlist snapshots and managed-copy mappings live in new tables in `intelligence.sqlite3` (migrated via `intelligence/store/migrations.py`, covered by `scripts/backup_stores.py`, `open_readonly`/`open_writer`). Scheduled refreshes run on `worker-schedule-discovery` (`app/services/discovery_schedule.py`).
+- **Keep the 6-package server dependency footprint.** Do not add the third-party `troi` Python package to `requirements.txt`; build Discair-generated local mixes directly in Python over local data.
+- **Graceful degradation when ListenBrainz is unconfigured.** Every ListenBrainz-backed feature must return a clean, non-error unconfigured state when no username or token is set.
+- **Multi-theme clients.** Web targets Listening Room (`L0`–`L10`), and Android spans multiple themes; client slices must update `docs/contracts/` when adding fields or routes.
 
 ## 1. Shared track matching and acquisition
 
-- Parse JSPF recording identifiers, preserve source order and repeated entries, and resolve against a server-side Navidrome song index. Match recording MBIDs first. For tracks with incomplete tagging, use normalized artist credit and title with corroborating duration or release information. Treat conflicting identities and ambiguous versions as unresolved.
-- Return source identity and track position, display metadata, match state (owned, missing, or ambiguous), and song ID when owned. Include the acquisition state separately. Use existing batch metadata and library snapshot code where possible, with worker-owned refresh and existing provider pacing.
-- Every unowned row exposes Download. Resolve an ambiguous or incomplete recording before submission, and give the row a clear explanation if acquisition cannot safely start. Reuse the existing track-acquisition service and import checks. The server resolves the track from its stored playlist and position, and rechecks ownership when clicked. Repeated clicks reuse the active acquisition.
-- After verified import and Navidrome indexing, rematch affected playlists and update their playable entries in original order. Reconcile on later scans as well, including tracks added outside Discair.
+- `LB-01` (`integrations/listenbrainz/jspf.py`) is merged. Extend it in `LB-04` to also parse JSPF playlist/track extensions (`last_modified_at`, `source_patch`, `creator`, `artist_identifiers`, `release_identifier`, `caa_id`).
+- Extend `discovery/search/index.py::_song_entry` to retain normalized `recording_mbid` (from `musicBrainzId`), and build the pure track matcher over `OwnedData.songs` (worker builds `OwnedData` synchronously like `app/services/similar_precompute.py`).
+- Match `recording_mbid` first (covers ~86.6% of the library directly). For remaining tracks, apply conservative normalized artist-credit + title fallback corroborated by release title/MBID or duration (`duration_ms` vs `duration * 1000` within a tight tolerance). Treat conflicting identities and ambiguous versions (live, remix, remaster, multiple candidates) as `ambiguous`, never guessing.
+- Return source identity, zero-based track position, display metadata, match state (`owned`, `missing`, `ambiguous`), owned Navidrome `song_id` when owned, and acquisition state separately.
+- Every unowned row exposes Download. The server resolves the track from its stored edition and position, rechecks ownership on click, and reuses any active acquisition. If `album` is missing, resolve via ListenBrainz `/1/metadata/lookup/` first, then MusicBrainz via `musicbrainz_lane()`; refuse safely with a clear explanation if identity remains ambiguous or no album can be resolved.
+- Track acquisition is safety-critical: keep existing canonical-path, destination, and import checks untouched, and test both safe success and unsafe refusal.
+- Reconcile affected playlists when Navidrome's `getScanStatus` marker advances after imports and on periodic worker checks, inserting newly indexed tracks in original source order.
 
 ## 2. Automatic Playlist Inbox
 
-- The server worker periodically reads the configured profile's paginated Created for Me collection and fetches details for new or changed playlists. Include Daily Jams, Weekly Jams, Weekly Exploration, and other playlists returned by that collection. The other eligible source is scheduled Discair-generated Troi mixes. The clients receive these automatically. There is no URL import or authored-playlist browser.
-- Store complete source snapshots in Discair. Save the owned subset as a private, managed Navidrome playlist. Persist a mapping from source identity to Navidrome playlist ID, including the occurrence order and last successful sync. Use the upstream playlist MBID for hosted sources and the recipe plus scheduled edition for local Troi sources. Verify whether Navidrome accepts empty playlists. If it does, create one at import. Otherwise keep the complete Discair snapshot and create the Navidrome copy when the first track becomes playable.
-- Make sync idempotent across retries and worker restarts. Reconcile uncertain create outcomes before creating again. Update only copies managed by Discair and leave unrelated or independently copied playlists alone. Keep previous successful snapshots during upstream failures and respect existing provider budgets. An empty successful fetch explains that ListenBrainz has yet to return a playlist and links to `troi-bot` for Daily Jams opt-in. An older snapshot remains playable and shows its generation date, including when weekly generation has stalled.
-- Expose the inbox and source details in web, Android, and macOS playlist surfaces. Show source, generation date, playable count, ordered track rows, playback, and per-track Download with progress and retry. Ordinary Navidrome clients see the playable subset. Use existing queue and acquisition controls in Discair.
+- The worker (`worker-schedule-discovery` in `app/services/discovery_schedule.py`) periodically reads:
+  1. The configured profile's paginated **Created for Me** collection (`Daily Jams`, `Weekly Jams`, `Weekly Exploration`, etc.), fetching details only when `last_modified_at` / `date` changes.
+  2. **ListenBrainz Collaborative-Filtering Recording Recommendations** (`/1/cf/recommendation/user/{u}/recording`), turned into a rolling Inbox mix (`Discair · ListenBrainz Picks`). Unlike `Created for Me` (which can be empty or stalled), this already returns a ~50/50 mix of owned tracks and downloadable discoveries today.
+  3. **Discair-generated local mixes** (section 5).
+- Store complete source snapshots and managed-copy mappings in `intelligence.sqlite3`. Key hosted playlists by upstream playlist MBID and rolling/local mixes by recipe + edition ID.
+- Sync the owned subset to one rolling private Navidrome playlist per recurring feed (D1):
+  - Create immediately with `createPlaylist(name=..., songId=...)` (0 songs verified supported on Navidrome `0.64.2`), then set `updatePlaylist(playlistId=..., public="false")`.
+  - Update atomically in source order (preserving repeats) via `createPlaylist(playlistId=..., songId=...)` (verified on Navidrome `0.64.2`).
+  - Make sync idempotent across retries and restarts; never adopt unrelated playlists; if the owner manually deletes a managed playlist in Navidrome, mark it unlinked and do not silently recreate it (D2).
+- Keep previous successful snapshots during upstream failures. An empty `Created for Me` fetch explains that ListenBrainz has not generated playlists yet and links to `troi-bot` (while `ListenBrainz Picks` and local mixes still populate the Inbox).
+- **Client surfaces:**
+  - **Web (Listening Room):** Inbox shelf and track detail with source, generation date, owned/total count, Navidrome sync badge, ordered track rows, and per-track Download/retry (no browser audio player).
+  - **Android & macOS:** Inbox shelf and track detail with ordered native playback of owned tracks, per-track Download/retry, and source metadata.
 
-**Acceptance:** Sync a representative generated fixture twice and after a simulated interrupted write. Confirm a single private Navidrome copy, source order including repeats, and a visible missing track that joins the playlist after successful acquisition and indexing. Exercise zero playlists, zero owned tracks, timeouts, and stale weekly editions. Use a redacted generated-playlist fixture while the configured profile has no upstream entries.
+**Acceptance:** Sync a representative fixture twice and after a simulated interrupted write. Confirm a single private rolling Navidrome copy, preserved source order including repeats, and a missing track joining in order after import and Navidrome scan completion. Exercise unconfigured ListenBrainz, zero `Created for Me` playlists, zero owned tracks, timeouts, manual deletion (D2), and stale editions.
 
-## 3. Artist Radio
+## 3. Artist Radio (owned-first) & LB Radio Discovery Mix
 
-- Add Start Artist Radio on artist pages, then tag seeds in Discover. Use a finite batch and play the owned subset through the existing queue. Surface the playable count and a clear empty state. Use the configured server token and encode seeds on the server. Cache briefly per seed and mode and coalesce duplicate requests.
-- Test Familiar, Explore, and Deep cuts against ListenBrainz easy, medium, and hard. Add weighted seeds, saved recipes, and Continue this mix after single-seed generation has acceptable local coverage. Check continuation using a playlist seed plus a related artist or tag seed so it can introduce tracks beyond the source mix.
-- Put generated mixes under Discover or the artist page, distinct from the live internet radio player. Preserve ordinary playback, queue, and scrobbling behavior.
+The live probe showed that raw ListenBrainz `/1/explore/lb-radio` matches only **0–5% of tracks** in the owner's 13,205-song library (`0–2` owned songs out of 50 across `easy`/`medium`/`hard` and `tag:(jazz)`). Treating LB Radio as an owned-only radio queue would leave the player nearly empty. Split the experience cleanly into two complementary tools, both kept distinct from Discair's live internet **Radio** player:
 
-**Acceptance:** Test artist ID, tag, and recommendation seeds against representative library sections. Report playable coverage, ambiguous matches, artist repetition, and wrong versions. Verify empty, invalid-token, throttled, and upstream failure responses leave an existing queue intact.
+- **3a. Owned-first Artist Radio (playable queue):**
+  - Seeded from an artist page (artist MBID). Combines the seed artist and Discair's precomputed similar artists (`similar_precompute`), ranks candidate recordings using ListenBrainz `/1/popularity/top-recordings-for-artist/{mbid}` (319 ranked tracks per call) and local play counts, and intersects with `OwnedData.songs` so the resulting 25–50 track queue is **100% playable** from the owner's library, with configurable familiarity (`Familiar`, `Explore`, `Deep cuts` controlling seed-vs-similar ratio and play-count weighting).
+  - **Android & macOS:** Plays directly in the existing native queue; preserves the current queue on failure or zero matches.
+  - **Web:** Previews the mix and offers **Save to Navidrome**.
+- **3b. LB Radio Discovery Mix (discovery & download):**
+  - Calls `/1/explore/lb-radio` with structured artist MBID or tag seeds and mode (`easy`/`medium`/`hard`), caches briefly, coalesces concurrent requests, and matches against `OwnedData.songs` returning the **full track list** (owned + unowned) (D3).
+  - Positioned honestly as a **"Discover a mix"** surface where unowned tracks are the primary value: every unowned track has one-click Download, owned tracks can be played (Android/macOS) or saved to Navidrome (Web).
+
+**Acceptance:** Verify owned-first Artist Radio produces a full playable queue with artist diversity and no wrong versions; verify LB Radio Discovery Mix returns full matched/unmatched rows, preserves existing native queues on error, and handles unconfigured tokens cleanly.
 
 ## 4. Fresh Releases
 
-- Extend the existing New Releases view with From your ListenBrainz listening and Coming soon, alongside the current library-artist results. Use the personal feed for taste-based results. Treat the broad global feed as optional discovery input and filter and page it server-side.
-- Group editions by release-group MBID, preserve useful release precision and provenance, join ownership using the library index, and label Owned, Out now, or Upcoming. Offer album, EP, and single filters. Use the existing album detail and acquisition flow. Upcoming items can be browsed even when the release is unavailable.
-- Cache bounded queries and retain the current library-based view when ListenBrainz is unavailable. Compare overlap and unique eligible releases with the existing MusicBrainz list. Consider a watchlist or Friday digest after evaluating coverage.
+- Extend existing `New Releases` with **From your ListenBrainz listening** and **Coming soon**, alongside the current MusicBrainz library-artist results.
+- Use ListenBrainz personal `/1/user/{user_name}/fresh_releases` (`days=30&past=true&future=true`) in one cached call (probed: 38 entries, 34 past + 4 upcoming, 100% `release_group_mbid`, 95% `caa_id`). Omit the 1,879-entry global feed (D4).
+- Deduplicate by `release_group_mbid`, preserve date precision (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`), join ownership via `OwnedData.albums`, label `Owned`, `Out now`, or `Upcoming`, and offer `Album`, `EP`, and `Single` filters. Upcoming releases remain browsable with acquisition clearly unavailable until release.
+- Retain the existing MusicBrainz library-artist view unchanged when ListenBrainz is unconfigured or unavailable.
 
-**Acceptance:** Verify duplicate editions, partial dates, dates near the local day boundary, type filters, and already-owned releases across clients.
+**Acceptance:** Verify duplicate editions, partial dates, local day boundaries, type filters, unconfigured/unavailable fallback, and owned/unowned navigation across clients.
 
-## 5. Discair-generated Troi mixes
+## 5. Discair-generated local mixes (no `troi` dependency)
 
-- Run a focused Troi evaluation in the server worker. Start with Rediscover your library, blending older favorites with neglected owned tracks. Compare coverage and variety with existing Discair selection. Pin and assess the dependency before enabling a scheduled recipe, including whether its inputs rely on experimental endpoints.
-- Send successful output through the same snapshot and Navidrome sync as Created for Me, with clear source attribution. Label local editions separately from hosted ListenBrainz playlists. Keep the prior edition when generation fails or yields an unusable result. Evaluate World Trip and artist deep cuts after the first recipe passes.
+- Implement local mixes as pure, deterministic Python generators in `discovery/` using local data Discair already owns (`OwnedData.songs`, Navidrome play counts/years, `intelligence/insights/` Forgotten Gems, and ListenBrainz listen history / feedback) with zero new dependencies.
+- Start with **Rediscover your library**, blending older favorites with neglected owned tracks (100% playable, zero extra external API calls).
+- Route generated output through the exact same Inbox snapshot and rolling private Navidrome sync pipeline, keyed by `recipe + scheduled edition` and labeled clearly as a Discair mix. Retain the prior edition on failure or empty output.
 
-**Acceptance:** With fixed recipe inputs, verify track eligibility and a repeatable edition identity. A rerun must update the same edition, and a provider outage must leave the prior playlist playable.
+**Acceptance:** With fixed fixtures, verify deterministic eligibility, repeatable edition identity, clear Discair attribution, and retention of the prior playable edition on failure.
 
-## 6. Browse by cover color
+## 6. High-value ListenBrainz additions inspired by the live probe
 
-- Add a swatch-led Discover view on web, Android, and macOS. A server endpoint validates the color, caps the result count, caches by normalized color, and uses ListenBrainz similarity order. Show cover, album, artist, and ownership. Open owned results in the library and other results on the existing album page.
-- Use named swatches, keyboard and screen-reader labels, and a visible selection indicator. Fetch on selection and show useful loading, empty, and retry states.
+These reuse the exact same matching, Inbox, and ListenBrainz client infrastructure with minimal new surface area:
 
-**Acceptance:** Verify color normalization, result bounds, missing art, navigation for owned and unowned releases, and accessible swatch selection.
+- **6a. Missing Essentials on Artist Pages (`/1/popularity/top-recordings-for-artist/{mbid}`):** Intersect an artist's top ListenBrainz recordings (cached 30 days, reusing the same endpoint as section 3a) with `OwnedData.songs` to surface the top unowned tracks on artist pages with one-click Download.
+- **6b. ListenBrainz Feedback Integration (`/1/feedback/user/{u}/get-feedback`):** Import ListenBrainz loves (`score=1`, 10 live on the owner's account) as an optional discovery seed alongside Navidrome stars (`discovery/star_seeds.py`) and optional rolling Navidrome playlist (`Discair · ListenBrainz Loved`), and honor hates (`score=-1`) as a negative exclusion in mixes and discovery.
+- **6c. Browse by cover color (low-priority / optional):** Bounded, cached server read of `/1/explore/color/{color}` preserving similarity order, collapsing duplicate releases, and joining ownership via `OwnedData.albums` using `release_mbid` and normalized `(artist, album)` with no N+1 MusicBrainz calls. Accessible swatches on Web, Android, and macOS.
 
 ## Implementation slices
 
-Each row is one PR. Start from current main once the listed dependencies have merged. Use the listed acceptance check as the stopping point and carry any follow-on work into its own slice. Server slices use focused tests and sanitized fixtures. Client slices use the merged server contract and test one client only. Slices with no shared dependency can proceed independently.
+Each row is one PR. Start from current `main` once the listed dependencies have merged. Server slices use focused `pytest` runs and sanitized fixtures; client slices build against the merged server contract, update `docs/contracts/` when adding fields or routes, and test one client only.
 
 ### Playlist Inbox and shared recording matching
 
+| Slice | Status | Depends on | PR scope and acceptance |
+| --- | --- | --- | --- |
+| LB-01 · Parse playlist tracks | **Merged (`#1270`)** | — | Added `integrations/listenbrainz/jspf.py` and sanitized fixture `tests/fixtures/listenbrainz_daily_jams.json`. |
+| LB-02 · Match exact recording IDs | Next | LB-01 | Add `recording_mbid` to `discovery/search/index.py::_song_entry` and add pure recording-MBID matching over `OwnedData.songs` (86.6% live `search3` coverage verified). Test ordered owned/missing results and duplicate occurrences. |
+| LB-03 · Match untagged tracks | Ready after LB-02 | LB-02 | Add conservative artist/title fallback with release and duration (`duration_ms` vs `duration * 1000`) corroboration. Fixtures must separate safe matches from ambiguous live, studio, and remastered versions. |
+| LB-04 · Read Created for Me & CF Recs | Ready | LB-01 | Add paced `httpx` upstream adapter for paginated `Created for Me`, `/1/cf/recommendation/user/{u}/recording`, and JSPF extension parsing (`last_modified_at`, `source_patch`, `creator`, track MBIDs/CAA). Verify pagination, unconfigured account, empty account, and failed detail reads. |
+| LB-05 · Store playlist editions | Ready after LB-04 | LB-04 | Add `intelligence.sqlite3` migration and repository for full source snapshots and managed-copy metadata (no `navidrome_server.py` additions). Verify idempotent retry, change detection, and retention of prior snapshots on partial refresh. |
+| LB-06 · Read the Inbox | Ready after LB-03, LB-05 | LB-03, LB-05 | Add authenticated Inbox list and detail endpoints (read-only store access) with shared fixtures for owned, missing, ambiguous, unconfigured, empty, and stale results, preserving source order and acquisition state. |
+| LB-07 · Save rolling private copies | Ready after LB-03, LB-05 | LB-03, LB-05 | Create and atomically replace rolling private Navidrome playlists (`createPlaylist` + `updatePlaylist(public="false")` + `createPlaylist(playlistId=...)`) per D1. Verify retry after uncertain create produces one copy, repeats survive, and unrelated playlists are never adopted. |
+| LB-08 · Reconcile managed copies | Ready after LB-07 | LB-07 | Reconcile managed Navidrome copies when Navidrome's `getScanStatus` marker advances or on worker refresh. Verify newly indexed tracks insert in source order, repeats survive, manual Navidrome deletion marks unlinked (D2), and unrelated playlists stay untouched. |
+| LB-09 · Download an Inbox track | Ready after LB-06 | LB-06 | Add server action for a stored edition + position, reusing `acquisition/track_service.py::request_track`. Resolve missing `album` via ListenBrainz `/1/metadata/lookup/` first, falling back to MusicBrainz via `musicbrainz_lane()`. Verify ownership recheck, safe refusal of unresolved/ambiguous tracks, and deduplication of concurrent clicks. |
+| LB-10 · Schedule hosted import | Ready after LB-08, LB-09 | LB-08, LB-09 | Register hosted Inbox refresh (`Created for Me` + `CF Recs`) and reconciliation on `worker-schedule-discovery` (`app/services/discovery_schedule.py`). Run manual live check on a disposable Navidrome playlist (including download → index → reconcile loop) before enabling recurring schedule. |
+| LB-11 · Web Inbox browse | Ready after LB-06 | LB-06 | Add Inbox shelf and track detail in Web (Listening Room) with source, generation date, owned count, Navidrome sync status, and empty/unconfigured states (no browser audio player). Check mixed and zero-owned fixtures. |
+| LB-12 · Web Inbox downloads | Ready after LB-09, LB-11 | LB-09, LB-11 | Connect per-track Download, progress, and retry in Web Inbox. Verify unresolved rows explain why acquisition cannot start and completed tracks show as owned after refresh. |
+| LB-13 · Android Inbox playback | Ready after LB-06 | LB-06 | Add Inbox shelf and track detail in Android with source date, owned count, empty state, and ordered native playback of owned tracks. Check mixed and zero-owned fixtures. |
+| LB-14 · Android Inbox downloads | Ready after LB-09, LB-13 | LB-09, LB-13 | Wire per-track Download, status, and retry to existing Android acquisition UI. Verify unresolved and newly playable rows. |
+| LB-15 · macOS Inbox playback | Ready after LB-06 | LB-06 | Add Inbox shelf and track detail in macOS with source date, owned count, empty state, and ordered native playback of owned tracks. Check mixed and zero-owned fixtures. |
+| LB-16 · macOS Inbox downloads | Ready after LB-09, LB-15 | LB-09, LB-15 | Wire per-track Download, status, and retry to existing macOS acquisition UI. Verify unresolved and newly playable rows. |
+
+### Owned-first Artist Radio & LB Radio Discovery Mix
+
 | Slice | Depends on | PR scope and acceptance |
 | --- | --- | --- |
-| LB-01 · Parse playlist tracks | — | Add a JSPF parser and a sanitized generated-playlist fixture. Verify recording URLs, missing identifiers, repeated tracks, order, and generation date. |
-| LB-02 · Match exact recording IDs | LB-01 | Build the recording MBID lookup from Navidrome song data. Verify ordered owned and missing results, including duplicate playlist occurrences. |
-| LB-03 · Match untagged tracks | LB-02 | Add conservative artist/title fallback with release or duration evidence. Fixtures must distinguish a safe match from ambiguous live, studio, and remastered versions. |
-| LB-04 · Read Created for Me | LB-01 | Add the paced upstream adapter for listing and fetching generated playlists. Verify pagination, an empty account, and failed detail reads. |
-| LB-05 · Store playlist editions | LB-04 | Persist full source snapshots by upstream ID, with generation and refresh times. Verify retry, repeat import, and retention of previous data after a partial refresh. |
-| LB-06 · Read the Inbox | LB-03, LB-05 | Add authenticated list and detail endpoints with shared fixtures for owned, missing, ambiguous, empty, and stale results. Verify that the owned IDs retain source order. |
-| LB-07 · Save private copies | LB-06 | Create the playable subset in Navidrome and record the managed ID. Check empty-playlist behavior with a disposable playlist. Verify that a retry after an uncertain create produces a single copy and never adopts an unrelated playlist. |
-| LB-08 · Reconcile managed copies | LB-07 | Update the playable subset when the Navidrome library changes. Verify that a newly indexed track is inserted in source order, repeats survive, and unrelated playlists stay untouched. |
-| LB-09 · Download an Inbox track | LB-06 | Add the server action for a stored track occurrence. Reuse existing acquisition and status handling. Verify current ownership, safe refusal of unresolved identity, and deduplication of simultaneous requests. |
-| LB-10 · Schedule hosted import | LB-08, LB-12 | Register one worker job to refresh hosted editions and reconcile copies. Prove a manual run on a disposable Navidrome playlist, including the download-to-index-to-playlist loop. Use a real Daily Jams edition if present and the fixture for automated tests. Enable recurring import only after the live check. |
-| LB-11 · Web Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
-| LB-12 · Web Inbox downloads | LB-09, LB-11 | Connect per-track Download, status and retry. Verify an unresolved row explains why acquisition cannot start and a completed track becomes playable after refresh. |
-| LB-13 · Android Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
-| LB-14 · Android Inbox downloads | LB-09, LB-13 | Wire per-track Download, status and retry to the existing acquisition UI. Verify unresolved and newly playable rows. |
-| LB-15 · macOS Inbox playback | LB-06 | Add the generated shelf and track detail with source date, owned count, empty state, and ordered playback. Check a mixed and a zero-owned playlist. |
-| LB-16 · macOS Inbox downloads | LB-09, LB-15 | Wire per-track Download, status and retry to the existing acquisition UI. Verify unresolved and newly playable rows. |
-
-### Artist Radio
-
-| Slice | Depends on | PR scope and acceptance |
-| --- | --- | --- |
-| LB-17 · Generate owned queues | LB-03 | Add authenticated generation for artist MBID and tag seeds, typed mode, short caching, and request coalescing. Verify empty, auth, throttle, and error responses. Record coverage and wrong-version matches for representative artist, tag, and recommendation seeds before expanding the UI. |
-| LB-18 · Web Artist Radio | LB-17 | Add Start Artist Radio with existing queue controls. Verify generation failure or zero playable tracks preserves the queue. |
-| LB-19 · Android Artist Radio | LB-17 | Add the artist-page action and playable coverage state. Verify failure and zero matches preserve the queue. |
-| LB-20 · macOS Artist Radio | LB-17 | Add the artist-page action and playable coverage state. Verify failure and zero matches preserve the queue. |
-| LB-21 · Web tag and depth controls | LB-18 | Add tag seeds in Discover and the three familiarity modes. Verify seed/mode selection and playback with the same server contract. |
-| LB-22 · Android tag and depth controls | LB-19 | Add tag seeds and the three modes to Android Discover. Verify selection and queue behavior. |
-| LB-23 · macOS tag and depth controls | LB-20 | Add tag seeds and the three modes to macOS Discover. Verify selection and queue behavior. |
-| LB-24 · Weighted prompts | LB-17 | Extend the server contract with structured weighted seeds once single-seed queues have acceptable coverage. Verify bounds, encoding, order, and a mixed artist/tag result. |
-| LB-25 · Saved radio recipes | LB-24 | Persist and expose reusable validated seed combinations through the server API. Verify save, reopen, and regeneration of a queue from a recipe. |
-| LB-26 · Playlist continuation | LB-24, LB-06 | Accept an Inbox edition as a continuation seed with a related artist or tag. Verify that the resulting queue can include playable tracks beyond the source playlist. |
-| LB-27 · Web radio recipes | LB-21, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
-| LB-28 · Android radio recipes | LB-22, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
-| LB-29 · macOS radio recipes | LB-23, LB-25, LB-26 | Add the recipe picker and Continue this mix. Verify both entry points use the existing queue. |
+| LB-17 · Owned-first Artist Radio API | LB-03 | Add authenticated server endpoint generating a playable 25–50 track library queue from seed artist + precomputed similar artists ranked by cached `/1/popularity/top-recordings-for-artist/{mbid}` and local play counts (`Familiar`/`Explore`/`Deep cuts`). Verify queue diversity, zero-match handling, and no unowned tracks leaking into the playable queue. |
+| LB-18 · LB Radio Discovery Mix API | LB-03 | Add authenticated `/1/explore/lb-radio` endpoint for structured artist MBID and tag seeds + mode (`easy`/`medium`/`hard`), short caching, and request coalescing, returning full matched list (owned + unowned) for discovery and download (D3). Verify auth, throttle, and error handling. |
+| LB-19 · Web Artist Radio & Discovery Mix | LB-17, LB-18 | Add Artist Radio (preview + Save to Navidrome) and Discovery Mix (preview + per-track Download + Save owned to Navidrome) on Web artist pages and Discover. No browser queue. |
+| LB-20 · Android Artist Radio & Discovery Mix | LB-17, LB-18 | Add Start Artist Radio (queues owned tracks natively, preserves queue on error/empty) on artist pages and Discovery Mix (play owned / download unowned) in Discover. |
+| LB-21 · macOS Artist Radio & Discovery Mix | LB-17, LB-18 | Add Start Artist Radio (queues owned tracks natively, preserves queue on error/empty) on artist pages and Discovery Mix (play owned / download unowned) in Discover. |
 
 ### Fresh Releases
 
 | Slice | Depends on | PR scope and acceptance |
 | --- | --- | --- |
-| LB-30 · Fetch and compare release feeds | — | Add bounded, cached personal and global reads. Capture an aggregate comparison of overlap, unique eligible entries, and dates against the existing MusicBrainz list. Keep the global feed optional. |
-| LB-31 · Serve personal and upcoming releases | LB-30 | Add the Discover read model with release-group deduplication, date precision, ownership, and album/EP/single filters. Verify timezone boundaries and provider failure alongside the existing library feed. |
-| LB-32 · Web Fresh Releases | LB-31 | Add personal and upcoming views to New Releases. Verify type filters, ownership, and existing album navigation. |
-| LB-33 · Android Fresh Releases | LB-31 | Add the views and filters to Android Discover. Verify upcoming and owned entries open the right destination. |
-| LB-34 · macOS Fresh Releases | LB-31 | Add the views and filters to macOS Discover. Verify upcoming and owned entries open the right destination. |
+| LB-22 · Fetch and compare personal releases | — | Add bounded, cached ListenBrainz personal `fresh_releases` read (`past=true&future=true`). Capture aggregate comparison of overlap, unique eligible entries, and date precision against the existing MusicBrainz `New Releases` list (no global feed per D4). |
+| LB-23 · Serve personal and upcoming releases | LB-22 | Add Discover read model with `release_group_mbid` deduplication, date precision, `OwnedData.albums` ownership join, `Owned`/`Out now`/`Upcoming` labels, and album/EP/single filters. Verify local date boundaries and graceful fallback when ListenBrainz is unconfigured or unavailable. |
+| LB-24 · Web Fresh Releases | LB-23 | Add personal and upcoming views to Web New Releases. Verify type filters, ownership, upcoming browse-only state, and album navigation. |
+| LB-25 · Android Fresh Releases | LB-23 | Add personal and upcoming views and filters to Android Discover. Verify upcoming and owned entries open the right destination. |
+| LB-26 · macOS Fresh Releases | LB-23 | Add personal and upcoming views and filters to macOS Discover. Verify upcoming and owned entries open the right destination. |
 
-### Discair-generated Troi mixes
-
-| Slice | Depends on | PR scope and acceptance |
-| --- | --- | --- |
-| LB-35 · Evaluate Rediscover your library | LB-02 | Add a reproducible, unscheduled recipe evaluation. Record dependency version, external inputs, playable coverage, and variety compared with existing Discair selection. Verify eligibility against fixed inputs. |
-| LB-36 · Save Troi editions to the Inbox | LB-08, LB-35 | Route the first supported recipe through the shared snapshot and managed-copy services. Use recipe plus scheduled edition as identity. Verify retry, source labels, and reuse of the same Navidrome copy. |
-| LB-37 · Schedule the first Troi mix | LB-10, LB-36 | Register the recipe in the worker with its own cadence. Verify an upstream failure or empty generation retains the last playable edition and that clients display its Troi attribution. |
-
-### Browse by cover color
+### Discair-generated local mixes
 
 | Slice | Depends on | PR scope and acceptance |
 | --- | --- | --- |
-| LB-38 · Serve cover-color results | — | Add a bounded, cached server read by normalized color. Preserve similarity order, join ownership, and test missing art and malformed input. |
-| LB-39 · Web cover-color browser | LB-38 | Add accessible swatches and result cards in Discover. Verify keyboard selection and owned/unowned album navigation. |
-| LB-40 · Android cover-color browser | LB-38 | Add the swatches and results in Android Discover. Verify screen-reader labels, selection, and retry. |
-| LB-41 · macOS cover-color browser | LB-38 | Add the swatches and results in macOS Discover. Verify keyboard and VoiceOver selection, retry, and album navigation. |
+| LB-27 · Build Rediscover your library generator | LB-02 | Add a pure, deterministic local mix generator in `discovery/` using `OwnedData.songs`, `intelligence/insights/` Forgotten Gems, and ListenBrainz listen history (zero new dependencies). Compare coverage and variety against existing Discair selection; verify eligibility against fixed fixtures. |
+| LB-28 · Save local mix editions to the Inbox | LB-08, LB-27 | Route the generator through the shared Inbox snapshot and rolling Navidrome copy services, keyed by `recipe + scheduled edition`. Verify retry, Discair attribution, and reuse of the same Navidrome copy. |
+| LB-29 · Schedule the first local mix | LB-10, LB-28 | Register the local mix on `worker-schedule-discovery` with its own cadence. Verify failure or empty generation retains the prior playable edition and clients display Discair attribution. |
 
-Start with LB-01. Fresh Releases and cover color can begin independently. Use the web Inbox as the first end-to-end client for the live check before enabling recurring import. World Trip, artist deep cuts, a release watchlist, and a Friday digest remain follow-up candidates to scope after the first relevant feature is evaluated.
+### ListenBrainz Feedback, Missing Essentials & Cover Color (optional / lower priority)
 
-[ListenBrainz API](https://listenbrainz.readthedocs.io/en/latest/users/api/index.html) · [Playlists](https://listenbrainz.readthedocs.io/en/latest/users/api/playlist.html) · [Fresh Releases and cover color](https://listenbrainz.readthedocs.io/en/latest/users/api/misc.html) · [Troi](https://troi.readthedocs.io/en/latest/) · [LB Radio prompts](https://troi.readthedocs.io/en/latest/lb_radio.html)
+| Slice | Depends on | PR scope and acceptance |
+| --- | --- | --- |
+| LB-30 · Missing Essentials on artist pages | LB-02, LB-17 | Reuse cached `/1/popularity/top-recordings-for-artist/{mbid}` intersected with `OwnedData.songs` to expose top unowned recordings on the artist page API with Download eligibility. |
+| LB-31 · ListenBrainz feedback sync | LB-02, LB-07 | Read `/1/feedback/user/{u}/get-feedback` (loves `score=1` and hates `score=-1`); exclude hated recordings from mixes/discovery and optionally expose loved tracks as a discovery seed or rolling Navidrome playlist (`Discair · ListenBrainz Loved`). |
+| LB-32 · Serve cover-color results | — | Add bounded, cached server read of `/1/explore/color/{color}` by normalized hex color. Preserve similarity order, collapse duplicate releases, join ownership via `OwnedData.albums` without N+1 MusicBrainz calls, and test missing art and malformed input. |
+| LB-33 · Web cover-color browser | LB-32 | Add accessible swatches and result cards in Web Discover. Verify keyboard selection and owned/unowned album navigation. |
+| LB-34 · Android cover-color browser | LB-32 | Add swatches and results in Android Discover. Verify TalkBack labels, selection, and retry. |
+| LB-35 · macOS cover-color browser | LB-32 | Add swatches and results in macOS Discover. Verify keyboard and VoiceOver selection, retry, and album navigation. |
+
+## Phase 2 / Exploratory candidates (not scheduled)
+
+Scope these only after Phase 1 is evaluated in daily use:
+
+- **Taste Neighbors & Following Feed (`/1/user/{u}/similar-users`, `/1/user/{u}/feed/events`):** Surface pinned recordings and top discoveries from the owner's 25 closest ListenBrainz taste neighbors and followed accounts, matched against `OwnedData.songs` for one-click Download.
+- **Stats & Atlas enrichment (`/1/stats/user/{u}/artist-map`, `daily-activity`):** Feed ListenBrainz's 47-country artist map into Stats/Atlas and use hour-of-day `daily-activity` profiles for time-aware local mixes (e.g., Morning vs. Late Night).
+- **LB Radio expansion:** Weighted multi-seed prompts, saved discovery recipes, and Inbox playlist continuation.
+- **Additional local mixes & Fresh Releases:** Artist deep cuts, World Trip, release watchlist, and Friday digest.
+
+## Execution order
+
+`LB-01` is merged and `D1`–`D4` are approved. Next server slices are `LB-02` (song index + exact MBID matching) and `LB-04` (`Created for Me` + `CF Recs` adapter), which can proceed in parallel; `LB-22` (Fresh Releases) can also begin independently.
+
+[ListenBrainz API](https://listenbrainz.readthedocs.io/en/latest/users/api/index.html) · [Playlists](https://listenbrainz.readthedocs.io/en/latest/users/api/playlist.html) · [Fresh Releases and cover color](https://listenbrainz.readthedocs.io/en/latest/users/api/misc.html) · [LB Radio prompts](https://troi.readthedocs.io/en/latest/lb_radio.html)
