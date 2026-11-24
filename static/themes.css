@@ -5,7 +5,7 @@
      data-font="shout"             one of the Brut font pairs below (the default Discair pair has no block)
    The blocks only override custom properties declared in app.css, so nothing here changes a component's markup. */
 /* Dark · Vinyl */
-:root[data-theme="vinyl"] {
+:root[data-theme="vinyl"], .appearance-swatch[data-preview-theme="vinyl"] {
   color-scheme: dark;
   --ink-rail: #080808; --ink: #0e0e0f; --surface: #171718; --surface-raised: #212123; --surface-hover: #2a2a2d;
   --edge: #2d2d30; --edge-strong: #7b7b82;
@@ -15,7 +15,7 @@
   --shadow-menu: 0 8px 24px rgba(0,0,0,.45);
 }
 /* Dark · Nocturne */
-:root[data-theme="nocturne"] {
+:root[data-theme="nocturne"], .appearance-swatch[data-preview-theme="nocturne"] {
   color-scheme: dark;
   --ink-rail: #0c0a14; --ink: #120f1d; --surface: #1b1730; --surface-raised: #262042; --surface-hover: #2f2850;
   --edge: #35305a; --edge-strong: #8579c7;
@@ -25,7 +25,7 @@
   --shadow-menu: 0 8px 24px rgba(0,0,0,.45);
 }
 /* Light · Parchment */
-:root[data-theme="parchment"] {
+:root[data-theme="parchment"], .appearance-swatch[data-preview-theme="parchment"] {
   color-scheme: light;
   --ink-rail: #ebe2cf; --ink: #f4ecdb; --surface: #fbf6ea; --surface-raised: #efe6d1; --surface-hover: #e6dcc3;
   --edge: #d8ccb0; --edge-strong: #857758;
@@ -36,7 +36,7 @@
   --shadow-menu: 0 8px 24px rgba(40,30,10,.18);
 }
 /* Light · Gallery */
-:root[data-theme="gallery"] {
+:root[data-theme="gallery"], .appearance-swatch[data-preview-theme="gallery"] {
   color-scheme: light;
   --ink-rail: #e8ecf1; --ink: #f3f5f8; --surface: #ffffff; --surface-raised: #eaeef3; --surface-hover: #dfe5ec;
   --edge: #d3dae3; --edge-strong: #6f7e92;
@@ -47,7 +47,7 @@
   --shadow-menu: 0 8px 24px rgba(40,30,10,.18);
 }
 /* Light · Sleeve */
-:root[data-theme="sleeve"] {
+:root[data-theme="sleeve"], .appearance-swatch[data-preview-theme="sleeve"] {
   color-scheme: light;
   --ink-rail: #ddd0bb; --ink: #e8dcc7; --surface: #f3eada; --surface-raised: #e0d2ba; --surface-hover: #d6c7ac;
   --edge: #c8b89b; --edge-strong: #7a6a4d;
@@ -58,7 +58,7 @@
   --shadow-menu: 0 8px 24px rgba(40,30,10,.18);
 }
 /* Neobrut · Brut · Cassette */
-:root[data-theme="cassette"] {
+:root[data-theme="cassette"], .appearance-swatch[data-preview-theme="cassette"] {
   color-scheme: light;
   --ink-rail: #fbe9a9; --ink: #fbf0e6; --surface: #ffffff; --surface-raised: #f6dfcf; --surface-hover: #ffd9c4;
   --edge: #000000; --edge-strong: #000000;
@@ -72,7 +72,7 @@
   --brut-nav-bg: #ffd400; --brut-nav-text: #000000; --brut-nav-edge: #000000; --brut-line: #000000;
 }
 /* Neobrut · Brut · Mint Desk */
-:root[data-theme="mintdesk"] {
+:root[data-theme="mintdesk"], .appearance-swatch[data-preview-theme="mintdesk"] {
   color-scheme: light;
   --ink-rail: #cff3c8; --ink: #eefbec; --surface: #ffffff; --surface-raised: #dcf5d6; --surface-hover: #c6efbd;
   --edge: #000000; --edge-strong: #000000;
@@ -86,7 +86,7 @@
   --brut-nav-bg: #97ee88; --brut-nav-text: #000000; --brut-nav-edge: #000000; --brut-line: #000000;
 }
 /* Neobrut · Brut · Night Shift */
-:root[data-theme="nightshift"] {
+:root[data-theme="nightshift"], .appearance-swatch[data-preview-theme="nightshift"] {
   color-scheme: dark;
   --ink-rail: #0a0a0a; --ink: #111111; --surface: #1a1a1a; --surface-raised: #262626; --surface-hover: #303030;
   --edge: #ffffff; --edge-strong: #ffffff;
@@ -100,7 +100,7 @@
 }
 
 /* Neobrut · Tape Deck · Lime (layout "tape": static/layouts.css) */
-:root[data-theme="tapelime"] {
+:root[data-theme="tapelime"], .appearance-swatch[data-preview-theme="tapelime"] {
   color-scheme: light;
   --ink-rail: #fffdf6; --ink: #f1eee3; --surface: #fffdf6; --surface-raised: #f1ecdc; --surface-hover: #e9f8b4;
   --edge: #111111; --edge-strong: #111111;
@@ -115,7 +115,7 @@
   --tape-soft: #e9f8b4;
 }
 /* Neobrut · Tape Deck · Cobalt (layout "tape": static/layouts.css) */
-:root[data-theme="tapecobalt"] {
+:root[data-theme="tapecobalt"], .appearance-swatch[data-preview-theme="tapecobalt"] {
   color-scheme: light;
   --ink-rail: #fbfcff; --ink: #e6edfb; --surface: #fbfcff; --surface-raised: #dbe5fa; --surface-hover: #d3dfff;
   --edge: #0e1b3d; --edge-strong: #0e1b3d;
@@ -130,7 +130,7 @@
   --tape-soft: #d3dfff;
 }
 /* Neobrut · Tape Deck · Tangerine (layout "tape": static/layouts.css) */
-:root[data-theme="tapetangerine"] {
+:root[data-theme="tapetangerine"], .appearance-swatch[data-preview-theme="tapetangerine"] {
   color-scheme: light;
   --ink-rail: #fffaf2; --ink: #fff0dc; --surface: #fffaf2; --surface-raised: #fbe6c8; --surface-hover: #ffe0b8;
   --edge: #1b120a; --edge-strong: #1b120a;
@@ -146,7 +146,7 @@
 }
 
 /* Neobrut · Ledger Room · Ink Slate (layout "ledger": static/layouts.css) */
-:root[data-theme="ledgerslate"] {
+:root[data-theme="ledgerslate"], .appearance-swatch[data-preview-theme="ledgerslate"] {
   color-scheme: light;
   --ink-rail: #fbfcff; --ink: #e4e9f2; --surface: #fbfcff; --surface-raised: #e4e9f2; --surface-hover: #eef3ff;
   --edge: #14213d; --edge-strong: #14213d;
@@ -162,7 +162,7 @@
 }
 
 /* Neobrut · Ledger Room · Plum Archive (layout "ledger": static/layouts.css) */
-:root[data-theme="ledgerplum"] {
+:root[data-theme="ledgerplum"], .appearance-swatch[data-preview-theme="ledgerplum"] {
   color-scheme: light;
   --ink-rail: #fffaff; --ink: #efe3f0; --surface: #fffaff; --surface-raised: #efe3f0; --surface-hover: #f8ecf9;
   --edge: #2d1233; --edge-strong: #2d1233;
@@ -178,7 +178,7 @@
 }
 
 /* Neobrut · Ledger Room · Paper Mono (layout "ledger": static/layouts.css) */
-:root[data-theme="ledgermono"] {
+:root[data-theme="ledgermono"], .appearance-swatch[data-preview-theme="ledgermono"] {
   color-scheme: light;
   --ink-rail: #ffffff; --ink: #f4f4f0; --surface: #ffffff; --surface-raised: #f4f4f0; --surface-hover: #f0f3ff;
   --edge: #0a0a0a; --edge-strong: #0a0a0a;
@@ -194,7 +194,7 @@
 }
 
 /* Neobrut · Crate Wall · Kraft (layout "crate": static/layouts.css) */
-:root[data-theme="cratekraft"] {
+:root[data-theme="cratekraft"], .appearance-swatch[data-preview-theme="cratekraft"] {
   color-scheme: light;
   --ink-rail: #d9b98a; --ink: #d9b98a; --surface: #fff6e2; --surface-raised: #efd9ae; --surface-hover: #f7e6c0;
   --edge: #17110a; --edge-strong: #17110a;
@@ -210,7 +210,7 @@
 }
 
 /* Neobrut · Crate Wall · Mint Sleeve (layout "crate": static/layouts.css) */
-:root[data-theme="cratemint"] {
+:root[data-theme="cratemint"], .appearance-swatch[data-preview-theme="cratemint"] {
   color-scheme: light;
   --ink-rail: #a9d9b4; --ink: #a9d9b4; --surface: #f4fff6; --surface-raised: #d3eed9; --surface-hover: #e3f6e7;
   --edge: #0d2a16; --edge-strong: #0d2a16;
@@ -226,7 +226,7 @@
 }
 
 /* Neobrut · Crate Wall · Night Press (layout "crate": static/layouts.css) */
-:root[data-theme="cratenight"] {
+:root[data-theme="cratenight"], .appearance-swatch[data-preview-theme="cratenight"] {
   color-scheme: dark;
   --ink-rail: #1b1713; --ink: #1b1713; --surface: #2a241d; --surface-raised: #352d24; --surface-hover: #3f362b;
   --edge: #f5ead8; --edge-strong: #f5ead8;
@@ -241,7 +241,7 @@
 }
 
 /* Neobrut · Zine Spread · Yellow (layout "zine": static/layouts.css) */
-:root[data-theme="zine"] {
+:root[data-theme="zine"], .appearance-swatch[data-preview-theme="zine"] {
   color-scheme: light;
   --ink-rail: #ffde59; --ink: #f1ede4; --surface: #ffffff; --surface-raised: #ebe5d6; --surface-hover: #f7f3e8;
   --edge: #111111; --edge-strong: #111111;
@@ -257,7 +257,7 @@
 }
 
 /* Listening Room (layout "listeningroom": static/listening-room/tokens.css) */
-:root[data-theme="listeningroom"] {
+:root[data-theme="listeningroom"], .appearance-swatch[data-preview-theme="listeningroom"] {
   color-scheme: dark;
   --ink-rail: #0c0d10; --ink: #101114; --surface: #16181d; --surface-raised: #23262d; --surface-hover: #2a2d35;
   --edge: #2a2d35; --edge-strong: #666c78;

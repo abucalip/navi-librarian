@@ -4552,13 +4552,23 @@ function createTrackGetButton(song) {
   return button;
 }
 
-async function loadNavidromeSettings() {
+function setSavedSecretHint(fieldId, configured) {
+  const field = $(fieldId);
+  const hint = $(fieldId + 'Saved');
+  hint.hidden = !configured;
+  if (configured) field.setAttribute('aria-describedby', hint.id);
+  else field.removeAttribute('aria-describedby');
+}
+
+async function loadNavidromeSettings(keepStatus = false) {
   try {
     const data = await requestJSON('/api/settings/navidrome');
     $('navidromeUrl').value = data.navidrome_url || '';
     $('navidromeUser').value = data.username || '';
     $('musicLibraryPath').value = data.music_library_path || '';
     $('navidromePassword').value = '';
+    setSavedSecretHint('navidromePassword', data.password_configured);
+    if (keepStatus) return;
     $('navidromeStatus').textContent = data.password_configured ? 'Password configured.' : 'Password not configured.';
     setStatusState($('navidromeStatus'), classifyStatus($('navidromeStatus').textContent));
   } catch (error) { $('navidromeStatus').textContent = error.message; setStatusState($('navidromeStatus'), 'error'); }
@@ -4574,7 +4584,7 @@ $('saveNavidrome').addEventListener('click', async () => {
     $('navidromePassword').value = '';
     $('navidromeStatus').textContent = result.message || 'Settings saved.';
     setStatusState($('navidromeStatus'), 'success');
-    await loadNavidromeSettings();
+    await loadNavidromeSettings(true);
   } catch (error) { $('navidromeStatus').textContent = error.message; setStatusState($('navidromeStatus'), 'error'); }
 });
 
@@ -4583,6 +4593,7 @@ async function loadListenbrainzSettings(keepStatus = false) {
     const data = await requestJSON('/api/settings/listenbrainz');
     $('listenbrainzUsername').value = data.username || '';
     $('listenbrainzToken').value = '';
+    setSavedSecretHint('listenbrainzToken', data.token_configured);
     if (keepStatus) return;
     $('listenbrainzStatus').textContent = data.token_configured ? 'Username set. User token configured.' : 'Username set. User token not configured (optional).';
     setStatusState($('listenbrainzStatus'), 'idle');
@@ -4610,6 +4621,7 @@ async function loadDiscogsSettings(keepStatus = false) {
   try {
     const data = await requestJSON('/api/settings/discogs');
     $('discogsToken').value = '';
+    setSavedSecretHint('discogsToken', data.source === 'settings');
     if (keepStatus) return;
     $('discogsStatus').textContent = DISCOGS_SOURCE_LABELS[data.source] || DISCOGS_SOURCE_LABELS.none;
     setStatusState($('discogsStatus'), 'idle');
@@ -4620,6 +4632,7 @@ async function saveDiscogsToken(token) {
   try {
     const result = await sendJSON('/api/settings/discogs', 'PUT', {token});
     $('discogsToken').value = '';
+    setSavedSecretHint('discogsToken', result.source === 'settings');
     $('discogsStatus').textContent = (token ? 'Token saved. ' : 'Saved token removed. ') + (DISCOGS_SOURCE_LABELS[result.source] || '');
     setStatusState($('discogsStatus'), 'success');
   } catch (error) { $('discogsStatus').textContent = error.message; setStatusState($('discogsStatus'), 'error'); }
@@ -4660,6 +4673,17 @@ $('testDiscogs').addEventListener('click', () => testServiceConnection('/api/set
 // Roving tabindex: exactly one tab is tabbable (the selected one). The others are reachable
 // with the arrow keys, Home and End, per the tabs pattern. Activation follows focus, so an
 // arrow key both moves focus and switches panel.
+const settingsTablist = document.querySelector('.settings-tabs');
+const desktopSettings = window.matchMedia('(min-width: 1080px)');
+
+function syncSettingsOrientation() {
+  settingsTablist.setAttribute('aria-orientation',
+    isListeningRoom() && desktopSettings.matches ? 'vertical' : 'horizontal');
+}
+
+desktopSettings.addEventListener('change', syncSettingsOrientation);
+syncSettingsOrientation();
+
 const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
 const settingsPanels = {
   navidrome: 'settingsNavidrome', slskd: 'settingsSlskd',
@@ -4681,6 +4705,9 @@ function selectSettingsTab(button, moveFocus = true) {
     panel.hidden = panel.id !== settingsPanels[name];
   }
   if (moveFocus) button.focus();
+  if (isListeningRoom() && !desktopSettings.matches) {
+    button.scrollIntoView({block: 'nearest', inline: 'nearest'});
+  }
 }
 
 function moveSettingsTab(from, step) {
@@ -4712,10 +4739,11 @@ function initAppearanceSettings() {
   const A = window.DiscairAppearance;
   if (!A || !$('appearanceTheme')) return;
   const rows = {
-    appearanceFont: { kind: 'font', items: A.FONTS.map(f => ({ value: f.id, label: f.label })) },
-    appearanceTheme: { kind: 'theme', items: A.THEMES.map(t => ({ value: t.id, label: t.label })) }
+    appearanceFont: { kind: 'font', items: A.FONTS },
+    appearanceTheme: { kind: 'theme', items: A.THEMES }
   };
   const sync = () => {
+    syncSettingsOrientation();
     for (const [id, row] of Object.entries(rows)) {
       const value = A.get(row.kind);
       $(id).querySelectorAll('input').forEach(input => { input.checked = input.value === value; });
@@ -4723,22 +4751,26 @@ function initAppearanceSettings() {
   };
   for (const [id, row] of Object.entries(rows)) {
     // Built once, so keyboard focus stays on the pill while the arrow keys move the choice.
-    $(id).innerHTML = row.items.map(item =>
-      `<div class="appearance-pill"><input type="radio" name="${id}" value="${item.value}" aria-label="${item.label}"><span aria-hidden="true">${item.label}</span></div>`
-    ).join('');
+    $(id).innerHTML = row.items.map(item => {
+      const swatch = row.kind === 'theme'
+        ? `<span class="appearance-swatch lr-settings-only" data-preview-theme="${item.id}"></span>` : '';
+      return `<div class="appearance-pill"><input type="radio" name="${id}" value="${item.id}" aria-label="${item.label}"><span aria-hidden="true">${swatch}${item.label}</span></div>`;
+    }).join('');
     $(id).querySelectorAll('input').forEach(input => input.addEventListener('change', () => { A.set(row.kind, input.value); sync(); }));
   }
   sync();
 }
 initAppearanceSettings();
 
-async function loadSlskdSettings() {
+async function loadSlskdSettings(keepStatus = false) {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
     $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
     renderQualityPriority(data.quality_priority);
+    setSavedSecretHint('slskdApiKey', data.api_key_configured);
+    if (keepStatus) return;
 
     $('slskdStatus').textContent =
       `API key ${data.api_key_configured ? 'configured' : 'not configured'}.`;
@@ -4757,7 +4789,7 @@ function qualityPriorityValues() {
 function updateQualityPriorityPositions() {
   const items = [...$('qualityPriorityList').querySelectorAll('.quality-priority-item')];
   items.forEach((item, index) => {
-    item.querySelector('.quality-priority-position').textContent = String(index + 1).padStart(2, '0');
+    item.querySelector('.quality-priority-position').textContent = String(index + 1);
     item.querySelector('[data-quality-move="up"]').disabled = index === 0;
     item.querySelector('[data-quality-move="down"]').disabled = index === items.length - 1;
   });
@@ -4805,7 +4837,12 @@ function renderQualityPriority(savedValues) {
     const grip = document.createElement('span');
     grip.className = 'quality-priority-grip';
     grip.setAttribute('aria-hidden', 'true');
-    grip.textContent = '⠿';
+    const legacyGrip = document.createElement('span');
+    legacyGrip.className = 'lr-settings-legacy';
+    legacyGrip.textContent = '⠿';
+    const gripIcon = listeningRoomIcon('grip');
+    gripIcon.classList.add('lr-settings-only');
+    grip.append(legacyGrip, gripIcon);
     const position = document.createElement('span');
     position.className = 'quality-priority-position';
     position.setAttribute('aria-hidden', 'true');
@@ -4822,7 +4859,11 @@ function renderQualityPriority(savedValues) {
       button.dataset.qualityMove = direction;
       button.title = `Move ${label} ${direction}`;
       button.setAttribute('aria-label', `Move ${label} ${direction}`);
-      button.append(spriteIcon(direction === 'up' ? 'chevron-up' : 'chevron-down'));
+      const legacyIcon = spriteIcon(direction === 'up' ? 'chevron-up' : 'chevron-down');
+      legacyIcon.classList.add('lr-settings-legacy');
+      const lrIcon = listeningRoomIcon(direction === 'up' ? 'chev-up' : 'chev-down');
+      lrIcon.classList.add('lr-settings-only');
+      button.append(legacyIcon, lrIcon);
       button.addEventListener('click', () => {
         const current = [...list.children].indexOf(item);
         moveQualityPriority(item, current + (direction === 'up' ? -1 : 1), direction);
@@ -4948,22 +4989,14 @@ $('saveSlskd').addEventListener('click', async () => {
     $('slskdApiKey').value = '';
     $('slskdStatus').textContent = 'Settings saved.';
     setStatusState($('slskdStatus'), 'success');
-    await loadSlskdSettings();
+    await loadSlskdSettings(true);
   } catch (error) {
     $('slskdStatus').textContent = error.message;
     setStatusState($('slskdStatus'), 'error');
   }
 });
 
-$('testSlskd').addEventListener('click', async () => {
-  $('slskdStatus').textContent = 'Testing connection…';
-  try {
-    const data = await sendJSON('/api/settings/slskd/test');
-    $('slskdStatus').textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
-  } catch (error) {
-    $('slskdStatus').textContent = error.message;
-  }
-});
+$('testSlskd').addEventListener('click', () => testServiceConnection('/api/settings/slskd/test', 'slskdStatus'));
 
 
 async function logOut(event) {

@@ -110,7 +110,7 @@ if __name__ == "__main__":
 class ThemeAndFontChoiceTests(unittest.TestCase):
     """Settings > Appearance: twenty themes and seven font pairs, applied before first paint from localStorage."""
 
-    THEME_IDS = ["ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight", "zine", "listeningroom"]
+    THEME_IDS = ["listeningroom", "ink", "vinyl", "nocturne", "parchment", "gallery", "sleeve", "cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight", "zine"]
     FONT_IDS = ["discair", "baseline", "technical", "editorial", "modern", "shout", "swiss"]
 
     def test_every_theme_and_font_in_the_script_has_a_stylesheet_block_except_the_defaults(self):
@@ -120,7 +120,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
         fonts = script.split("var FONTS = [")[1].split("];")[0]
         self.assertEqual(re.findall(r"id: '(\w+)'", themes), self.THEME_IDS)
         self.assertEqual(re.findall(r"id: '(\w+)'", fonts), self.FONT_IDS)
-        for theme in self.THEME_IDS[1:]:  # ink is the :root of app.css
+        for theme in (theme for theme in self.THEME_IDS if theme != "ink"):  # Ink uses the app.css defaults.
             self.assertIn(f':root[data-theme="{theme}"]', css, theme)
         for font in self.FONT_IDS[1:]:  # the Discair pair is the :root of app.css
             self.assertIn(f':root[data-font="{font}"]', css, font)
@@ -131,7 +131,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
         themes = script.split("var THEMES = [")[1].split("];")[0]
         brut = [m.group(1) for m in re.finditer(r"id: '(\w+)'[^}]*brut: true", themes)]
         self.assertEqual(brut, ["cassette", "mintdesk", "nightshift", "tapelime", "tapecobalt", "tapetangerine", "ledgerslate", "ledgerplum", "ledgermono", "cratekraft", "cratemint", "cratenight", "zine"])
-        for theme in self.THEME_IDS[1:]:
+        for theme in (theme for theme in self.THEME_IDS if theme != "ink"):
             block = css.split(f':root[data-theme="{theme}"]')[1].split("}")[0]
             self.assertEqual("--brut-sh:" in block, theme in brut, theme)
 
@@ -153,22 +153,23 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
         themes = (STATIC / "themes.css").read_text(encoding="utf-8")
         self.assertEqual(themes.count("--accent-text:"), len(self.THEME_IDS) - 1)
 
-    def test_settings_appearance_is_exactly_two_pill_rows_font_then_theme(self):
+    def test_settings_appearance_keeps_native_radio_groups_and_adds_listening_room_swatches(self):
         html = (TEMPLATES / "index.html").read_text(encoding="utf-8")
         self.assertIn('data-settings-tab="appearance"', html)
         panel = html.split('<div id="settingsAppearance"')[1].split("</section>")[0]
-        self.assertEqual(panel.count('class="appearance-row"'), 2)
+        self.assertEqual(panel.count('class="appearance-row '), 2)
         for control in ("appearanceFont", "appearanceTheme"):
             self.assertIn(f'<div id="{control}" class="appearance-pills" role="radiogroup"', panel, control)
         self.assertLess(panel.index('id="appearanceFont"'), panel.index('id="appearanceTheme"'))
-        # nothing else: no heading, no sentence, no status line, no Day or Night rows
-        for gone in ("<h3>", "<p ", "appearanceDay", "appearanceNight", "appearanceStatus", "kept on this device only"):
+        self.assertIn('id="lrAppearanceFontNote" class="lr-settings-only"', panel)
+        for gone in ("appearanceDay", "appearanceNight", "appearanceStatus", "kept on this device only"):
             self.assertNotIn(gone, panel, gone)
         js = (STATIC / "app.js").read_text(encoding="utf-8")
         self.assertIn("appearance: 'settingsAppearance'", js)
         self.assertIn("initAppearanceSettings();", js)
         self.assertIn('type="radio"', js)
-        for gone in ("appearance-swatch", "is-group-start", "data-font=", "A.SYSTEM", "appearanceDay"):
+        self.assertIn('class="appearance-swatch lr-settings-only"', js)
+        for gone in ("is-group-start", "data-font=", "A.SYSTEM", "appearanceDay"):
             self.assertNotIn(gone, js, gone)
 
     def test_only_real_buttons_get_a_neobrut_shadow_not_links_inputs_or_circles(self):
@@ -199,7 +200,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
 
     def _theme_blocks(self):
         css = (STATIC / "themes.css").read_text(encoding="utf-8")
-        return {m.group(1): m.group(2) for m in re.finditer(r':root\[data-theme="(\w+)"\] \{(.*?)\n\}', css, re.S)}
+        return {m.group(1): m.group(2) for m in re.finditer(r':root\[data-theme="(\w+)"\](?:, \.appearance-swatch\[data-preview-theme="\1"\])? \{(.*?)\n\}', css, re.S)}
 
     def _token(self, block, name):
         return re.search(rf"--{name}: (#[0-9a-fA-F]{{6}})", block).group(1)
@@ -288,7 +289,7 @@ class ThemeAndFontChoiceTests(unittest.TestCase):
 
     def test_pills_are_plain_text_no_colour_dots_and_no_per_font_typefaces(self):
         css = (STATIC / "app.css").read_text(encoding="utf-8")
-        for gone in ("appearance-swatch", "is-group-start", '.appearance-pill[data-font='):
+        for gone in ("is-group-start", '.appearance-pill[data-font='):
             self.assertNotIn(gone, css, gone)
         self.assertIn("border: max(var(--bw), 2px) solid var(--text)", css)
         self.assertIn(".appearance-pill input:checked + span { color: var(--ink); background: var(--text); }", css)

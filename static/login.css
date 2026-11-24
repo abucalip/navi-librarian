@@ -70,3 +70,95 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); out
 h1 .wordmark { display: block; height: 34px; width: auto; }
 /* The i-dots of the wordmark take the theme accent (the standalone discair-logo.svg keeps the Ink yellow). */
 .wordmark .wordmark-dots { fill: var(--accent); }
+
+/* Listening Room uses the same authentication form for sign-in and first-run setup. */
+.lr-login-brand, #lrAuthHeading { display: none; }
+:root[data-layout="listeningroom"] {
+  body {
+    padding: var(--lr-space-16);
+    background: var(--lr-bg);
+    color: var(--lr-text);
+    font: 400 16px/25px var(--lr-font-text);
+  }
+
+  .login-panel {
+    padding: var(--lr-space-32);
+    border-color: var(--lr-edge);
+    border-radius: var(--lr-radius-panel);
+    background: var(--lr-surface);
+  }
+
+  .brand-icon, .wordmark, .login-legacy-heading { display: none; }
+  .lr-login-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--lr-space-8);
+    margin-bottom: var(--lr-space-24);
+    font: 700 20px/28px var(--lr-font-display);
+  }
+  .lr-login-brand span {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin: 1px;
+    border-radius: 50%;
+    background: var(--lr-accent);
+  }
+  .lr-login-brand span::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--lr-rail);
+  }
+
+  h1 {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font: 700 30px/34px var(--lr-font-display);
+    letter-spacing: -0.02em;
+  }
+  #lrAuthHeading { display: inline; }
+
+  .intro { margin: var(--lr-space-8) 0 0; color: var(--lr-text-muted); }
+  .intro.is-error { color: var(--lr-danger); }
+
+  #authForm:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lr-space-24);
+    margin-top: var(--lr-space-24);
+  }
+  .field, button, .message { margin: 0; }
+  label {
+    margin-bottom: var(--lr-space-4);
+    color: var(--lr-text-soft);
+    font: 600 13px/18px var(--lr-font-text);
+  }
+  input {
+    padding: 0 var(--lr-space-16);
+    border-color: var(--lr-edge-strong);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-surface-2);
+    font: 400 16px/20px var(--lr-font-text);
+  }
+  button {
+    order: 1;
+    border-color: var(--lr-accent);
+    border-radius: var(--lr-radius-control);
+    background: var(--lr-accent);
+    color: var(--lr-on-accent);
+    font: 600 14px/20px var(--lr-font-text);
+  }
+  button:hover { background: var(--lr-accent-hover); border-color: var(--lr-accent-hover); }
+
+  .message { min-height: 0; color: var(--lr-danger); font: 600 13px/18px var(--lr-font-text); }
+  .message:empty { position: absolute; }
+  .glyph { margin: 0; width: 16px; height: 16px; }
+
+  @media (max-width: 719px) {
+    .login-panel { padding: var(--lr-space-24); }
+  }
+}

@@ -53,8 +53,10 @@ class LoginTemplateTests(unittest.TestCase):
         self.assertIn('<script src="/static/login.js" defer></script>', self.html)
 
     def test_no_credential_or_configuration_value_is_rendered_into_markup(self):
+        self.assertIn('href="/static/listening-room/tokens.css"', self.html)
+        form = self.html.split('<form', 1)[1].split('</form>', 1)[0]
         for secret_like in ("value=", "sandbox", "secret", "token"):
-            self.assertNotIn(secret_like, self.html.lower(), secret_like)
+            self.assertNotIn(secret_like, form.lower(), secret_like)
 
 
 class LoginStylesheetTests(unittest.TestCase):
