@@ -42,6 +42,22 @@ def request_headers(environ: dict[str, str] | None = None) -> dict[str, str]:
     return headers
 
 
+def lookup_recording(artist, title, *, token=None, post=httpx.post):
+    """Use the bulk mapper for the one recording selected in the Inbox."""
+    headers = request_headers(None if token is None else {"LISTENBRAINZ_TOKEN": token})
+    if "Authorization" not in headers or len(artist) + len(title) > 250:
+        return {}
+    response = post(
+        "https://api.listenbrainz.org/1/metadata/lookup/",
+        json={"recordings": [{"artist_name": artist, "recording_name": title}]},
+        headers=headers, timeout=12, follow_redirects=False,
+    )
+    rows = response.raise_for_status().json()
+    if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
+        raise ValueError("Invalid ListenBrainz recording lookup")
+    return rows[0]
+
+
 def recent_listens(
     username: str,
     days: int = 30,

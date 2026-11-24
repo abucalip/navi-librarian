@@ -1,12 +1,14 @@
 # Project status
 
-Last checked against GitHub `main` at `9f9606a8` on 2026-11-24.
+Last checked against GitHub `main` at `42bbd175` on 2026-11-24.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
-- **ListenBrainz managed-copy reconciliation (LB-08, 2026-11-24)** — Branch `feat/lb-08-reconcile-playlists` adds a worker entry point that refreshes existing copies after indexing and records confirmed deletions as unlinked. Next action is PR review. The recurring job registration and live Navidrome check belong to LB-10.
+- **ListenBrainz Inbox downloads (LB-09, 2026-11-24)** — Branch `feat/lb-09-inbox-download` adds the authenticated download action and verifies the import-to-reconcile flow with a disposable fixture. Next action is PR review. The live Navidrome and slskd check belongs to LB-10.
+
+- **ListenBrainz managed-copy reconciliation (LB-08, 2026-11-24)** — PR #1277 merged as `42bbd175`, adding the worker entry point for refreshing existing copies and marking confirmed deletions as unlinked.
 
 - **ListenBrainz rolling private copies (LB-07, 2026-11-24)** — PR #1276 merged as `35ef1d9c`, adding the server sync service and schema-v8 creation intents.
 

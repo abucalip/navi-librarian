@@ -143,6 +143,8 @@ LB-06's shared route contract and fixtures are in [Playlist Inbox API](../contra
 | LB-15 · macOS Inbox playback | Ready after LB-06 | LB-06 | Add Inbox shelf and track detail in macOS with source date, owned count, empty state, and ordered native playback of owned tracks. Check mixed and zero-owned fixtures. |
 | LB-16 · macOS Inbox downloads | Ready after LB-09, LB-15 | LB-09, LB-15 | Wire per-track Download, status, and retry to existing macOS acquisition UI. Verify unresolved and newly playable rows. |
 
+**LB-10 live check:** Use isolated Navidrome and slskd instances and a disposable music root. Seed an edition with an owned track repeated around a known missing test recording. Confirm the linked copy is private and initially shows the owned track twice. Request the missing track through LB-09 and confirm two simultaneous requests produce one download. After import, wait for an idle Navidrome scan with a new marker and run reconciliation once. Confirm the same private playlist ID now contains all three positions in order, and another download click reports the middle track as owned. The LB-09 fixture covers this sequence with simulated provider transports.
+
 ### Owned-first Artist Radio & LB Radio Discovery Mix
 
 | Slice | Depends on | PR scope and acceptance |

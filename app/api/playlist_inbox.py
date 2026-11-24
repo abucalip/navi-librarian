@@ -1,6 +1,7 @@
-"""Authenticated, read-only Playlist Inbox HTTP routes."""
+"""Authenticated Playlist Inbox HTTP routes."""
 
 from contextlib import closing
+from itertools import islice
 import os
 import sqlite3
 from time import time
@@ -11,7 +12,8 @@ from acquisition.state import read_track_statuses
 from app.api.dependencies import get_librarian
 from app.api.insights import STORE_FILE
 from app.api.search import owned_view
-from discovery.playlist_inbox import edition_detail, list_items
+from discovery.playlist_download import InboxDownloadError, download_track
+from discovery.playlist_inbox import edition_detail, edition_tracks, list_items
 from intelligence.store import open_readonly
 from intelligence.store.playlist_editions import get_edition, list_current_editions
 from settings.service import listenbrainz_username
@@ -75,3 +77,28 @@ def inbox_detail(response: Response, edition_id: int = Path(gt=0, le=2**63 - 1),
         "index_state": view.state,
         **edition_detail(edition, view.data, jobs, librarian._music_key, time()),
     }
+
+
+@router.post("/{edition_id}/tracks/{position}/download")
+def inbox_download(
+    response: Response,
+    edition_id: int = Path(gt=0, le=2**63 - 1),
+    position: int = Path(ge=0, le=2**63 - 2),
+    librarian=Depends(get_librarian),
+):
+    try:
+        with closing(open_readonly(librarian.DATA_DIR / STORE_FILE)) as db:
+            edition = get_edition(db, edition_id)
+    except sqlite3.Error as error:
+        raise HTTPException(status_code=503, detail="Playlist Inbox store unavailable.") from error
+    if edition is None:
+        raise HTTPException(status_code=404, detail="Playlist Inbox edition not found.")
+    if position >= len(edition.snapshot.tracks):
+        raise HTTPException(status_code=404, detail="Playlist Inbox track not found.")
+    track = next(islice(edition_tracks(edition), position, None))
+    try:
+        result = download_track(librarian, edition_id, track)
+    except InboxDownloadError as error:
+        raise HTTPException(status_code=error.status, detail={"code": error.code, "message": str(error)}) from error
+    response.headers["Cache-Control"] = "no-store"
+    return {"edition_id": edition_id, "position": position, **result}

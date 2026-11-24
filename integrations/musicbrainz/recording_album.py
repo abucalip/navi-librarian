@@ -5,7 +5,9 @@ import json
 from urllib.parse import urlencode
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+from unicodedata import normalize
 
+from discovery.search.normalize import normalize_mbid
 from integrations.provider_gate import musicbrainz_lane
 
 RECORDING_MAX_WAIT = 15.0  # a radio "Get" click waits for a slot only this long
@@ -41,20 +43,23 @@ def _rank(release):
     return (0 if plain else 1, 0 if official else 1, _year(release) or 9999)
 
 
-def _matching_recordings(artist: str, title: str, fetch=_fetch_recordings, lane=None):
-    """Return MusicBrainz recordings whose title and artist credit exactly match after normalisation."""
-    query = f'recording:"{_escape(title)}" AND artist:"{_escape(artist)}"'
+def _search(query, limit, fetch, lane):
     lane = lane or musicbrainz_lane(RECORDING_MAX_WAIT)
     if not lane.acquire():
         raise OSError("MusicBrainz is rate limited")
     try:
-        recordings = fetch(query, 10)
+        return fetch(query, limit)
     except HTTPError as exc:
         if exc.code in (429, 503):
             lane.penalize(None)
         raise
+
+
+def _matching_recordings(artist: str, title: str, fetch=_fetch_recordings, lane=None):
+    """Return MusicBrainz recordings whose title and artist credit exactly match after normalisation."""
+    query = f'recording:"{_escape(title)}" AND artist:"{_escape(artist)}"'
     matches = []
-    for recording in recordings:
+    for recording in _search(query, 10, fetch, lane):
         if _norm(recording.get("title")) != _norm(title):
             continue
         credit = "".join(c.get("name", "") + c.get("joinphrase", "") for c in recording.get("artist-credit") or [])
@@ -62,6 +67,53 @@ def _matching_recordings(artist: str, title: str, fetch=_fetch_recordings, lane=
             continue
         matches.append(recording)
     return matches
+
+
+def _label(value):
+    return " ".join(normalize("NFC", value).casefold().split()) if isinstance(value, str) else ""
+
+
+def lookup_inbox_album(
+    artist, title, *, recording_mbid=None, release_mbid=None, duration_ms=None,
+    mapped_release=None, fetch=_fetch_recordings, lane=None,
+):
+    """Resolve a unique recording and release for an Inbox acquisition."""
+    query = (f"rid:{recording_mbid}" if recording_mbid else
+             f'recording:"{_escape(title)}" AND artist:"{_escape(artist)}"')
+    limit = 100
+    rows = _search(query, limit, fetch, lane)
+    if len(rows) >= limit:
+        return None
+    matches = {}
+    for row in rows:
+        mbid = normalize_mbid(row.get("id"))
+        if not mbid or (recording_mbid and mbid != recording_mbid):
+            continue
+        credit = "".join(c.get("name", "") + c.get("joinphrase", "") for c in row.get("artist-credit") or [])
+        if (_label(credit), _label(row.get("title"))) != (_label(artist), _label(title)):
+            continue
+        length = row.get("length")
+        if duration_ms and type(length) is int and abs(duration_ms - length) > 2_000:
+            continue
+        if release_mbid and not any(
+            normalize_mbid(release.get("id")) == release_mbid for release in row.get("releases") or []
+        ):
+            continue
+        matches[mbid] = row
+    if len(matches) != 1:
+        return None
+    mbid, row = next(iter(matches.items()))
+    releases = [release for release in row.get("releases") or [] if _label(release.get("title"))]
+    if release_mbid:
+        releases = [release for release in releases if normalize_mbid(release.get("id")) == release_mbid]
+    elif mapped_release and mapped_release[0] == mbid:
+        confirmed = [release for release in releases if normalize_mbid(release.get("id")) == mapped_release[1]
+                     and _label(release["title"]) == _label(mapped_release[2])]
+        releases = confirmed or releases
+    if len({_label(release["title"]) for release in releases}) != 1:
+        return None
+    best = min(releases, key=_rank)
+    return mbid, best["title"], _year(best)
 
 
 def lookup_recording_album(artist: str, title: str, fetch=_fetch_recordings, lane=None):

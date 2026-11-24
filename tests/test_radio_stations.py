@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from integrations.musicbrainz.recording_album import lookup_recording_album, lookup_recording_mbid
+from integrations.musicbrainz.recording_album import lookup_inbox_album, lookup_recording_album, lookup_recording_mbid
 from integrations.radio import stations
 from integrations.radio.store import RadioStore
 
@@ -196,6 +196,35 @@ class RecordingAlbumGateTests(unittest.TestCase):
         with self.assertRaises(HTTPError):
             lookup_recording_album("A", "T", fetch=throttled, lane=lane)
         self.assertEqual(len(lane.penalties), 1)
+
+    def test_inbox_lookup_requires_a_unique_recording_and_confirmed_release(self):
+        from gate_fakes import FreeLane
+
+        recording = "90000000-0000-4000-8000-000000000001"
+        other_recording = "90000000-0000-4000-8000-000000000002"
+        release = "90000000-0000-4000-8000-000000000003"
+        rows = [
+            {"id": recording, "title": "Song", "artist-credit": [{"name": "Artist"}], "length": 210_000,
+             "releases": [{"id": release, "title": "Album", "date": "2000"}, {"title": "Compilation"}]},
+            {"id": other_recording, "title": "Song", "artist-credit": [{"name": "Artist"}], "length": 250_000,
+             "releases": [{"title": "Concert"}]},
+        ]
+        lane = FreeLane()
+        queries = []
+
+        def fetch(query, limit):
+            queries.append((query, limit))
+            return rows
+
+        self.assertIsNone(lookup_inbox_album("Artist", "Song", fetch=fetch, lane=lane))
+        self.assertIsNone(lookup_inbox_album("Artist", "Song", recording_mbid=recording, fetch=fetch, lane=lane))
+        resolved = lookup_inbox_album("Artist", "Song", release_mbid=release, fetch=fetch, lane=lane)
+        self.assertEqual(resolved, (recording, "Album", 2000))
+        resolved = lookup_inbox_album("Artist", "Song", duration_ms=209_000,
+                                      mapped_release=(recording, release, "Album"), fetch=fetch, lane=lane)
+        self.assertEqual(resolved, (recording, "Album", 2000))
+        self.assertEqual(queries[1], (f"rid:{recording}", 100))
+        self.assertEqual(lane.acquired, 4)
 
 
 class StationListFieldTests(unittest.TestCase):

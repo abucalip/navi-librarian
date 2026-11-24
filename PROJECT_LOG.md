@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz Inbox downloads (LB-09)
+
+- Branch `feat/lb-09-inbox-download` starts from GitHub `main` at `42bbd175` (LB-08, PR #1277).
+- Added the authenticated edition-position action. It verifies current ownership, resolves missing album metadata conservatively, and passes valid requests to the single-track acquisition service.
+- Focused Inbox API, acquisition track, ListenBrainz client and MusicBrainz recording-album tests passed. The disposable fixture exercised one download, import, index update and private playlist reconciliation. The live Navidrome/slskd check remains in LB-10.
+
 ## 2026-11-24 — ListenBrainz managed-copy reconciliation (LB-08)
 
 - Branch `feat/lb-08-reconcile-playlists` starts from GitHub `main` at `9f9606a8`.
