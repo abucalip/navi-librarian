@@ -5,7 +5,7 @@ import Foundation
 // `android/app/src/main/kotlin/app/discair/model/Radio.kt`. The name `RadioModel` already means "Radio from this"
 // (similar songs), so everything here uses the `Station` and `Radio` prefixes.
 
-/// A station from `GET /api/radio/stations`. `stream_url` is deliberately not decoded: the Mac plays `playableURL` only.
+/// A station from `GET /api/radio/stations`.
 public struct RadioStation: Decodable, Equatable, Sendable, Identifiable {
     /// A string, as the server sends it.
     public let id: String
@@ -14,6 +14,8 @@ public struct RadioStation: Decodable, Equatable, Sendable, Identifiable {
     public let proxied: Bool
     /// What the player opens: the relay address when proxied, else the station's own. Never shown, logged or put in an error.
     public let playableURL: String
+    /// Original source address for the station editor. Playback uses playableURL.
+    public let streamURL: String?
     public let homepageURL: String?
     /// A server path, always present (the generated tile is served when nothing else is found).
     public let logoPath: String
@@ -24,6 +26,7 @@ public struct RadioStation: Decodable, Equatable, Sendable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, proxied, favourite, tags
+        case streamURL = "stream_url"
         case playableURL = "playable_url", homepageURL = "homepage_url", logoPath = "logo_url", lastPlayedAt = "last_played_at"
     }
 
@@ -42,6 +45,7 @@ public struct RadioStation: Decodable, Equatable, Sendable, Identifiable {
         self.name = name
         playableURL = playable
         proxied = (try? c.decode(Bool.self, forKey: .proxied)) ?? false
+        streamURL = text(.streamURL) ?? (proxied ? nil : playable)
         homepageURL = text(.homepageURL)
         logoPath = text(.logoPath) ?? "/api/radio/stations/\(rawID)/logo"
         favourite = (try? c.decode(Bool.self, forKey: .favourite)) ?? false
@@ -50,8 +54,10 @@ public struct RadioStation: Decodable, Equatable, Sendable, Identifiable {
     }
 
     public init(id: String, name: String, proxied: Bool = false, playableURL: String, homepageURL: String? = nil,
-                logoPath: String? = nil, favourite: Bool = false, tags: [String] = [], lastPlayedAt: Double? = nil) {
+                logoPath: String? = nil, favourite: Bool = false, tags: [String] = [], lastPlayedAt: Double? = nil,
+                streamURL: String? = nil) {
         self.id = id; self.name = name; self.proxied = proxied; self.playableURL = playableURL; self.homepageURL = homepageURL
+        self.streamURL = streamURL ?? (proxied ? nil : playableURL)
         self.logoPath = logoPath ?? "/api/radio/stations/\(id)/logo"
         self.favourite = favourite; self.tags = tags; self.lastPlayedAt = lastPlayedAt
     }

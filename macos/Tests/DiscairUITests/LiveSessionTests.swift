@@ -90,6 +90,18 @@ struct LiveSessionTests {
         #expect(defaults.string(forKey: PlayerModel.lastStationKey) == "7")
     }
 
+    @Test func deletingAStationStopsItAndForgetsItForReplay() throws {
+        let (player, output, _, _) = try make()
+        player.playStation(station("7"))
+        player.stationDeleted("8")
+        #expect(player.live?.stationID == "7")
+        player.stationDeleted("7")
+        #expect(output.stops == 1)
+        #expect(player.live == nil)
+        #expect(player.lastStationID == nil)
+        #expect(!player.togglePlayPauseLive())
+    }
+
     @Test func theOutputsStatesBecomeThePhases() throws {
         let (p, live, _, _) = try make()
         p.playStation(station("1"))

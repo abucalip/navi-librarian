@@ -51,7 +51,7 @@ public final class StationsModel {
     @ObservationIgnored private let clock: @Sendable () -> Date
     @ObservationIgnored private let pause: @Sendable (TimeInterval) async -> Void
     @ObservationIgnored private var pollTask: Task<Void, Never>?
-    @ObservationIgnored private var listBusy = false
+    @ObservationIgnored private var listRequest: UUID?
     @ObservationIgnored private var nowBusy = false
     /// Changes shown but not yet confirmed, by station id. A reload that arrives meanwhile must not undo them.
     @ObservationIgnored private var pendingFavourite: [String: Bool] = [:]
@@ -70,7 +70,7 @@ public final class StationsModel {
         if source == nil || historyKey != key {
             stop()
             listGeneration = UUID()
-            listBusy = false
+            listRequest = nil
             nowBusy = false
             historyKey = key
             localPlayback = key.flatMap { defaults.dictionary(forKey: $0) as? [String: Double] } ?? [:]
@@ -150,20 +150,25 @@ public final class StationsModel {
 
     /// Reads the list. Keeps what is on screen when the read fails, and says so.
     public func reload() async {
-        guard let source, !listBusy else { return }
-        let generation = listGeneration
-        listBusy = true
-        defer { if generation == listGeneration { listBusy = false } }
+        await reload(afterWrite: false)
+    }
+
+    /// A write requires a fresh read even if a poll that began before the write is still running.
+    func reload(afterWrite: Bool) async {
+        guard let source, afterWrite || listRequest == nil else { return }
+        let request = UUID()
+        listRequest = request
+        defer { if listRequest == request { listRequest = nil } }
         if stations.isEmpty { phase = .loading }
         do {
             let list = try await source.radioStations()
-            guard generation == listGeneration else { return }
+            guard listRequest == request else { return }
             stations = applyPending(to: list).map(includingLocalPlayback)
             loadedAt = clock()
             phase = .loaded
             if let tagFilter, !chips.contains(where: { $0.tag?.lowercased() == tagFilter.lowercased() }) { self.tagFilter = nil }
         } catch {
-            guard generation == listGeneration else { return }
+            guard listRequest == request else { return }
             phase = .failed(message: Self.message(error), retryable: Self.retryable(error))
         }
     }
@@ -261,6 +266,7 @@ public final class StationsModel {
 extension RadioStation {
     func replacing(favourite: Bool? = nil, tags: [String]? = nil, lastPlayedAt: Double? = nil) -> RadioStation {
         RadioStation(id: id, name: name, proxied: proxied, playableURL: playableURL, homepageURL: homepageURL, logoPath: logoPath,
-                     favourite: favourite ?? self.favourite, tags: tags ?? self.tags, lastPlayedAt: lastPlayedAt ?? self.lastPlayedAt)
+                     favourite: favourite ?? self.favourite, tags: tags ?? self.tags, lastPlayedAt: lastPlayedAt ?? self.lastPlayedAt,
+                     streamURL: streamURL)
     }
 }

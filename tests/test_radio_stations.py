@@ -19,8 +19,11 @@ class FakeNavidrome:
             return {"internetRadioStations": {"internetRadioStation": list(self.rows.values())}}
         if self.fail_update:
             raise RuntimeError("boom")
+        if method == "deleteInternetRadioStation":
+            del self.rows[params["id"]]
+            return {}
         row = self.rows[params["id"]]
-        row["streamUrl"] = params["streamUrl"]
+        row.update({key: value for key, value in params.items() if key != "id"})
         return {}
 
 
@@ -49,6 +52,45 @@ class StationTests(unittest.TestCase):
         self.assertEqual(self.api.rows["7"]["streamUrl"], "http://rock.example/live")
         self.assertFalse(stations.list_stations(self.api, self.store)[0]["proxied"])
         self.assertIsNone(self.store.station_by_token(url.rsplit("/", 1)[1]))
+
+    def test_edit_direct_station_and_clear_homepage(self):
+        stations.update_station(self.api, self.store, "7", " New FM ", "https://new.example/live", "")
+        self.assertEqual(self.api.rows["7"], {
+            "id": "7", "name": "New FM", "streamUrl": "https://new.example/live", "homepageUrl": "",
+        })
+
+    def test_edit_relayed_station_preserves_relay_and_updates_origin(self):
+        stations.enable(self.api, self.store, "7", "https://librarian.example")
+        relay_url = self.api.rows["7"]["streamUrl"]
+        stations.update_station(self.api, self.store, "7", "New FM", "https://new.example/live", "")
+        row = stations.list_stations(self.api, self.store)[0]
+        self.assertEqual((row["name"], row["stream_url"], row["playable_url"], row["proxied"]),
+                         ("New FM", "https://new.example/live", relay_url, True))
+        self.assertEqual(self.store.station_by_token(relay_url.rsplit("/", 1)[1])["name"], "New FM")
+        stations.disable(self.api, self.store, "7")
+        self.assertEqual(self.api.rows["7"]["streamUrl"], "https://new.example/live")
+
+    def test_refuses_invalid_edits_without_writing(self):
+        for args in (("", "https://new.example/live", ""), ("New FM", "file:///tmp/stream", ""),
+                     ("New FM", "https://[", ""), ("New FM", "https://new.example/live", "ftp://host")):
+            with self.assertRaises(stations.StationError):
+                stations.update_station(self.api, self.store, "7", *args)
+        self.assertEqual(self.api.calls, [])
+
+    def test_delete_targets_one_station_and_closes_relay_only_after_success(self):
+        self.api.rows["8"] = {"id": "8", "name": "Other FM", "streamUrl": "https://other.example"}
+        stations.enable(self.api, self.store, "7", "https://librarian.example")
+        token = self.store.get_station("7")["token"]
+        with self.assertRaises(stations.StationError):
+            stations.delete_station(self.api, self.store, "99")
+        self.api.fail_update = True
+        with self.assertRaises(RuntimeError):
+            stations.delete_station(self.api, self.store, "7")
+        self.assertIsNotNone(self.store.station_by_token(token))
+        self.api.fail_update = False
+        stations.delete_station(self.api, self.store, "7")
+        self.assertEqual(list(self.api.rows), ["8"])
+        self.assertIsNone(self.store.station_by_token(token))
 
     def test_enable_twice_keeps_one_token(self):
         stations.enable(self.api, self.store, "7", "https://librarian.example")

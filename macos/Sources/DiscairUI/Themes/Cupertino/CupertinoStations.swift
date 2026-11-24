@@ -12,6 +12,10 @@ struct CupertinoStations: View {
     @State private var selectedID: String?
     @State private var editingTags: RadioStation?
     @State private var addingStation = false
+    @State private var editingStation: RadioStation?
+    @State private var deletingStation: RadioStation?
+    @State private var deleteBusy = false
+    @State private var deleteProblem: String?
 
     init(state: AppState, selected: String? = nil) {
         self.state = state
@@ -32,10 +36,34 @@ struct CupertinoStations: View {
                 header
                 if model.pane == .stations, model.phase == .loaded, !model.isEmpty { chips }
                 if let note = model.actionNote { noteLine(note) }
+                if let deleteProblem { noteLine(deleteProblem) }
                 content(sideBySide: sideBySide)
             }
             .padding(.horizontal, CU.Space.xl)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .sheet(item: $editingStation) { station in
+            StationDetailsSheet(station: station) { draft in await state.editStation(station, draft: draft) }
+        }
+        .alert("Delete station?", isPresented: Binding(
+            get: { deletingStation != nil },
+            set: { if !$0 { deletingStation = nil } }
+        ), presenting: deletingStation) { station in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) { delete(station) }
+        } message: { station in
+            Text("“\(station.name)” will be removed from Navidrome.")
+        }
+    }
+
+    private func delete(_ station: RadioStation) {
+        guard !deleteBusy else { return }
+        deleteBusy = true
+        deleteProblem = nil
+        Task {
+            deleteProblem = await state.deleteStation(station)
+            if deleteProblem == nil, selectedID == station.id { selectedID = nil }
+            deleteBusy = false
         }
     }
 
@@ -65,7 +93,7 @@ struct CupertinoStations: View {
         .buttonStyle(CapsuleButtonStyle(small: true, outlined: true))
         .accessibilityLabel("Add station")
         .sheet(isPresented: $addingStation) {
-            AddStationSheet { draft in await state.addStation(draft) }
+            StationDetailsSheet { draft in await state.addStation(draft) }
         }
     }
 
@@ -155,7 +183,9 @@ struct CupertinoStations: View {
                            showsRule: i > 0 && !selected && !previousSelected,
                            select: { selectedID = station.id; if !playing { player.playStation(station) } },
                            toggleFavourite: { Task { await model.setFavourite(station, on: !station.favourite) } },
-                           editTags: { editingTags = station })
+                           editTags: { editingTags = station },
+                           edit: { editingStation = station },
+                           delete: deleteBusy ? nil : { deletingStation = station })
             }
         }
         .focusable()
@@ -193,6 +223,8 @@ private struct StationRow: View {
     let select: () -> Void
     let toggleFavourite: () -> Void
     let editTags: () -> Void
+    let edit: () -> Void
+    let delete: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -232,10 +264,15 @@ private struct StationRow: View {
         .background(selected ? CU.accentTint : .clear, in: RoundedRectangle(cornerRadius: CU.Shell.rowRadius, style: .continuous))
         .overlay(alignment: .top) { if showsRule { Rectangle().fill(CU.separator).frame(height: 1) } }
         .contextMenu {
+            Button("Edit Station…", action: edit)
             Button("Edit Tags…", action: editTags)
             Button(station.favourite ? "Remove from Favourites" : "Add to Favourites", action: toggleFavourite)
+            Divider()
+            Button("Delete Station…", role: .destructive) { delete?() }.disabled(delete == nil)
         }
+        .accessibilityAction(named: "Edit Station", edit)
         .accessibilityAction(named: "Edit Tags", editTags)
+        .accessibilityAction(named: "Delete Station") { delete?() }
     }
 
     private var statusColour: Color {
@@ -309,20 +346,29 @@ struct OnAirPanel: View {
     }
 }
 
-/// Add station: name, stream URL and internet address. Add sends it to Navidrome; a refusal stays on the sheet as a sentence.
-struct AddStationSheet: View {
-    let add: (StationRules.NewStation) async -> String?
-    @State private var name = ""
-    @State private var streamURL = ""
-    @State private var homepageURL = ""
+/// Shared form for adding a station and editing its original stream address.
+struct StationDetailsSheet: View {
+    private let editing: Bool
+    private let save: (StationRules.NewStation) async -> String?
+    @State private var name: String
+    @State private var streamURL: String
+    @State private var homepageURL: String
     @State private var problem: String?
     @State private var busy = false
     @Environment(\.dismiss) private var dismiss
     @FocusState private var nameFocused: Bool
 
+    init(station: RadioStation? = nil, save: @escaping (StationRules.NewStation) async -> String?) {
+        editing = station != nil
+        self.save = save
+        _name = State(initialValue: station?.name ?? "")
+        _streamURL = State(initialValue: station?.streamURL ?? "")
+        _homepageURL = State(initialValue: station?.homepageURL ?? "")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: CU.Space.m) {
-            Text("Add station").cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
+            Text(editing ? "Edit station" : "Add station").cuRole(CU.Font.title2).foregroundStyle(CU.text).accessibilityAddTraits(.isHeader)
             field("Name", text: $name, prompt: "FIP").focused($nameFocused)
             field("Stream URL", text: $streamURL, prompt: "https://stream.example.com/live")
             field("Internet address", text: $homepageURL, prompt: "https://example.com (optional)")
@@ -331,8 +377,8 @@ struct AddStationSheet: View {
             }
             HStack(spacing: CU.Space.s) {
                 Spacer()
-                Button("Cancel") { dismiss() }.buttonStyle(CapsuleButtonStyle()).keyboardShortcut(.cancelAction)
-                Button(busy ? "Adding…" : "Add") { submit() }
+                Button("Cancel") { dismiss() }.buttonStyle(CapsuleButtonStyle()).keyboardShortcut(.cancelAction).disabled(busy)
+                Button(editing ? (busy ? "Saving…" : "Save") : (busy ? "Adding…" : "Add")) { submit() }
                     .buttonStyle(CapsuleButtonStyle(primary: true)).keyboardShortcut(.defaultAction).disabled(busy)
             }
         }
@@ -340,6 +386,7 @@ struct AddStationSheet: View {
         .frame(width: 420)
         .background(CU.bgPanel)
         .foregroundStyle(CU.text)
+        .interactiveDismissDisabled(busy)
         .onAppear { nameFocused = true }
     }
 
@@ -362,7 +409,7 @@ struct AddStationSheet: View {
         case .success(let draft):
             problem = nil; busy = true
             Task {
-                let result = await add(draft)
+                let result = await save(draft)
                 busy = false
                 if let result { problem = result } else { dismiss() }
             }

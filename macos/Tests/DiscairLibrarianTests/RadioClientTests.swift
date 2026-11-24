@@ -19,6 +19,19 @@ import DiscairCore
         #expect(list.map(\.id) == ["11", "12", "13"] && list[0].favourite && list[0].proxied)
     }
 
+    @Test func editAndDeleteSendStationWrites() async throws {
+        let t = MockTransport { _, _ in (200, self.json(#"{"id":"11"}"#)) }
+        let client = try client(t)
+        try await client.updateRadioStation(station: "11", name: "New FM", streamURL: "https://new.example/live", homepageURL: "")
+        try await client.deleteRadioStation(station: "11")
+        #expect(t.sent.map(\.httpMethod) == ["PUT", "DELETE"])
+        #expect(t.sent.map { $0.url?.path } == Array(repeating: "/api/radio/stations/11", count: 2))
+        #expect(sentBody(t.sent[0]) as? [String: String] == [
+            "name": "New FM", "stream_url": "https://new.example/live", "homepage_url": ""
+        ])
+        #expect(t.sent[1].httpBody == nil)
+    }
+
     @Test func emptyStationsFixtureIsAnEmptyList() async throws {
         let t = MockTransport { _, _ in (200, try fixtureBody("radio_stations_empty")) }
         #expect(try await client(t).radioStations().isEmpty)

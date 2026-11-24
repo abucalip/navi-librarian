@@ -34,10 +34,17 @@ Each station gains:
 | `favourite` | Boolean, owner-set. |
 | `last_played_at` | Last time a play of this station was logged, or null. Used for sort order. |
 | `tags` | Free-text list, owner-set, for grouping. May be empty. |
+| `stream_url` | Original stream URL for station editing. |
 | `playable_url` | The relay URL `/radio/stream/{token}` when the station is proxied, else the original stream URL. |
 | `proxied` | Boolean. Stations that are not proxied are still listed and playable, but have no live title and no Download. |
 
 Order: favourites first, then by `last_played_at` descending, then by name.
+
+#### Station management
+
+- `PUT /api/radio/stations/{id}` replaces `name`, `stream_url`, and `homepage_url`. A blank or omitted homepage clears it. A relayed station keeps its playback URL and uses the updated original stream on its next connection.
+- `DELETE /api/radio/stations/{id}` removes the station from Navidrome and disables its relay token. Listening history remains available.
+- Both writes use the Librarian session and the configured Navidrome account. On success they return `{"id": "..."}`. The Mac refreshes the station list after either write and stops local playback if the current station was deleted.
 
 ### 3.2 Live song: `GET /api/radio/stations/{id}/now`
 

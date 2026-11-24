@@ -60,6 +60,12 @@ class RadioRouteTests(unittest.TestCase):
         self.store = radio.get_store(self.librarian)
         self.store.save_station("1", "tok", "Rock FM", "http://rock.example/live")
 
+    def test_station_writes_require_a_session(self):
+        path = "/api/radio/stations/1"
+        self.assertEqual(self.gated.put(path, json={}).status_code, 401)
+        self.assertEqual(self.gated.delete(path).status_code, 401)
+        self.librarian.api_call.assert_not_called()
+
     def make_client(self, gated):
         app = FastAPI()
         if gated:
@@ -225,6 +231,15 @@ class StationFieldRouteTests(unittest.TestCase):
 
     def tearDown(self):
         self.dir.cleanup()
+
+    def test_update_and_delete_station_forward_the_selected_id(self):
+        path = "/api/radio/stations/1"
+        response = self.client.put(path, json={"name": "New FM", "stream_url": "https://new.example/live"})
+        self.assertEqual(response.status_code, 200)
+        self.librarian.api_call.assert_called_with("updateInternetRadioStation", id="1", name="New FM",
+                                                  streamUrl="https://new.example/live", homepageUrl="")
+        self.assertEqual(self.client.delete(path).status_code, 200)
+        self.librarian.api_call.assert_called_with("deleteInternetRadioStation", id="1")
 
     def test_favourite_and_tags_are_saved_and_listed(self):
         self.assertEqual(self.client.put("/api/radio/stations/1/favourite", json={"favourite": True}).json(),

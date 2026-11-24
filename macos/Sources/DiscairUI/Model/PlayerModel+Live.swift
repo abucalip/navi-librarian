@@ -57,6 +57,12 @@ extension PlayerModel {
         return "This station's address is a playlist the Mac cannot play. Switch its relay on from the web Radio page."
     }
 
+    func stationDeleted(_ id: String) {
+        if live?.stationID == id { stopStation() }
+        if stoppedStation?.id == id { stoppedStation = nil }
+        if lastStationID == id { defaults.removeObject(forKey: Self.lastStationKey) }
+    }
+
     /// Starts a station. A library song that was playing is paused and the queue stays as it is.
     public func playStation(_ station: RadioStation) {
         if let refusal = Self.playlistRefusal(for: station) { notice = refusal; return }

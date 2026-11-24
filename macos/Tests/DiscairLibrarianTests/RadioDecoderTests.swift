@@ -18,6 +18,15 @@ import Foundation
         #expect(list[1].lastPlayedAt == 1_700_000_000)
     }
 
+    @Test func stationEditorUsesTheOriginalAddress() throws {
+        let body = #"{"id":"1","name":"A","proxied":true,"playable_url":"https://relay.example/token","stream_url":"https://origin.example/live"}"#
+        let station = try decode(RadioStation.self, body)
+        #expect(station.streamURL == "https://origin.example/live")
+        #expect(station.playableURL == "https://relay.example/token")
+        let older = #"{"id":"1","name":"A","proxied":true,"playable_url":"https://relay.example/token"}"#
+        #expect(try decode(RadioStation.self, older).streamURL == nil)
+    }
+
     @Test func emptyStationsFixtureIsEmpty() throws {
         #expect(try fixture(RadioStationsPayload.self, "radio_stations_empty").items.isEmpty)
     }
