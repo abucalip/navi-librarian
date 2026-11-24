@@ -291,7 +291,7 @@ In a ranked row the panel sits **beside** the title block, not under it, so it t
 | 7 | Genres / Radio | `/api/dashboard/genres`; "Grab the radio" and Heard (existing) | 6 / 2 links | — |
 
 - **Independent sections.** Each section loads on its own, with no section waiting for another, and fails on its own. A failed or empty section shows its note (`pages/states.html`), never a blank gap.
-- **No new route.** Home uses only routes that exist today. At L3 the stored lens endpoint returns 404 for Genre spread. Home omits it when unavailable and includes it in the order above when the server serves it.
+- **Genre spread** uses the stored lens endpoint at `GET /api/discovery/genre_spread`. The daily refresh selects it from the four existing lens pools after their own picks, using the family-coverage policy and the same provider data. Until the worker stores its first usable list, the endpoint returns HTTP 200 with an empty list. Home still handles a 404 from older servers.
 - **Shelves.** The current Recently played, Most played and Newly added shelves move to Library (L5). They are library views, not discovery, and Home stays about discovery.
 
 ### 7.2 Keyboard and focus

@@ -1,14 +1,14 @@
 """Daily lens pools: gathers each lens's candidate pool (Engine 2, Phase 4, slice 2).
 
-For each lens in ``LENS_LIST_ORDER`` the gatherer runs ``run_deep_cuts_tag_supply`` with the lens
+For each lens in ``LENS_SUPPLY_ORDER`` the gatherer runs ``run_deep_cuts_tag_supply`` with the lens
 name and the day as the radio scope, then looks up the album listeners (batched ListenBrainz
 release-group popularity), the artist genre tags (one ListenBrainz artist batch per lens, cached)
-and the fallback tags for pool artists with fewer than two genre tags. Its output is the input of
-``discovery.lens_lists.build_lens_lists``.
+and the fallback tags for pool artists with fewer than two genre tags. Genre spread uses those
+same candidates and metadata. The output is the input of ``discovery.lens_lists.build_lens_lists``.
 
 Gated by ``engine2_lens_lists_enabled`` (default on): when the setting is off the function returns
-before any provider call. Unwired: nothing calls it yet, and it does not read or write the
-recommendation history, the cooldown or the personal list. Providers and caches are injected, so
+before any provider call. It does not read or write the recommendation history, the cooldown
+or the personal list. Providers and caches are injected, so
 tests use fixtures and make no network call. A failing provider leaves the pool or its tags short;
 it does not raise for provider errors. See docs/plans/engine2.md (Phase 4, slice 2).
 """
@@ -22,9 +22,14 @@ from discovery.artist_tag_fallback import fallback_artist_tags, load_genre_vocab
 from discovery.batch_metadata import ARTIST_GENRE_CACHE_PREFIX, ARTIST_GENRE_TTL_SECONDS, prefetch_artist_genres
 from discovery.current_tastes import current_tastes_context, recent_window
 from discovery.deep_cuts_supply import run_deep_cuts_tag_supply
-from discovery.history_windows import listen_artist_mbid
-from discovery.lens_lists import LENS_LIST_ORDER, history_artist_mbids, lens_seed_queries, usable_listens
+from discovery.derived_profile import derive_profile
+from discovery.history_windows import listen_artist_mbid, window_artist_weights
+from discovery.lens_lists import (
+    LENS_SUPPLY_ORDER, history_artist_mbids, lens_seed_queries, merge_artist_tags, usable_listens,
+)
+from discovery.lenses import GENRE_SPREAD
 from discovery.mbid_popularity import resolve_popularity
+from discovery.recommendations import classify_recommendation_category, music_key
 from settings.service import engine2_lens_lists_enabled_value
 
 # Discogs artist-style calls per lens for pool artists with fewer than two genre tags. Each answer
@@ -57,6 +62,38 @@ def _check_day(day: Any) -> None:
         raise ValueError("day must be an ISO date (YYYY-MM-DD)")
 
 
+def _genre_spread_pool(
+    pools: Mapping[str, list[dict[str, Any]]],
+    listens: list[Mapping[str, Any]],
+    artist_tags: Mapping[str, list[str]],
+    fallback_tags: Mapping[str, list[str]],
+) -> list[dict[str, Any]]:
+    """Prepare the shared candidates for the family-coverage allocator."""
+    unique = {}
+    for pool in pools.values():
+        for album in pool:
+            key = (music_key(album["primary_artist"]), music_key(album["album"]))
+            unique.setdefault(key, album)
+
+    tags_by_artist = merge_artist_tags(artist_tags, fallback_tags)
+    candidate_tags = [tags_by_artist.get(album.get("artist_mbid"), []) for album in unique.values()]
+    weights = window_artist_weights(listens, window_days=30, half_life_days=14)
+    core, exploration, _ = derive_profile(
+        ((tags_by_artist.get(mbid, []), weight) for mbid, weight in weights.items()),
+        [tag for tags in candidate_tags for tag in tags],
+    )
+    heard_tags = {tag.casefold() for mbid in history_artist_mbids(listens)
+                  for tag in artist_tags.get(mbid, ())}
+    prepared = []
+    for album, tags in zip(unique.values(), candidate_tags):
+        category, _ = classify_recommendation_category(album, tags, core, exploration)
+        # The reason names a real profile seed that appears in the owner's listening tags.
+        seed_tag = next((tag for tag in album.get("seed_tags", ()) if tag.casefold() in heard_tags), None)
+        prepared.append({**album, "discovery_category": category,
+                         "discovery_score": album.get("score"), "seed_tag": seed_tag})
+    return prepared
+
+
 def gather_lens_pools(
     listens: Iterable[Mapping[str, Any]],
     *,
@@ -76,7 +113,7 @@ def gather_lens_pools(
     Returns ``{"status": "disabled", "day": day}`` with no provider call when the setting is off.
     Otherwise returns ``status`` "gathered" with: ``seeds`` ({lens: seed queries}), ``pools``
     ({lens: album dicts}), ``popularity`` ({release group MBID: album listeners}), ``artist_tags``
-    and ``fallback_tags`` ({artist MBID: tags}), and ``lenses`` (per-lens counts). Listens stamped
+    and ``fallback_tags`` ({artist MBID: tags}), and ``lenses`` (per-supply counts). Listens stamped
     before 1971 are dropped before any profile is built. Raises ``ValueError`` for a bad ``day``.
     """
     _check_day(day)
@@ -107,7 +144,7 @@ def gather_lens_pools(
     fallback_tags: dict[str, list[str]] = {}
     reports: dict[str, dict[str, Any]] = {}
     vocabulary: set[str] | None = None
-    for lens in LENS_LIST_ORDER:
+    for lens in LENS_SUPPLY_ORDER:
         queries = seeds.get(lens.name, [])
         albums: dict[Any, dict[str, Any]] = {}
         failures: list[dict[str, Any]] = []
@@ -167,13 +204,14 @@ def gather_lens_pools(
         get, sorted(wanted - {""}), headers=headers, cache_get=cache_get, cache_set=cache_set)
     # The history and linked artists' genres belong in the returned tag map too, not only the pool's.
     artist_tags.update(_genres_from_cache(providers, genre_mbids))
+    pools[GENRE_SPREAD.name] = _genre_spread_pool(pools, usable, artist_tags, fallback_tags)
     areas = {mbid: profile["area"] for mbid, profile in profiles.items() if profile.get("area")}
     years = {mbid: profile["begin_year"] for mbid, profile in profiles.items() if profile.get("begin_year")}
 
     return {
         "status": "gathered",
         "day": day,
-        "seeds": {lens.name: list(seeds.get(lens.name, [])) for lens in LENS_LIST_ORDER},
+        "seeds": {lens.name: list(seeds.get(lens.name, [])) for lens in LENS_SUPPLY_ORDER},
         "pools": pools,
         "popularity": popularity,
         "artist_tags": artist_tags,

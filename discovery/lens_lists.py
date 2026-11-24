@@ -1,11 +1,8 @@
 """Daily lens lists: one finished list per lens from already-gathered pools (Engine 2, Phase 4).
 
-Pure: the caller gathers each lens's pool (``run_deep_cuts_tag_supply`` with the lens name
-and day as the radio scope), the album listeners, the artist genre tags, the fallback tags
-and the known-artist inputs; this module makes no provider calls and reads no clock. The
-gates are the lens's own (``run_lens`` through ``partition_lens_pools``), and every lens list
-is independent of the recommendation history and cooldown. Unwired; see docs/plans/engine2.md
-(Phase 4, slice 1).
+Pure: the caller supplies the candidate pools, album listeners, artist genre tags, fallback
+tags and known-artist inputs. Each lens uses its own selection policy through
+``partition_lens_pools`` and is independent of the recommendation history and cooldown.
 """
 from __future__ import annotations
 
@@ -25,7 +22,10 @@ from discovery.history_windows import (
 )
 from discovery.current_tastes import current_tastes_plan, ranking_boost
 from discovery.discovery_mode import BALANCED, DiscoveryKnobs
-from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, LENSES, OBSESSIONS, REPEATED_TRACKS, Lens, partition_lens_pools
+from discovery.lenses import (
+    CURRENT_TASTES, DEEP_CUTS, GENRE_SPREAD, OBSESSIONS, REPEATED_TRACKS, Lens,
+    partition_lens_pools,
+)
 from discovery.profile_seeds import obsession_seed_queries, repeated_track_seed_queries
 from discovery.genre_block import drop_blocked_candidates
 from discovery.recommendations import artist_identity, music_key
@@ -35,9 +35,10 @@ from discovery.tag_queries import MAX_PROFILE_QUERIES, select_supplementary_tag_
 # lens has (partitioning removes an artist from the lenses after the one that picked it).
 # Measured 2026-10-24 on one history: Repeated tracks seeds niche tags and filled 8 of 10
 # without the fallback tags; Obsessions seeds broad tags and filled 10 of 10 either way;
-# Deep cuts seeds the dense-month window, which sits between the two. Current tastes is
-# last: its genres are the broadest of the four, and it replaces Now.
-LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)
+# Deep cuts seeds the dense-month window, which sits between the two.
+LENS_SUPPLY_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)
+# Genre spread draws from the shared supply after the four independently gathered lenses.
+LENS_LIST_ORDER = (*LENS_SUPPLY_ORDER, GENRE_SPREAD)
 LENS_LIST_SIZE = 10
 # Deep cuts window: the densest month of the history. When the history is shorter than
 # that, the densest window is the whole recent activity, as the lens definition asks.
@@ -76,7 +77,7 @@ def lens_seed_queries(
     similar: Mapping[str, Sequence[str]] | None = None,
     collaborators: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, list[tuple[str, str, str]]]:
-    """Seed queries for each lens in ``LENS_LIST_ORDER``, derived from the listening history.
+    """Seed queries for each independently gathered lens, derived from the listening history.
 
     Repeated tracks and Obsessions use their seed builders with the approved defaults; Deep
     cuts takes the profile tags of the densest ``DEEP_CUTS_WINDOW_DAYS`` window, with flat
@@ -142,8 +143,8 @@ def _validate(lenses: Sequence[Lens], pools: Mapping[str, Any], day: Any, count:
     if parsed.isoformat() != day:
         raise ValueError("day must be an ISO date (YYYY-MM-DD)")
     for lens in lenses:
-        if LENSES.get(getattr(lens, "name", None)) is not lens or lens.kind != "deep_cuts":
-            raise ValueError("lenses must be registered lenses with the Deep cuts gates")
+        if not any(lens is registered for registered in LENS_LIST_ORDER):
+            raise ValueError("lenses must be registered daily lenses")
     if len({lens.name for lens in lenses}) != len(lenses):
         raise ValueError("lens names must be unique")
     if not isinstance(pools, Mapping):
@@ -244,7 +245,7 @@ def build_lens_lists(
                 "release_group_mbid": (str(album["release_group_mbid"])
                                        if album.get("release_group_mbid") else None),
                 "seed": item.seed,
-                "seed_tag": seed_tags.get(item.seed),
+                "seed_tag": album.get("seed_tag") if lens is GENRE_SPREAD else seed_tags.get(item.seed),
                 "album_listeners": item.audience,
                 "tag_strength": item.tag_strength,
                 "tags": list(item.tags),
@@ -256,7 +257,8 @@ def build_lens_lists(
             "day": day,
             "requested": count,
             "albums": albums,
-            "seed_tags": [tag for tag in seed_tags.values() if tag],
+            "seed_tags": (list(dict.fromkeys(album["seed_tag"] for album in albums if album["seed_tag"]))
+                          if lens is GENRE_SPREAD else [tag for tag in seed_tags.values() if tag]),
             "pool_size": len(candidates[lens.name]),
             "skipped_entries": skipped[lens.name],
             "checked": result.checked_count,
