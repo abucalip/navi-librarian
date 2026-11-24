@@ -67,9 +67,9 @@ Discair will automatically bring ListenBrainz mixes (`Created for Me` and collab
   3. **Discair-generated local mixes** (section 5).
 - Store complete source snapshots and managed-copy mappings in `intelligence.sqlite3`. Key hosted playlists by upstream playlist MBID and rolling/local mixes by recipe + edition ID.
 - Sync the owned subset to one rolling private Navidrome playlist per recurring feed (D1):
-  - Create immediately with `createPlaylist(name=..., songId=...)` (0 songs verified supported on Navidrome `0.64.2`), then set `updatePlaylist(playlistId=..., public="false")`.
-  - Update atomically in source order (preserving repeats) via `createPlaylist(playlistId=..., songId=...)` (verified on Navidrome `0.64.2`).
-  - Make sync idempotent across retries and restarts; never adopt unrelated playlists; if the owner manually deletes a managed playlist in Navidrome, mark it unlinked and do not silently recreate it (D2).
+  - Persist a unique creation token and create an empty playlist with a temporary name containing the token. Link its ID, then set the final name, the management comment, and `public="false"` in one request. Verify privacy before populating the copy.
+  - Update atomically in source order (preserving repeats) via `createPlaylist(playlistId=..., songId=...)`. On Navidrome `0.64.2`, use one `updatePlaylist` request with every existing track position to clear a nonempty copy.
+  - Recover a lost create reply by looking up the exact temporary marker for the same owner. Keep the create pending if the outcome remains unknown. If the owner manually deletes a linked playlist, report it missing so LB-08 can record the unlink decision (D2).
 - Keep previous successful snapshots during upstream failures. An empty `Created for Me` fetch explains that ListenBrainz has not generated playlists yet and links to `troi-bot` (while `ListenBrainz Picks` and local mixes still populate the Inbox).
 - **Client surfaces:**
   - **Web (Listening Room):** Inbox shelf and track detail with source, generation date, owned/total count, Navidrome sync badge, ordered track rows, and per-track Download/retry (no browser audio player).

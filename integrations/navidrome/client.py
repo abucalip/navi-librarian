@@ -17,6 +17,14 @@ class CoverArtUnavailable(LookupError):
     """Navidrome has no image for the requested ID, or returned something that is not an image."""
 
 
+class NavidromeAPIError(RuntimeError):
+    """A failed Subsonic response with its protocol error code."""
+
+    def __init__(self, code, message):
+        super().__init__(f"Navidrome API error {code}: {message}")
+        self.code = code
+
+
 def _signed_request(config_provider, params, salt_factory):
     """Return ``(base_url, query)`` with Subsonic token authentication for one call."""
     base_url, username, password = config_provider()
@@ -95,7 +103,7 @@ def _get(url, query, client_factory):
     return _shared_client().get(url, params=query)
 
 
-def api_call(method, config_provider, *, client_factory=None, salt_factory=None, **params):
+def api_call(method, config_provider, *, client_factory=None, salt_factory=None, form_post=False, **params):
     """Call Navidrome using token authentication and validate its response.
 
     Dependencies are supplied by the caller so the legacy server can retain its
@@ -105,17 +113,21 @@ def api_call(method, config_provider, *, client_factory=None, salt_factory=None,
         salt_factory = lambda: secrets.token_hex(12)
 
     base_url, query = _signed_request(config_provider, params, salt_factory)
-    response = _get(f"{base_url}/rest/{method}.view", query, client_factory)
+    url = f"{base_url}/rest/{method}.view"
+    if form_post and client_factory is not None:
+        with client_factory(timeout=30, follow_redirects=False) as client:
+            response = client.post(url, data=query, extensions=dict([METRICS_LABEL]))
+    elif form_post:
+        response = _shared_client().post(url, data=query)
+    else:
+        response = _get(url, query, client_factory)
     response.raise_for_status()
     data = response.json()
 
     root = data.get("subsonic-response", {})
     if root.get("status") != "ok":
         error = root.get("error", {})
-        raise RuntimeError(
-            f"Navidrome API error {error.get('code')}: "
-            f"{error.get('message', 'Unknown error')}"
-        )
+        raise NavidromeAPIError(error.get("code"), error.get("message", "Unknown error"))
 
     return root
 
