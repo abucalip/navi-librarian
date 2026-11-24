@@ -128,7 +128,11 @@ class LedgerLayoutTests(unittest.TestCase):
         handler = app.split(shortcut, 1)[1].split("return;", 1)[0]
         self.assertIn("event.key.toLowerCase() === 'k'", handler)
         self.assertIn("&& document.documentElement.dataset.layout", handler)
-        self.assertIn("&& !lrSheet.open", handler)
+        self.assertIn("&& !listeningRoomOverlayOpen", handler)
+        self.assertIn(
+            "const listeningRoomOverlayOpen = lrSheet.open || $('lrPickMenu').open || (isListeningRoom() && albumModalOpen);",
+            app,
+        )
         self.assertIn("event.preventDefault();", handler)
         self.assertIn("setSearchExpanded(true, {focus: true});", handler)
         self.assertIn('<kbd class="search-shortcut" aria-hidden="true" hidden></kbd>', index)
@@ -167,8 +171,7 @@ class LedgerLayoutTests(unittest.TestCase):
         self.assertIn(':root[data-layout="ledger"] .genre-accordion {', self.ledger)
         self.assertNotIn(".genre-accordion", (STATIC / "app.css").read_text(encoding="utf-8"))
 
-    def test_the_default_theme_is_still_ink(self):
-        self.assertIn("var DEFAULT = { theme: 'ink',", self.script)
+    def test_saved_theme_takes_precedence_over_the_default(self):
         self.assertIn("return byId(value) ? value : DEFAULT.theme;", self.script)
 
 

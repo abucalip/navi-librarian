@@ -29,6 +29,13 @@ class ListeningRoomShellTests(unittest.TestCase):
         self.assertIn("link.setAttribute('aria-current', 'page')", self.js)
         self.assertIn("lrMore.setAttribute('aria-current', 'page')", self.js)
 
+    def test_phone_navigation_precedes_search_in_keyboard_order(self):
+        skip_link = self.html.index('class="skip-link"')
+        phone_nav = self.html.index('<nav class="lr-tabbar"')
+        search = self.html.index('<form id="globalSearch"')
+        self.assertLess(skip_link, phone_nav)
+        self.assertLess(phone_nav, search)
+
     def test_more_is_a_named_modal_with_the_four_secondary_destinations(self):
         self.assertIn('aria-haspopup="dialog" aria-expanded="false" aria-controls="lrMoreSheet"', self.html)
         sheet = self.html.split('<dialog class="lr-sheet" id="lrMoreSheet" aria-labelledby="lrMoreTitle">', 1)[1]
