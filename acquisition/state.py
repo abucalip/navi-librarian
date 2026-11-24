@@ -7,7 +7,9 @@ and secondary feedback projections remain with the server adapters.
 """
 from __future__ import annotations
 
+from contextlib import closing
 import json
+from pathlib import Path
 import sqlite3
 
 
@@ -92,6 +94,31 @@ def list_jobs(*, services):
             "created_at": row[8], "updated_at": row[9],
         })
     return jobs
+
+
+def read_track_statuses(database_path):
+    """Read only the identity and status needed by the Inbox, without initializing the store."""
+    path = Path(database_path).resolve()
+    if not path.exists():
+        return {}
+    with closing(sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True, timeout=10)) as db:
+        table = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='discovery_acquisitions'"
+        ).fetchone()
+        if table is None:
+            return {}
+        rows = db.execute(
+            """SELECT artist_key, album_key, artist, status,
+                      json_extract(details_json, '$.album_name'), json_extract(details_json, '$.track_title')
+               FROM discovery_acquisitions
+               WHERE CASE WHEN json_valid(details_json) THEN json_extract(details_json, '$.kind') END = 'track'
+            """
+        )
+        return {
+            (artist_key, album_key): (artist, album, title, status)
+            for artist_key, album_key, artist, status, album, title in rows
+            if isinstance(album, str) and isinstance(title, str)
+        }
 
 
 def reactivate_dismissed_job(artist, album, metadata=None, *, services):

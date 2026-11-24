@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz Playlist Inbox reads (LB-06)
+
+- Branch `feat/lb-06-inbox-read` starts from GitHub `main` at `838eceb6` (LB-05, PR #1274).
+- Added session-protected list and detail routes, a shared client contract, and response fixtures for guarded ownership and acquisition status, snapshot age, and empty and unconfigured states.
+- Six focused HTTP tests passed. The migrated v4-to-v7 copy of the supplied test store passed the authenticated route smoke check with seeded editions, acquisition rows, and an owned-song index fixture. SQLite tracing recorded ten read-only statements. The original store stayed at v4. Live provider and installed-client verification were outside this check.
+
 ## 2026-11-24 — ListenBrainz playlist edition storage (LB-05)
 
 - Branch `feat/lb-05-playlist-editions` starts from GitHub `main` at `23cbb776` (LB-04, PR #1273).

@@ -6,6 +6,8 @@ Last checked against GitHub `main` at `23cbb776` (LB-04, PR #1273 merged) on 202
 
 ## Current state
 
+- **ListenBrainz Playlist Inbox reads (LB-06, 2026-11-24)** — Branch `feat/lb-06-inbox-read` adds authenticated read-only list and detail routes. Six focused HTTP tests passed, and a smoke check on a migrated copy of the supplied schema-v4 test store verified seeded editions, stable track order, and acquisition status. Next action is PR review before the client Inbox slices.
+
 - **ListenBrainz playlist edition storage (LB-05, 2026-11-24)** — Branch `feat/lb-05-playlist-editions` adds schema v7, atomic publication of complete snapshots, and recurring Navidrome feed links. The 44 focused tests and 85 contract subtests passed. Next action is PR review before LB-06 and LB-07.
 
 - **ListenBrainz track matching (LB-03, 2026-11-24)** — Branch `feat/lb-03-untagged-track-matching` adds corroborated artist/title fallback and an ambiguous state. All 46 focused matcher and JSPF parser tests passed. The read-only Navidrome probe could not connect. Next action is PR review.

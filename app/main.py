@@ -45,6 +45,7 @@ from app.api.knowledge_update import router as knowledge_update_router
 from app.api.waveform import router as waveform_router
 from app.api.sonic import router as sonic_router
 from app.api.library import router as library_router
+from app.api.playlist_inbox import router as playlist_inbox_router
 from app.api.owned_artwork import router as owned_artwork_router
 from app.api.artwork import router as artwork_router
 from app.api.radio import router as radio_router
@@ -229,6 +230,7 @@ app.include_router(acquisitions_router)
 app.include_router(discovery_router)
 app.include_router(search_router)
 app.include_router(library_router)
+app.include_router(playlist_inbox_router)
 app.include_router(feedback_router)
 app.include_router(smart_playlists_router)
 app.include_router(taste_playlist_router)
