@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import timezone
 from math import isfinite
 from typing import TYPE_CHECKING, Any
@@ -51,6 +51,13 @@ class ManagedCopy:
     feed_key: str
     playlist_id: str | None
     unlinked: bool = False
+
+
+@dataclass(frozen=True)
+class CopyIntent:
+    target_key: str
+    token: str
+    edition_id: int
 
 
 def publish_edition(
@@ -156,3 +163,26 @@ def save_managed_copy(db: sqlite3.Connection, copy: ManagedCopy, *, expected: Ma
             (copy.feed_key, copy.playlist_id, copy.unlinked),
         )
         return True
+
+
+def get_copy_intent(db: sqlite3.Connection, feed_key: str) -> CopyIntent | None:
+    row = db.execute(
+        "SELECT target_key, token, edition_id FROM playlist_copy_intents WHERE feed_key = ?", (feed_key,),
+    ).fetchone()
+    return CopyIntent(**dict(row)) if row else None
+
+
+def record_copy_intent(db: sqlite3.Connection, feed_key: str, intent: CopyIntent) -> None:
+    """Commit the unique remote creation marker before the first create request."""
+    with db:
+        db.execute(
+            "INSERT INTO playlist_copy_intents (feed_key, target_key, token, edition_id) VALUES (?, ?, ?, ?)",
+            (feed_key, intent.target_key, intent.token, intent.edition_id),
+        )
+
+
+def advance_copy_intent(db: sqlite3.Connection, feed_key: str, intent: CopyIntent, edition_id: int) -> CopyIntent:
+    """Keep a delayed sync from rolling a feed back to a previously seen edition."""
+    with db:
+        db.execute("UPDATE playlist_copy_intents SET edition_id = ? WHERE feed_key = ?", (edition_id, feed_key))
+    return replace(intent, edition_id=edition_id)

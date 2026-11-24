@@ -1,3 +1,9 @@
+## 2026-11-24 — ListenBrainz rolling private copies (LB-07)
+
+- Branch `feat/lb-07-rolling-playlists` starts from GitHub `main` at `076d1e72` (LB-06, PR #1275).
+- Added one private rolling Navidrome copy per feed. Schema v8 records creation intent before the request, so a lost reply can recover the same copy. Uncertain creates remain pending until the matching copy appears.
+- Fifty focused tests passed for sync, migration, store, and Navidrome transport. The sandbox denied loopback binding, leaving the TCP connection-reuse test and live Navidrome fault-injection check open.
+
 ## 2026-11-24 — ListenBrainz Playlist Inbox reads (LB-06)
 
 - Branch `feat/lb-06-inbox-read` starts from GitHub `main` at `838eceb6` (LB-05, PR #1274).

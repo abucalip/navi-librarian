@@ -33,7 +33,7 @@
     "generation": 1,
     "graph_coverage": "none",
     "listenbrainz_connected": false,
-    "schema_version": 7,
+    "schema_version": 8,
     "sonic_available": false
   }
 }

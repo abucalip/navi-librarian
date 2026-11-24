@@ -351,6 +351,17 @@ _V7 = (
     """,
 )
 
+_V8 = (
+    """
+    CREATE TABLE playlist_copy_intents (
+        feed_key TEXT PRIMARY KEY NOT NULL CHECK (length(feed_key) > 0),
+        target_key TEXT NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        edition_id INTEGER NOT NULL CHECK (edition_id > 0)
+    )
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
@@ -359,6 +370,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(5, "release group types", _V5),
     Migration(6, "manual update requests", _V6),
     Migration(7, "playlist editions and managed copies", _V7),
+    Migration(8, "Navidrome playlist creation intents", _V8),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 
