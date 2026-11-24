@@ -1,12 +1,14 @@
 # Project status
 
-Last checked against GitHub `main` at `42bbd175` on 2026-11-24.
+Last checked against GitHub `main` at `0f127acb` on 2026-11-25.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
-- **ListenBrainz Inbox downloads (LB-09, 2026-11-24)** — Branch `feat/lb-09-inbox-download` adds the authenticated download action and verifies the import-to-reconcile flow with a disposable fixture. Next action is PR review. The live Navidrome and slskd check belongs to LB-10.
+- **ListenBrainz scheduled Inbox import (LB-10, 2026-11-25)** — Branch `feat/lb-10-schedule-inbox` adds hourly provider refresh and five-minute scan checks on the discovery worker. The owner verified the live Soulseek download, import, and in-place private playlist update with disposable services. Next action is PR review.
+
+- **ListenBrainz Inbox downloads (LB-09, 2026-11-24)** — PR #1278 merged as `0f127acb`, adding the authenticated download action and simulated import-to-reconcile verification.
 
 - **ListenBrainz managed-copy reconciliation (LB-08, 2026-11-24)** — PR #1277 merged as `42bbd175`, adding the worker entry point for refreshing existing copies and marking confirmed deletions as unlinked.
 

@@ -330,6 +330,28 @@ def test_reconcile_after_scan_and_worker_refresh(inbox):
         assert get_copy_intent(db, "daily-jams").edition_id == current
 
 
+def test_reconcile_rechecks_an_unchanged_idle_marker_at_the_hourly_limit(inbox, monkeypatch):
+    from app.services import playlist_reconcile
+
+    remote = Navidrome()
+    now = 0
+    monkeypatch.setattr(playlist_reconcile, "monotonic", lambda: now)
+    linked = sync(inbox, remote.client())
+    reconciler = PlaylistReconciler(inbox[0], max_idle_seconds=3600)
+    assert reconciler.run_once(remote.client()) is None
+    del remote.playlists[linked.playlist_id]
+
+    now = 3599
+    assert reconciler.run_once(remote.client()) is None
+    with closing(open_writer(inbox[0])) as db:
+        assert not get_managed_copy(db, "daily-jams").unlinked
+
+    now = 3600
+    assert reconciler.run_once(remote.client()) is None
+    with closing(open_writer(inbox[0])) as db:
+        assert get_managed_copy(db, "daily-jams").unlinked
+
+
 def test_reconcile_retries_if_scan_changes_during_inventory(inbox):
     remote = Navidrome()
     assert sync(inbox, remote.client()).state == "synced"

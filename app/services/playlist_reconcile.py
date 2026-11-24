@@ -1,7 +1,7 @@
 """Worker entry point for refreshing already-linked Playlist Inbox copies."""
 
 from contextlib import closing
-from time import time
+from time import monotonic, time
 
 from app.worker_schedule import NOT_READY
 from discovery.playlist_sync import reconcile_linked
@@ -15,9 +15,11 @@ from intelligence.store.playlist_editions import list_linked_feed_keys
 class PlaylistReconciler:
     """Keep a scan checkpoint for the lifetime of one worker."""
 
-    def __init__(self, store_path):
+    def __init__(self, store_path, *, max_idle_seconds=float("inf")):
         self._store_path = store_path
         self._checkpoint = None
+        self._verified_at = 0.0
+        self._max_idle_seconds = max_idle_seconds
 
     def run_once(self, navidrome: PlaylistClient, *, worker_refresh: bool = False):
         """Refresh after a scan change or a worker refresh, retrying incomplete passes."""
@@ -32,7 +34,8 @@ class PlaylistReconciler:
             if marker is None:
                 return NOT_READY
             checkpoint = (navidrome.target_key, marker, feeds)
-            if not worker_refresh and checkpoint == self._checkpoint:
+            if (not worker_refresh and checkpoint == self._checkpoint
+                    and monotonic() - self._verified_at < self._max_idle_seconds):
                 return None
 
             self._checkpoint = None
@@ -46,4 +49,5 @@ class PlaylistReconciler:
             return NOT_READY
 
         self._checkpoint = checkpoint
+        self._verified_at = monotonic()
         return None

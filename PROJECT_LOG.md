@@ -1,3 +1,9 @@
+## 2026-11-25 — Schedule ListenBrainz Playlist Inbox import (LB-10)
+
+- Branch `feat/lb-10-schedule-inbox` starts from GitHub `main` at `0f127acb` (LB-09, PR #1278).
+- The discovery worker refreshes Created for Me and collaborative-filtering editions hourly, enriches each new CF page in one batch, and syncs private rolling copies. It checks Navidrome scans every five minutes and rechecks all linked copies after an hour even if the scan marker is unchanged.
+- The owner verified the live disposable check with one Soulseek download for two requests, import and indexing, and an in-place update preserving the playlist ID, privacy, and order. All 42 focused scheduler, refresh, sync and ListenBrainz adapter tests passed. The full suite was not run.
+
 ## 2026-11-24 — ListenBrainz Inbox downloads (LB-09)
 
 - Branch `feat/lb-09-inbox-download` starts from GitHub `main` at `42bbd175` (LB-08, PR #1277).
