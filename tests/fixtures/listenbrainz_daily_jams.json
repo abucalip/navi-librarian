@@ -6,7 +6,10 @@
       "https://musicbrainz.org/doc/jspf#playlist": {
         "creator": "troi-bot",
         "created_for": "fixture-listener",
-        "last_modified_at": "2025-01-03T03:04:05+00:00"
+        "last_modified_at": "2025-01-03T03:04:05+00:00",
+        "additional_metadata": {
+          "algorithm_metadata": {"source_patch": "daily-jams"}
+        }
       }
     },
     "identifier": "https://listenbrainz.org/playlist/00000000-0000-4000-8000-000000000001",
@@ -34,7 +37,20 @@
         "duration": 180000,
         "identifier": [
           "https://musicbrainz.org/recording/00000000-0000-4000-8000-000000000004"
-        ]
+        ],
+        "extension": {
+          "https://musicbrainz.org/doc/jspf#track": {
+            "artist_identifiers": [
+              "https://musicbrainz.org/artist/00000000-0000-4000-8000-000000000005",
+              "https://musicbrainz.org/artist/ABCDEF00-0000-4000-8000-000000000006"
+            ],
+            "release_identifier": "https://musicbrainz.org/release/00000000-0000-4000-8000-000000000007",
+            "additional_metadata": {
+              "caa_id": 34897349734,
+              "caa_release_mbid": "00000000-0000-4000-8000-000000000008"
+            }
+          }
+        }
       },
       {
         "title": "Fixture track 1",
