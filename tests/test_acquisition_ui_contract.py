@@ -175,7 +175,7 @@ class AcquisitionStatusRowTests(unittest.TestCase):
     def test_the_stream_restarts_on_every_visit_to_acquisitions(self):
         init = function_source(self.js, "function initializePage(name)", "// One navigation path")
         self.assertNotIn("startAcquisitionStream", init)
-        nav = function_source(self.js, "function navigateTo(name)", "document.querySelectorAll('nav button")
+        nav = function_source(self.js, "function navigateTo(", "document.querySelectorAll('nav button")
         self.assertIn("if (name === 'acquisitions') startAcquisitionStream();", nav)
         self.assertIn("else stopAcquisitionStream();", nav)
         self.assertIn("navigateTo(button.dataset.go)", self.js)

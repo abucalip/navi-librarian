@@ -19,7 +19,7 @@ APP_CSS = ROOT / "static" / "app.css"
 
 def _function_body(source, signature):
     start = source.index(signature)
-    brace = source.index("{", start)
+    brace = source.index(") {", start) + 2
     depth = 0
     for position in range(brace, len(source)):
         char = source[position]
@@ -85,8 +85,8 @@ class HeaderMenuScriptTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
     def test_shared_navigation_runs_initialize_and_stop_stream(self):
-        body = _function_body(self.js, "function navigateTo(name)")
-        self.assertIn("showPage(name)", body)
+        body = _function_body(self.js, "function navigateTo(")
+        self.assertRegex(body, r"\bshowPage\(name(?:,|\))")
         self.assertIn("initializePage(name)", body)
         self.assertIn("stopAcquisitionStream()", body)
 
