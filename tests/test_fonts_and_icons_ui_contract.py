@@ -437,9 +437,9 @@ class ListeningRoomFoundationTests(unittest.TestCase):
         package_ids = re.findall(r'<symbol id="(lr-[^"]+)"', package_sprite)
         self.assertEqual(ids, package_ids)
 
-    def test_listening_room_theme_is_opt_in_behind_appearance_switch(self):
+    def test_listening_room_is_the_configured_default_theme(self):
         script = (STATIC / "appearance.js").read_text(encoding="utf-8")
-        self.assertIn("var DEFAULT = { theme: 'ink', font: 'discair' };", script)
+        self.assertIn("var DEFAULT = { theme: 'listeningroom', font: 'discair' };", script)
         line = next(l for l in script.splitlines() if "id: 'listeningroom'" in l)
         for field in ("label: 'Listening Room'", "group: 'Listening Room'", "dark: true", "layout: 'listeningroom'", "bar: '#0c0d10'"):
             self.assertIn(field, line, field)

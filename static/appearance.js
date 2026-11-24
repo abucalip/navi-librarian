@@ -38,7 +38,7 @@
     { id: 'swiss', label: 'Brut \u00b7 Swiss brut' }
   ];
   var KEY = { theme: 'discair.theme', font: 'discair.font' };
-  var DEFAULT = { theme: 'ink', font: 'discair' };
+  var DEFAULT = { theme: 'listeningroom', font: 'discair' };
 
   function read(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
   function write(key, value) { try { window.localStorage.setItem(key, value); } catch (e) { /* private mode: applies for this page only */ } }
