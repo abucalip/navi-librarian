@@ -135,7 +135,7 @@ struct LiveArtistLink: View {
     let open: (String) -> Void
 
     var body: some View {
-        Button { open(artist) } label: { Text(artist).underline() }
+        Button { open(artist) } label: { Text(artist) }
             .buttonStyle(.plain)
             .accessibilityLabel("Open artist \(artist)")
             .help("Open artist \(artist)")
