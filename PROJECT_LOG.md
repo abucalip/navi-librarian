@@ -1,3 +1,9 @@
+## 2026-11-25 — Android Playlist Inbox downloads (LB-14)
+
+- Branch `feat/lb-14-android-inbox-downloads` starts from GitHub `main` at `5de03f15` (LB-13, PR #1282).
+- Edition rows request and retry by position, show structured refusals and shared acquisition progress, and refresh ownership before newly imported tracks can join playback.
+- All 13 focused Android tests and the debug build passed. An Android 36 emulator with a disposable HTTPS fixture verified two rapid taps produced one request, a retry after no matches, 42% transfer progress, an unresolved-album refusal, and the ownership transition from two repeated owned occurrences to the ordered three-position queue. A live Navidrome and Soulseek transfer through Android remains unverified.
+
 ## 2026-11-25 — Android Playlist Inbox playback (LB-13)
 
 - Branch `feat/lb-13-android-inbox` starts from GitHub `main` at `40a0ed51` (LB-12, PR #1281).

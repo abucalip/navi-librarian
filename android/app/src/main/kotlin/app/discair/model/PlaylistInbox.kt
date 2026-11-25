@@ -45,6 +45,40 @@ data class InboxTrack(
     @SerialName("duration_ms") val durationMs: Long?,
     @SerialName("match_state") val matchState: String?,
     @SerialName("song_id") val songId: String?,
+    @SerialName("acquisition_status") val acquisitionStatus: String? = null,
+    @SerialName("acquisition_key") val acquisitionKey: InboxAcquisitionKey? = null,
 ) {
     val displayTitle: String get() = title?.takeIf(String::isNotBlank) ?: "Untitled track"
 }
+
+@Serializable
+data class InboxAcquisitionKey(val artist: String, @SerialName("job_album") val jobAlbum: String) {
+    fun matches(job: AcquisitionJob): Boolean =
+        job.isSong && artist == job.artist && jobAlbum == job.album
+}
+
+@Serializable
+data class InboxDownload(
+    val ok: Boolean,
+    val status: String,
+    val message: String? = null,
+    val artist: String? = null,
+    @SerialName("job_album") val jobAlbum: String? = null,
+) {
+    val acquisitionKey: InboxAcquisitionKey?
+        get() = if (status != "identity_conflict" && artist != null && jobAlbum != null) InboxAcquisitionKey(artist, jobAlbum) else null
+}
+
+private val ACTIVE_INBOX_DOWNLOADS = setOf(
+    "searching", "requested", "queued", "queued_unconfirmed", "already_in_progress",
+    "downloading", "download_complete_waiting_for_folder", "importing", "monitoring",
+    "recovery_started", "queue_uncertain", "source_switching", "skip_requested", "retry_requested",
+)
+
+private val RETRYABLE_INBOX_DOWNLOADS = setOf(
+    "no_matches", "queue_failed", "settings_required", "slskd_error", "download_failed", "dismissed",
+)
+
+internal fun inboxDownloadActive(status: String?): Boolean = status in ACTIVE_INBOX_DOWNLOADS
+
+internal fun inboxDownloadRetryable(status: String?): Boolean = status in RETRYABLE_INBOX_DOWNLOADS

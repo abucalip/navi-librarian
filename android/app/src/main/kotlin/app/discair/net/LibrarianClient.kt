@@ -3,6 +3,7 @@ package app.discair.net
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -30,7 +31,11 @@ fun httpClient(cookies: CookieJar = CookieJar.NO_COOKIES): OkHttpClient = OkHttp
 
 /** Pulls the server's `detail` text out of an error body, if there is one. */
 fun errorDetail(body: String): String? = try {
-    lenient.parseToJsonElement(body).jsonObject["detail"]?.jsonPrimitive?.contentOrNull
+    when (val detail = lenient.parseToJsonElement(body).jsonObject["detail"]) {
+        is JsonPrimitive -> detail.contentOrNull
+        is JsonObject -> (detail["message"] as? JsonPrimitive)?.contentOrNull
+        else -> null
+    }
 } catch (e: Exception) {
     null
 }
@@ -89,9 +94,9 @@ class LibrarianClient(
     }
 
     /** POST a JSON body to [segments]. Same one-time re-login on 401; a 429 or error status throws. */
-    fun post(segments: List<String>, json: String): String {
+    fun post(segments: List<String>, json: String? = null): String {
         val url = baseUrl.toHttpUrl().newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
-        return get(Request.Builder().url(url).post(json.toRequestBody(JSON)).build())
+        return get(Request.Builder().url(url).post(json?.toRequestBody(JSON) ?: ByteArray(0).toRequestBody()).build())
     }
 
     /** PUT a JSON body to [segments]. Same one-time re-login on 401; an error status throws. */

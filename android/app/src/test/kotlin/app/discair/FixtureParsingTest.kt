@@ -26,6 +26,11 @@ class FixtureParsingTest {
     @Test fun badLoginFixtureCarriesTheServerDetail() =
         assertEquals("Invalid username or password.", errorDetail(fixtureBody("librarian/auth_login_bad_credentials.json")))
 
+    @Test fun inboxRefusalCarriesTheStructuredServerMessage() {
+        val body = """{"detail":{"code":"unresolved_album","message":"Could not confirm this track's album."}}"""
+        assertEquals("Could not confirm this track's album.", errorDetail(body))
+    }
+
     @Test fun navidromePingFixtureIsSuccess() = assertNull(Subsonic.pingFailure(fixtureBody("navidrome/ping.json")))
 
     @Test fun subsonicWrongPasswordIsUnauthorised() {
