@@ -1,12 +1,14 @@
 # Project status
 
-Last checked against GitHub `main` at `40a0ed51` on 2026-11-25.
+Last checked against GitHub `main` at `5de03f15` on 2026-11-25.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
-- **Android Playlist Inbox playback (LB-13, 2026-11-25)** — Android Discover shows the Inbox shelf and edition details. Play owned tracks passes the edition’s owned occurrences in source order to the native queue. Next action is PR review.
+- **Android Playlist Inbox downloads (LB-14, 2026-11-25)** — Edition rows request and retry downloads by position, show transfer status, and refresh ownership before newly indexed tracks can join playback. Next action is PR review.
+
+- **Android Playlist Inbox playback (LB-13, 2026-11-25)** — PR #1282 merged as `5de03f15`. Android Discover shows the Inbox shelf and edition details. Play owned tracks passes the edition’s owned occurrences in source order to the native queue.
 
 - **Listening Room Playlist Inbox downloads (LB-12, 2026-11-25)** — Adds Download, progress, retry, and a status refresh to Inbox tracks. Focused API and shell tests and isolated desktop and phone Chrome fixtures passed. Next action is PR review and the browser acceptance checklist on the CI-tested SHA.
 

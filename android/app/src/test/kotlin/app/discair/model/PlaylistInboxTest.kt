@@ -36,6 +36,28 @@ class PlaylistInboxTest {
         assertEquals(listOf("owned", "another", "owned"), withAnotherOwnedSong.playbackItems().map { it.songId })
     }
 
+    @Test fun existingAcquisitionRepliesCarryTheirSyntheticJobKey() {
+        val reply = ApiJson.decodeFromString<InboxDownload>(
+            """{"ok":false,"status":"already_in_progress","artist":"Artist","album":"Album","job_album":"Album [Track]"}""",
+        )
+        assertTrue(inboxDownloadActive(reply.status))
+        assertEquals(InboxAcquisitionKey("Artist", "Album [Track]"), reply.acquisitionKey)
+        assertNull(reply.copy(status = "identity_conflict").acquisitionKey)
+        assertTrue(inboxDownloadRetryable("no_matches"))
+    }
+
+    @Test fun importedTrackStillNeedsConfirmedOwnershipToPlay() {
+        val edition = ApiJson.decodeFromJsonElement<InboxEdition>(fixture.getValue("mixed_detail"))
+        val withImport = edition.copy(tracks = edition.tracks.map {
+            if (it.position == 1) it.copy(acquisitionStatus = "imported") else it
+        })
+        assertEquals(listOf("owned", "owned"), withImport.playbackItems().map { it.songId })
+        val withOwnership = withImport.copy(tracks = withImport.tracks.map {
+            if (it.position == 1) it.copy(matchState = "owned", songId = "imported") else it
+        })
+        assertEquals(listOf("owned", "imported", "owned"), withOwnership.playbackItems().map { it.songId })
+    }
+
     @Test fun zeroAndUnknownOwnershipGiveNoPlaybackItems() {
         val zero = ApiJson.decodeFromJsonElement<InboxEdition>(fixture.getValue("zero_owned_detail"))
         assertEquals(0, zero.ownedCount)
