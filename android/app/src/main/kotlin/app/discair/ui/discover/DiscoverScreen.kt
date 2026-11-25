@@ -84,7 +84,7 @@ private fun countFor(list: DiscoveryList) = when (list) {
 internal data class Section(val title: String?, val path: String, val result: DiscoveryResult?, val error: String?)
 
 @Composable
-fun DiscoverScreen(open: Opener) {
+fun DiscoverScreen(open: Opener, onOpenInboxEdition: (Long) -> Unit) {
     val repo = LocalRepository.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -285,6 +285,7 @@ fun DiscoverScreen(open: Opener) {
                 }
             }
             }
+            PlaylistInboxShelf(onOpenInboxEdition)
             statusLine?.let {
                 Text(
                     it, color = Ink.ChartRedText, style = MaterialTheme.typography.bodyMedium,

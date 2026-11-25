@@ -175,6 +175,9 @@ interface LibraryRepository : AcquisitionApi {
     /** One discovery list in the server's order. [list] is a path name such as `new_releases` or a lens name. */
     fun discovery(list: String, count: Int): DiscoveryResult
 
+    fun playlistInbox(): app.discair.model.PlaylistInbox = throw UnsupportedOperationException()
+    fun inboxEdition(id: Long): app.discair.model.InboxEdition = throw UnsupportedOperationException()
+
     /** Sends feedback; throws unless the server answers `ok`. Nothing is assumed saved before this returns. */
     fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject)
 
@@ -467,6 +470,16 @@ class LibrarianRepository(
 
     override fun discovery(list: String, count: Int) =
         parseDiscovery(fetch(listOf("api", "discovery", list), mapOf("count" to "$count")))
+
+    override fun playlistInbox(): app.discair.model.PlaylistInbox {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return ApiJson.decodeFromString(client.get(listOf("api", "playlists", "inbox")))
+    }
+
+    override fun inboxEdition(id: Long): app.discair.model.InboxEdition {
+        if (ReadMode.isCacheOnly) throw CacheMiss()
+        return ApiJson.decodeFromString(client.get(listOf("api", "playlists", "inbox", id.toString())))
+    }
 
     override fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject) {
         val reply = ApiJson.decodeFromString(

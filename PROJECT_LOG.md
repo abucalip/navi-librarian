@@ -1,3 +1,9 @@
+## 2026-11-25 — Android Playlist Inbox playback (LB-13)
+
+- Branch `feat/lb-13-android-inbox` starts from GitHub `main` at `40a0ed51` (LB-12, PR #1281).
+- Discover shows current Inbox editions and opens their ordered detail. Play owned tracks sends each owned occurrence to the native player. The Play control is disabled when there are no playable tracks.
+- All three focused Android tests and the debug build passed. The Android 36 emulator used the shared Inbox responses over authenticated loopback HTTPS and streamed generated audio through a Subsonic fixture. The check covered the shelf, mixed detail, repeated queue entries, and preserving playback on a zero-owned edition. Physical-device and live-service checks remain open.
+
 ## 2026-11-25 — Listening Room Playlist Inbox downloads (LB-12)
 
 - Branch `feat/lb-12-web-inbox-downloads` starts from GitHub `main` at `5d8d6953` (LB-11, PR #1280).

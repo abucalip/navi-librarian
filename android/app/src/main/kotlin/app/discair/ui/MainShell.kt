@@ -88,6 +88,7 @@ import app.discair.ui.artist.ArtistScreen
 import app.discair.ui.common.LocalAcquisitions
 import app.discair.ui.common.LocalImageLoader
 import app.discair.ui.downloads.DownloadsScreen
+import app.discair.ui.discover.InboxEditionScreen
 import app.discair.data.AcquisitionHub
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Badge
@@ -392,7 +393,21 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     TopLevelPage { Opaque { HomeScreen(open, onRadio = { nav.navigate(RadioRoute) { launchSingleTop = true } }, onDownloads = { nav.navigate(DownloadsRoute) { launchSingleTop = true } }, onStats = { goPage(StatsRoute) }, onServer = { goPage(ServerRoute) }, onLibrary = { goPage(LibraryRoute) }, onOpenPlayer = { nowPlayingOpen = true },
                         onSettings = { goPage(SettingsRoute) }, showDiscover = NavRules.discoverInTopBar(chosenLayout, rail), onDiscover = { goPage(DiscoverRoute) }) } }
                 }
-                composable<DiscoverRoute> { TopLevelPage("Discover") { Opaque { DiscoverScreen(open) } } }
+                composable<DiscoverRoute> {
+                    TopLevelPage("Discover") {
+                        Opaque {
+                            DiscoverScreen(open, onOpenInboxEdition = { id ->
+                                nav.navigate(InboxEditionRoute(id)) { launchSingleTop = true }
+                            })
+                        }
+                    }
+                }
+                composable<InboxEditionRoute> { entry ->
+                    Opaque {
+                        InboxEditionScreen(entry.toRoute<InboxEditionRoute>().id,
+                            onBack = { nav.popBackStack() }, onPlay = { player.playItems(it) })
+                    }
+                }
                 composable<LibraryRoute> { TopLevelPage("Library") { Opaque { LibraryScreen(open) } } }
                 composable<DownloadsRoute> { Opaque { DownloadsScreen(open) } }
                 composable<RadioRoute> { Opaque { app.discair.ui.radio.RadioScreen(onBack = { nav.popBackStack() }, onOpenHeard = { nav.navigate(HeardRoute) { launchSingleTop = true } }, onOpenPlayer = { nowPlayingOpen = true }) } }

@@ -33,6 +33,7 @@ Paths are relative to the repository root.
 | Web Playlist Inbox | `static/listening-room/playlist-inbox.js` renders saved editions, requests downloads by edition and track position, and refreshes ownership and acquisition progress through the authenticated APIs. |
 | Android app | `android/app/src/main/kotlin/app/discair/` |
 | Android screens and themes | Under the Android app path, use `ui/<feature>/` for screens and theme variants, `ui/common/` for shared controls and shells, and `ui/theme/` for palettes and theme selection. |
+| Android Playlist Inbox | `ui/discover/PlaylistInboxScreen.kt` reads the authenticated Inbox through the Android repository. `model/PlaylistInbox.kt` projects edition tracks into native queue items using the server’s ownership matches. |
 | macOS app | `macos/Sources/DiscairApp/`, `macos/Sources/DiscairUI/` |
 | macOS playback, models, and API clients | `macos/Sources/DiscairAudio/`, `macos/Sources/DiscairCore/`, `macos/Sources/DiscairLibrarian/`, `macos/Sources/DiscairNavidrome/` |
 
