@@ -8,9 +8,19 @@ struct CupertinoDiscover: View {
     private var model: DiscoveryModel { state.discovery }
 
     var body: some View {
+        if let id = state.playlistInbox.editionID,
+           state.session == nil || state.session?.librarian != nil {
+            CupertinoInboxEdition(state: state, id: id)
+        } else {
+            browse
+        }
+    }
+
+    private var browse: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Discover").font(CU.title(34)).padding(.top, 4).accessibilityAddTraits(.isHeader)
+                CupertinoInboxShelf(state: state)
                 HStack(spacing: 8) {
                     ForEach(DiscoveryModel.Kind.allCases) { k in
                         let on = model.selected == k

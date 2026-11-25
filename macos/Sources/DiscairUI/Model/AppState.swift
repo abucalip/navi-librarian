@@ -93,6 +93,7 @@ public final class AppState {
     /// Get, Save, Not for me and the job list. Live only once a session connects.
     public let acquisition: AcquisitionModel
     public let discovery = DiscoveryModel()
+    let playlistInbox = PlaylistInboxModel()
     /// Internet radio stations, their live titles and the tag filter.
     public let stations: StationsModel
     /// What Download sent for each heard song, shared by every place the live song is shown (S2-3 item 2).
@@ -245,6 +246,7 @@ public final class AppState {
         artwork.configure(librarian: session.librarian)
         acquisition.configure(librarian: session.librarian)
         discovery.configure(librarian: session.librarian)
+        playlistInbox.configure(librarian: session.librarian)
         let stationHistoryScope = session.activeProfile.map { "\($0.id.uuidString)|\(session.navidromeUsername ?? "")" }
         stations.configure(source: session.librarian, historyScope: stationHistoryScope)
         radioDownloads.configure(source: session.librarian)
