@@ -297,6 +297,7 @@ function navigateTo(name, {inboxEdition = null} = {}) {
   // Grab the radio (static/radio.js): the log changes while the owner listens, so every visit reloads.
   if (name === 'radio') loadRadio();
   if (name === 'playlistInbox') window.playlistInbox?.load(inboxEdition);
+  else window.playlistInbox?.leave();
 }
 
 document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>

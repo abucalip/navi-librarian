@@ -1,3 +1,9 @@
+## 2026-11-25 — Listening Room Playlist Inbox downloads (LB-12)
+
+- Branch `feat/lb-12-web-inbox-downloads` starts from GitHub `main` at `5d8d6953` (LB-11, PR #1280).
+- The Inbox requests downloads by edition and track position, shows transfer progress and retry, and preserves saved job linkage for tracks whose album was resolved by the server. An imported track becomes owned when the library index confirms it.
+- All 19 focused Inbox API and Listening Room shell tests passed. Isolated Chrome fixtures at 1440 px and 390 px covered keyboard activation, duplicate clicks, retry, progress after reload, unresolved metadata, the indexed ownership transition, and polling cleanup on navigation. The follow-up browser checklist on the CI-tested SHA remains open.
+
 ## 2026-11-25 — Listening Room Playlist Inbox browse (LB-11)
 
 - Branch `feat/lb-11-web-inbox` starts from GitHub `main` at `fbd758a2` (LB-10, PR #1279).

@@ -10,6 +10,7 @@ from unicodedata import normalize
 import httpx
 
 from acquisition import track_service
+from discovery.playlist_inbox import download_source
 from discovery.recording_match import match_recordings
 from discovery.search.index import SongInventoryError, build_owned_data, fetch_song_inventory
 from discovery.search.normalize import normalize_mbid
@@ -132,8 +133,7 @@ def download_track(librarian, edition_id, track):
         raise InboxDownloadError(409, "unresolved_track", "This track needs an artist and title to download.")
     track = replace(track, recording_mbid=normalize_mbid(track.recording_mbid),
                     release_mbid=normalize_mbid(track.release_mbid))
-    source = (f"{track.recording_mbid}/{track.release_mbid or ''}" if track.recording_mbid
-              else f"{edition_id}/{track.position}")
+    source = download_source(edition_id, track)
     try:
         config = librarian._navidrome_config()
     except ValueError as error:

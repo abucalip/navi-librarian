@@ -6,7 +6,7 @@
   overflow-wrap: anywhere;
 }
 
-.lr-inbox :is(a, button, h2):focus-visible {
+.lr-inbox :is(a, button, h2, .lr-inbox-track-status, .lr-inbox-match):focus-visible {
   outline: 2px solid var(--lr-focus);
   outline-offset: 2px;
 }
@@ -104,13 +104,32 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 32%);
   align-items: baseline;
   gap: var(--lr-space-16);
+  padding: 4px 4px 4px 0;
   content-visibility: auto;
   contain-intrinsic-block-size: auto 2rem;
 }
 
 .lr-inbox-track-labels p { font-size: .875rem; }
 .lr-inbox-match { color: var(--lr-text-muted); text-align: end; font-size: .875rem; }
+.lr-inbox-track-actions {
+  display: grid;
+  justify-items: end;
+  text-align: end;
+}
+.lr-inbox-track-actions [hidden] { display: none; }
+.lr-inbox-track-actions > span:empty { display: none; }
+.lr-inbox-track-actions > :is(p:not(:empty), progress, button) { margin-block-start: var(--lr-space-4); }
+.lr-inbox-track-actions .lr-btn[aria-disabled="true"] {
+  opacity: .65;
+  cursor: wait;
+}
+.lr-inbox-track-status { font-size: .875rem; }
+.lr-inbox-track-progress {
+  width: min(100%, 9rem);
+  accent-color: var(--lr-accent);
+}
 .lr-inbox .lr-inbox-status:not(:empty) { margin-block: var(--lr-space-16) var(--lr-space-4); }
+#inboxRefresh:not([hidden]) { margin-block-start: var(--lr-space-8); }
 
 @media (width < 480px) {
   .lr-inbox-track {
@@ -118,4 +137,5 @@
     gap: var(--lr-space-4);
   }
   .lr-inbox-match { text-align: start; }
+  .lr-inbox-track-actions { justify-items: start; text-align: start; }
 }

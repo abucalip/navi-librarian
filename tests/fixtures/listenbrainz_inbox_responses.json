@@ -81,7 +81,8 @@
         "caa_release_mbid": null,
         "match_state": "owned",
         "song_id": "owned",
-        "acquisition_status": "imported"
+        "acquisition_status": "imported",
+        "acquisition_key": {"artist": "Artist", "job_album": "Owned (song on Album)"}
       },
       {
         "position": 1,
@@ -97,7 +98,8 @@
         "caa_release_mbid": null,
         "match_state": "missing",
         "song_id": null,
-        "acquisition_status": "downloading"
+        "acquisition_status": "downloading",
+        "acquisition_key": {"artist": "Artist", "job_album": "Missing (song on Album)"}
       },
       {
         "position": 2,
@@ -129,7 +131,8 @@
         "caa_release_mbid": null,
         "match_state": "owned",
         "song_id": "owned",
-        "acquisition_status": "imported"
+        "acquisition_status": "imported",
+        "acquisition_key": {"artist": "Artist", "job_album": "Owned (song on Album)"}
       },
       {
         "position": 4,

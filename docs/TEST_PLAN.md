@@ -59,6 +59,8 @@ The directly imported `discovery_refresh` tests cover freshness classification a
 
 The Playlist Inbox schedule uses mock provider transports in `tests/test_playlist_inbox_refresh.py` to cover unchanged, empty, and failed sources, batch recommendation metadata, scan changes during inventory reads, private rolling-copy identity, ordered repeats, and deletion opt-out. `tests/test_playlist_sync.py` covers the bounded scan checkpoint and the hourly recheck of linked copies. The [LB-10 plan](plans/LB.md#playlist-inbox-and-shared-recording-matching) records the separate disposable live download, import, scan and reconciliation check.
 
+For Listening Room Inbox downloads, use a fixture with repeated missing tracks and a row whose metadata cannot be resolved. Check that the repeats share pending and progress states and that clicking both while a request is pending sends one request. Exercise a failed download and Retry, verify the unresolved reason, then simulate import and indexing. Refresh the edition and check that both occurrences and the owned count update. Reopen an edition while an albumless track downloads to verify that progress returns, and leave the Inbox to verify that polling stops.
+
 The enforced size check is `python scripts/check_server_size.py`. Its ceiling is 2,650 lines for `navidrome_server.py`, with a 280-line default top-level-function limit and a temporary named 450-line ceiling for `recommend_new_music()`. `tests/test_server_size_guard.py` must cover in-limit acceptance, file growth, generic function growth, exception-specific boundaries/diagnostics, and invalid Python. The Python syntax workflow runs the guard before the full unit suite; the guard must not change the non-publishing image-validation setting.
 
 

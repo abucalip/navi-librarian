@@ -45,6 +45,13 @@ def _with_copy_state(item, states):
     return {**item, "navidrome_sync_state": state}
 
 
+def _track_jobs(librarian):
+    try:
+        return read_track_statuses(librarian.DISCOVERY_DB)
+    except sqlite3.Error as error:
+        raise HTTPException(status_code=503, detail="Playlist Inbox store unavailable.") from error
+
+
 @router.get("")
 def inbox_list(response: Response, librarian=Depends(get_librarian)):
     try:
@@ -65,11 +72,12 @@ def inbox_list(response: Response, librarian=Depends(get_librarian)):
         }
 
     view = owned_view(librarian)
+    jobs = _track_jobs(librarian) if view.data is not None and any(e.snapshot.tracks for e in editions) else {}
     return {
         "state": "ready",
         "listenbrainz_configured": configured,
         "index_state": view.state,
-        "items": [_with_copy_state(item, states) for item in list_items(editions, view.data, time())],
+        "items": [_with_copy_state(item, states) for item in list_items(editions, view.data, jobs, time())],
     }
 
 
@@ -83,10 +91,10 @@ def inbox_detail(response: Response, edition_id: int = Path(gt=0, le=2**63 - 1),
             states = _copy_states(db, librarian)
 
         view = owned_view(librarian)
-        jobs = read_track_statuses(librarian.DISCOVERY_DB) if view.data is not None and edition.snapshot.tracks else {}
     except sqlite3.Error as error:
         raise HTTPException(status_code=503, detail="Playlist Inbox store unavailable.") from error
 
+    jobs = _track_jobs(librarian) if edition.snapshot.tracks else {}
     response.headers["Cache-Control"] = "no-store"
     return {
         "listenbrainz_configured": _configured(librarian),

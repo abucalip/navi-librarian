@@ -1,12 +1,14 @@
 # Project status
 
-Last checked against GitHub `main` at `0f127acb` on 2026-11-25.
+Last checked against GitHub `main` at `5d8d6953` on 2026-11-25.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
 
-- **Listening Room Playlist Inbox (LB-11, 2026-11-25)** — Branch `feat/lb-11-web-inbox` adds the Discover shelf and read-only edition detail, with recorded Navidrome copy linkage. The desktop and phone browser fixtures show mixed and zero-owned editions. Next action is PR review and the browser acceptance checklist on the CI-tested SHA.
+- **Listening Room Playlist Inbox downloads (LB-12, 2026-11-25)** — Adds Download, progress, retry, and a status refresh to Inbox tracks. Focused API and shell tests and isolated desktop and phone Chrome fixtures passed. Next action is PR review and the browser acceptance checklist on the CI-tested SHA.
+
+- **Listening Room Playlist Inbox (LB-11, 2026-11-25)** — PR #1280 merged as `5d8d6953`, adding the Discover shelf and read-only edition detail with recorded Navidrome copy linkage.
 
 - **ListenBrainz scheduled Inbox import (LB-10, 2026-11-25)** — Branch `feat/lb-10-schedule-inbox` adds hourly provider refresh and five-minute scan checks on the discovery worker. The owner verified the live Soulseek download, import, and in-place private playlist update with disposable services. Next action is PR review.
 
