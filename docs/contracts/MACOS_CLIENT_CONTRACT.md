@@ -72,6 +72,8 @@ Sources actually read: WWDC25 "Build an AppKit app with the new design" (session
 
 Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-track preload, crossfade (continuous albums stay gapless), 10-band EQ with presets and pre-gain, timed and plain lyrics, scrobbling toggle, streaming quality cap and transcoding, resume paused after restart, offline banner and cached pages, acquisition Get, progress, retry, dismiss, Undo and Never suggest, the pick menu (More like this, Less like this, Block genre for the album's own genre) and Settings › Blocklist (Star Operation S2c), song-level Get, Settings for all services. Each Android contract (`ANDROID_PLAYER`, `CROSSFADE`, `EQ`, `LYRICS`) is the baseline; the macOS contract changes only what the engine requires.
 
+Discover’s Playlist Inbox uses the authenticated [Inbox list and edition GETs](PLAYLIST_INBOX_CONTRACT.md). Play owned tracks starts at the first playable occurrence in source order, turns shuffle off, and keeps repeated occurrences. With zero or unknown ownership, playback is unavailable and the current queue is preserved.
+
 ## 6. Desktop features (approved by the owner)
 
 1. **Library table:** sortable columns (year, rating, bitrate, format, added, plays, last played, missing MBID).

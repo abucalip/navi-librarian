@@ -1,10 +1,12 @@
 # Project status
 
-Last checked against GitHub `main` at `5de03f15` on 2026-11-25.
+Last checked against GitHub `main` at `525f08ff` on 2026-11-25.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **macOS Playlist Inbox playback (LB-15, 2026-11-25)** — Discover shows saved playlists and queues their playable owned occurrences in source order. Nine focused Swift tests passed, including the Cupertino renders. Next action is PR review and a live macOS playback check.
 
 - **Android Playlist Inbox downloads (LB-14, 2026-11-25)** — Edition rows request and retry downloads by position, show transfer status, and refresh ownership before newly indexed tracks can join playback. Next action is PR review.
 

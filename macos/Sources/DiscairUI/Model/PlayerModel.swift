@@ -263,10 +263,21 @@ public final class PlayerModel {
     /// Plays `songs` from `startAt`, replacing the queue.
     /// `position` (seconds) starts the song there instead of at 0, as a handoff from another device does.
     public func play(_ songs: [QueueItem], startAt: Int = 0, position: Double = 0) {
+        startQueue(songs, at: startAt, position: position, ordered: false)
+    }
+
+    private func startQueue(_ songs: [QueueItem], at startAt: Int, position: Double, ordered: Bool) {
         leaveByOwner()
+        if ordered { queue.setShuffle(false) }
         queue.set(songs, startAt: startAt)
         resumeAt = position
         startCurrent(resume: position > 0)
+    }
+
+    /// Starts an explicitly ordered list. With no playable songs, keep the current playback and shuffle setting.
+    func playInOrder(_ songs: [QueueItem]) {
+        guard !songs.isEmpty else { return }
+        startQueue(songs, at: 0, position: 0, ordered: true)
     }
 
     public func playNext(_ song: QueueItem) {

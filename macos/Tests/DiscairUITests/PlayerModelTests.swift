@@ -8,7 +8,7 @@ import Testing
 @testable import DiscairUI
 
 @MainActor
-private final class FakeOutput: AudioOutput {
+final class FakeOutput: AudioOutput {
     var onFinished: (() -> Void)?
     var isPlaying = false
     var position: Double = 0
@@ -485,4 +485,54 @@ struct WaveformPlaybackTests {
 private actor PeakCallCounter {
     private var n = 0
     func next() -> Int { n += 1; return n }
+}
+
+@MainActor
+struct PlaylistInboxPlaybackTests {
+    @Test func orderedPlaybackReplacesShuffleAndKeepsRepeatedOccurrences() async throws {
+        var fixture = try inboxFixture("mixed_detail")
+        var tracks = try #require(fixture["tracks"] as? [[String: Any]])
+        tracks[1]["match_state"] = "owned"
+        tracks[1]["song_id"] = "second"
+        tracks[1]["duration_ms"] = 1234
+        fixture["tracks"] = tracks
+        fixture["owned_count"] = 3
+        let detail = try JSONDecoder().decode(PlaylistInboxDetail.self, from: JSONSerialization.data(withJSONObject: fixture))
+        let (player, output, fetcher) = try make()
+        defer { player.stop() }
+        player.toggleShuffle()
+        let items = PlaylistInboxModel.playbackItems(for: detail)
+        player.playInOrder(items)
+        await until { player.phase == .playing }
+
+        #expect(output.isPlaying)
+        #expect(fetcher.requested.first.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?
+            .queryItems?.first(where: { $0.name == "id" })?.value == "owned")
+        #expect(!player.shuffle)
+        #expect(player.current?.songID == "owned")
+        #expect(player.queue.upNext.map(\.songID) == ["second", "owned"])
+        #expect(player.queue.upNext.first?.duration == 1.234)
+        #expect(Set(player.queue.items.map(\.id)).count == 3)
+    }
+
+    @Test func zeroAndUnknownOwnershipLeavePlaybackIntact() async throws {
+        let (player, output, _) = try make()
+        defer { player.stop() }
+        player.toggleShuffle()
+        player.play(songs(3))
+        await until { player.phase == .playing }
+        let before = player.queue.snapshot
+        let decoder = JSONDecoder()
+        let zero = try inboxFixture("zero_owned_detail")
+        var unknown = try inboxFixture("mixed_detail")
+        unknown["owned_count"] = NSNull()
+        for fixture in [zero, unknown] {
+            let detail = try decoder.decode(PlaylistInboxDetail.self, from: JSONSerialization.data(withJSONObject: fixture))
+            let items = PlaylistInboxModel.playbackItems(for: detail)
+            #expect(items.isEmpty)
+            player.playInOrder(items)
+            #expect(player.queue.snapshot == before)
+            #expect(output.isPlaying)
+        }
+    }
 }

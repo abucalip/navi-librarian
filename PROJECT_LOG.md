@@ -1,3 +1,9 @@
+## 2026-11-25 — macOS Playlist Inbox playback (LB-15)
+
+- Branch `feat/lb-15-macos-inbox-playback` starts from GitHub `main` at `525f08ff` (LB-14, PR #1283).
+- Discover shows saved editions and their tracks. Play owned tracks starts the native queue in source order with shuffle off, preserves repeats, and leaves playback alone when ownership is zero or unknown.
+- Nine focused Swift tests passed. The Cupertino shelf and the mixed and zero-owned edition renders were reviewed. A live Navidrome run remains unverified because the local sandbox denied the loopback bind.
+
 ## 2026-11-25 — Android Playlist Inbox downloads (LB-14)
 
 - Branch `feat/lb-14-android-inbox-downloads` starts from GitHub `main` at `5de03f15` (LB-13, PR #1282).
