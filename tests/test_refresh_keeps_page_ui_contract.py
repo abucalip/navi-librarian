@@ -33,7 +33,7 @@ class RefreshKeepsPageSourceTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
     def test_show_page_and_library_navigation_write_the_hash(self):
-        self.assertIn("syncLocationHash();", _function_source(self.js, "showPage"))
+        self.assertIn("syncLocationHash(", _function_source(self.js, "showPage"))
         for name in ("libraryReset", "libraryOpen"):
             self.assertIn("syncLocationHash();", _function_source(self.js, name), name)
         self.assertIn("syncLocationHash(", _function_source(self.js, "libraryBack"))

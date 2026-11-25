@@ -1,11 +1,12 @@
 (() => {
   const tabs = [...lrDiscovery.querySelectorAll('a')];
   const heading = $('lrDiscoverHeading');
+  const subtitle = heading.querySelector('p');
   const recommendationStatus = $('recommendationCount');
   const refine = recommendationStatus.parentElement;
   const preference = 'discair-listening-room-discover-list';
   const {icon, renderReason, artistPhoto} = window.listeningRoomHome;
-  const listIcons = ['discover', 'layers', 'people', 'disc', 'library', 'calendar'];
+  const listIcons = ['discover', 'layers', 'people', 'disc', 'library', 'calendar', 'list'];
   const primaryLinks = lrLinks.filter(link => !lrDiscovery.contains(link) && link.dataset.lrPage === 'recommendations');
   const lensPicker = document.querySelector('#lensLists .lens-picker');
   const lensResults = $('lensListsCards');
@@ -93,6 +94,7 @@
     const enabled = isListeningRoom();
     const inDiscover = enabled && lrDiscoverPages.has(page);
     heading.hidden = !inDiscover;
+    subtitle.hidden = page === 'playlistInbox';
     if (enabled && recommendationStatus.parentElement === refine) refine.after(recommendationStatus);
     else if (!enabled && recommendationStatus.parentElement !== refine) refine.prepend(recommendationStatus);
     lrDiscovery.hidden = !inDiscover;

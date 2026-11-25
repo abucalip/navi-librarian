@@ -29,7 +29,8 @@
         "fetched_at": "2027-01-15T08:00:00+00:00",
         "stale": false,
         "total_count": 2,
-        "owned_count": 0
+        "owned_count": 0,
+        "navidrome_sync_state": "not_linked"
       },
       {
         "edition_id": 1,
@@ -39,12 +40,13 @@
         "title": "A mix",
         "creator": null,
         "source_patch": null,
-        "generated_at": null,
+        "generated_at": "2027-01-08T08:00:00+00:00",
         "last_modified_at": null,
         "fetched_at": "2027-01-08T08:00:00+00:00",
         "stale": true,
         "total_count": 6,
-        "owned_count": 2
+        "owned_count": 2,
+        "navidrome_sync_state": "linked"
       }
     ]
   },
@@ -58,7 +60,7 @@
     "title": "A mix",
     "creator": null,
     "source_patch": null,
-    "generated_at": null,
+    "generated_at": "2027-01-08T08:00:00+00:00",
     "last_modified_at": null,
     "fetched_at": "2027-01-08T08:00:00+00:00",
     "stale": true,
@@ -161,7 +163,8 @@
         "song_id": null,
         "acquisition_status": null
       }
-    ]
+    ],
+    "navidrome_sync_state": "linked"
   },
   "zero_owned_detail": {
     "listenbrainz_configured": false,
@@ -212,6 +215,7 @@
         "song_id": null,
         "acquisition_status": null
       }
-    ]
+    ],
+    "navidrome_sync_state": "not_linked"
   }
 }

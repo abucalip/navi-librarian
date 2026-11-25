@@ -30,6 +30,7 @@ Paths are relative to the repository root.
 | Area | Start here |
 | --- | --- |
 | Web templates and UI | `app/templates/`, `static/app.js`, `static/radio.js`, `static/listening-room/` |
+| Web Playlist Inbox | `static/listening-room/playlist-inbox.js` renders saved editions and their ordered tracks from the authenticated Inbox read API. |
 | Android app | `android/app/src/main/kotlin/app/discair/` |
 | Android screens and themes | Under the Android app path, use `ui/<feature>/` for screens and theme variants, `ui/common/` for shared controls and shells, and `ui/theme/` for palettes and theme selection. |
 | macOS app | `macos/Sources/DiscairApp/`, `macos/Sources/DiscairUI/` |

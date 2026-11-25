@@ -6,6 +6,8 @@ Last checked against GitHub `main` at `0f127acb` on 2026-11-25.
 
 ## Current state
 
+- **Listening Room Playlist Inbox (LB-11, 2026-11-25)** — Branch `feat/lb-11-web-inbox` adds the Discover shelf and read-only edition detail, with recorded Navidrome copy linkage. The desktop and phone browser fixtures show mixed and zero-owned editions. Next action is PR review and the browser acceptance checklist on the CI-tested SHA.
+
 - **ListenBrainz scheduled Inbox import (LB-10, 2026-11-25)** — Branch `feat/lb-10-schedule-inbox` adds hourly provider refresh and five-minute scan checks on the discovery worker. The owner verified the live Soulseek download, import, and in-place private playlist update with disposable services. Next action is PR review.
 
 - **ListenBrainz Inbox downloads (LB-09, 2026-11-24)** — PR #1278 merged as `0f127acb`, adding the authenticated download action and simulated import-to-reconcile verification.

@@ -14,8 +14,9 @@ from app.api.insights import STORE_FILE
 from app.api.search import owned_view
 from discovery.playlist_download import InboxDownloadError, download_track
 from discovery.playlist_inbox import edition_detail, edition_tracks, list_items
+from integrations.navidrome.playlists import PlaylistClient
 from intelligence.store import open_readonly
-from intelligence.store.playlist_editions import get_edition, list_current_editions
+from intelligence.store.playlist_editions import edition_copy_states, get_edition, list_current_editions
 from settings.service import listenbrainz_username
 
 router = APIRouter(prefix="/api/playlists/inbox")
@@ -31,11 +32,25 @@ def _configured(librarian):
                 or os.environ.get("LISTENBRAINZ_TOKEN", "").strip())
 
 
+def _copy_states(db, librarian):
+    try:
+        navidrome = PlaylistClient(librarian._navidrome_config())
+    except ValueError:
+        return None
+    return edition_copy_states(db, navidrome.target_key)
+
+
+def _with_copy_state(item, states):
+    state = "unconfigured" if states is None else states.get(item["edition_id"], "not_linked")
+    return {**item, "navidrome_sync_state": state}
+
+
 @router.get("")
 def inbox_list(response: Response, librarian=Depends(get_librarian)):
     try:
         with closing(open_readonly(librarian.DATA_DIR / STORE_FILE)) as db:
             editions = list_current_editions(db)
+            states = _copy_states(db, librarian) if editions else None
     except sqlite3.Error as error:
         raise HTTPException(status_code=503, detail="Playlist Inbox store unavailable.") from error
 
@@ -54,7 +69,7 @@ def inbox_list(response: Response, librarian=Depends(get_librarian)):
         "state": "ready",
         "listenbrainz_configured": configured,
         "index_state": view.state,
-        "items": list_items(editions, view.data, time()),
+        "items": [_with_copy_state(item, states) for item in list_items(editions, view.data, time())],
     }
 
 
@@ -63,8 +78,9 @@ def inbox_detail(response: Response, edition_id: int = Path(gt=0, le=2**63 - 1),
     try:
         with closing(open_readonly(librarian.DATA_DIR / STORE_FILE)) as db:
             edition = get_edition(db, edition_id)
-        if edition is None:
-            raise HTTPException(status_code=404, detail="Playlist Inbox edition not found.")
+            if edition is None:
+                raise HTTPException(status_code=404, detail="Playlist Inbox edition not found.")
+            states = _copy_states(db, librarian)
 
         view = owned_view(librarian)
         jobs = read_track_statuses(librarian.DISCOVERY_DB) if view.data is not None and edition.snapshot.tracks else {}
@@ -75,7 +91,7 @@ def inbox_detail(response: Response, edition_id: int = Path(gt=0, le=2**63 - 1),
     return {
         "listenbrainz_configured": _configured(librarian),
         "index_state": view.state,
-        **edition_detail(edition, view.data, jobs, librarian._music_key, time()),
+        **_with_copy_state(edition_detail(edition, view.data, jobs, librarian._music_key, time()), states),
     }
 
 
