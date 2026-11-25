@@ -11,6 +11,17 @@ from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
+from typing import NamedTuple
+
+
+class TrackStatus(NamedTuple):
+    artist: str
+    job_album: str
+    album: str
+    title: str
+    status: str
+    inbox_source: str | None
+    recording_mbid: str | None
 
 
 def save_job(artist, album, status, details=None, *, candidate=None, settings=None, services):
@@ -108,16 +119,18 @@ def read_track_statuses(database_path):
         if table is None:
             return {}
         rows = db.execute(
-            """SELECT artist_key, album_key, artist, status,
-                      json_extract(details_json, '$.album_name'), json_extract(details_json, '$.track_title')
+            """SELECT artist_key, album_key, artist, album,
+                      json_extract(details_json, '$.album_name'), json_extract(details_json, '$.track_title'),
+                      status, json_extract(details_json, '$.inbox_source'),
+                      json_extract(details_json, '$.recording_mbid')
                FROM discovery_acquisitions
                WHERE CASE WHEN json_valid(details_json) THEN json_extract(details_json, '$.kind') END = 'track'
             """
         )
         return {
-            (artist_key, album_key): (artist, album, title, status)
-            for artist_key, album_key, artist, status, album, title in rows
-            if isinstance(album, str) and isinstance(title, str)
+            (row[0], row[1]): TrackStatus(*row[2:])
+            for row in rows
+            if isinstance(row[4], str) and isinstance(row[5], str)
         }
 
 

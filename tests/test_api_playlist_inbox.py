@@ -97,14 +97,18 @@ def publish(path, snapshot, fetched_at=NOW, expected=None):
         return publish_edition(db, snapshot, expected_current_id=expected, fetched_at=fetched_at)
 
 
-def seed_jobs(path):
+def job_storage(path):
     with closing(sqlite3.connect(path)) as db, db:
         db.execute("""CREATE TABLE discovery_acquisitions (
             artist_key TEXT, album_key TEXT, artist TEXT, album TEXT, status TEXT,
             details_json TEXT, candidate_json TEXT, settings_json TEXT, created_at REAL, updated_at REAL,
             PRIMARY KEY (artist_key, album_key)
         )""")
-    services = {"init": lambda: None, "db_path": path, "music_key": music_key, "clock": lambda: NOW}
+    return {"init": lambda: None, "db_path": path, "music_key": music_key, "clock": lambda: NOW}
+
+
+def seed_jobs(path):
+    services = job_storage(path)
     for title, status, kind in (
         ("Owned", "imported", "track"), ("Missing", "downloading", "track"),
         ("Versions", "downloading", "track"), ("No Album", "downloading", "track"),
@@ -334,6 +338,7 @@ def test_download_falls_back_from_conflicting_mapper_and_keeps_polling_key(inbox
     sign_in(download.client)
     edition = publish(inbox.store, replace(make_snapshot(), tracks=(
         {"position": 0, "artist": "Artist", "title": "Missing"},
+        {"position": 1, "artist": "Artist", "title": "Missing"},
     )), expected=download.edition)
     calls = []
 
@@ -358,6 +363,32 @@ def test_download_falls_back_from_conflicting_mapper_and_keeps_polling_key(inbox
     assert calls == ["listenbrainz", "musicbrainz"]
     assert download.monitor["ctx"]["year"] == 2020
     assert len(download.acquisition.queued) == 1
+    job, = download.acquisition.jobs.values()
+    storage = job_storage(inbox.librarian.DISCOVERY_DB)
+    save_job(job["artist"], job["album"], job["status"], job["details"], services=storage)
+    detail_url = f"{URL}/{edition}"
+    row, repeated = download.client.get(detail_url).json()["tracks"]
+    assert row["album"] is None
+    assert row["acquisition_status"] == "downloading"
+    assert row["acquisition_key"] == {"artist": "Artist", "job_album": result["job_album"]}
+    assert repeated["acquisition_key"] == row["acquisition_key"]
+    unrelated = publish(inbox.store, replace(make_snapshot("local", "rediscover"), tracks=(
+        {"position": 0, "artist": "Artist", "title": "Missing"},
+    )))
+    assert download.client.get(f"{URL}/{unrelated}").json()["tracks"][0]["acquisition_status"] is None
+
+    save_job(job["artist"], job["album"], "imported", job["details"], services=storage)
+    detail = download.client.get(detail_url).json()
+    assert detail["tracks"][0]["acquisition_status"] == "imported"
+    assert detail["tracks"][0]["match_state"] == "missing"
+    owned = inbox.view.value.data
+    inbox.view.value = IndexView("fresh", replace(owned, songs=(*owned.songs, {
+        "id": "new", "name": "Missing", "artist": "Artist", "album": "Album",
+    })), None)
+    detail = download.client.get(detail_url).json()
+    assert [track["song_id"] for track in detail["tracks"]] == ["new", "new"]
+    assert detail["owned_count"] == 2
+    assert next(item for item in download.client.get(URL).json()["items"] if item["edition_id"] == edition)["owned_count"] == 2
 
     def unavailable(*args, **kwargs):
         raise URLError("fixture upstream unavailable")
