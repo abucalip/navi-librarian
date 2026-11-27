@@ -271,3 +271,7 @@ Fixtures (`android/contract-fixtures/librarian/`): `artwork_index.json` (`ok`), 
 ## Not in this contract
 
 Entity pages and path `reasons[]` (later phases); any scheduling or trigger route for the health job; macOS Swift fixtures (the macOS Health view is the Phase 1 client gate and will consume these JSON files directly).
+
+## GET /api/artist-radio (LB-17)
+
+Authenticated owned-library queue; no playlist writes or playback side effects. Contract: [Artist Radio](ARTIST_RADIO_CONTRACT.md).

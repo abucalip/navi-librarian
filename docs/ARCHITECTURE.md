@@ -10,6 +10,7 @@ Paths are relative to the repository root. Use this map to jump directly to sour
 | Worker and scheduled jobs | `app/worker.py`, `app/worker_schedule.py`, `app/services/` | `tests/test_worker*.py` |
 | Discovery, lenses, and feedback | `discovery/refresh.py`, `discovery/lenses.py`, `discovery/lens_service.py`, `discovery/pick_why.py`, `app/api/discovery.py`, `app/api/feedback.py` | `tests/test_api_discovery_injection.py`, `tests/test_api_feedback_routes.py` |
 | Owned library index, search, artist/album pages | `discovery/search/`, `app/api/search.py`, `app/api/library.py` | `tests/test_api_search_routes.py`, `tests/test_album_inventory_snapshot.py` |
+| Owned-first Artist Radio | `app/api/artist_radio.py`, `discovery/artist_radio.py`, `integrations/listenbrainz/artist_radio.py` | `tests/test_api_artist_radio.py`, `tests/test_artist_radio.py`, `tests/test_listenbrainz_artist_radio.py` |
 | Playlist Inbox and rolling copies | `app/api/playlist_inbox.py`, `discovery/playlist_inbox.py`, `discovery/recording_match.py`, `discovery/playlist_sync.py`, `intelligence/store/playlist_editions.py` | `tests/test_api_playlist_inbox.py`, `tests/test_playlist_*.py` |
 | Scheduled Playlist Inbox import | `app/services/discovery_schedule.py`, `app/services/playlist_inbox_refresh.py` | `tests/test_playlist_inbox_refresh.py` |
 | Playlist Inbox downloads | `discovery/playlist_download.py`, `acquisition/track_service.py` | `tests/test_acquisition_track.py` |
