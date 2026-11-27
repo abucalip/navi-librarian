@@ -6,9 +6,9 @@
 
 A self-hosted, single-owner music-library platform with three clients:
 
-- **Web:** responsive browser interface for discovery, library exploration, music knowledge, acquisition, settings and administration. The web client is not an audio player.
-- **Android:** native music player and Librarian companion, including library browsing, discovery, acquisition, playback, radio and listening features.
-- **macOS:** native Apple Silicon desktop player and Librarian companion, with the same core music and acquisition capabilities plus desktop-oriented navigation, queue, playback and knowledge-exploration experiences.
+- **Web:** responsive browser interface for discovery, library exploration, music knowledge, acquisition, settings and administration. The web client is not an audio player. Lives in `abucalip/navi-librarian` alongside the server and shared API contracts.
+- **Android:** native music player and Librarian companion, including library browsing, discovery, acquisition, playback, radio and listening features. Lives in `abucalip/discair-android`.
+- **macOS:** native Apple Silicon desktop player and Librarian companion, with the same core music and acquisition capabilities plus desktop-oriented navigation, queue, playback and knowledge-exploration experiences. Lives in `abucalip/discair-macos`.
 
 The Python/FastAPI server is the shared source of truth for library-aware discovery, provider access, acquisition, radio metadata, persistent state and derived intelligence. Clients consume its APIs and Navidrome's music-server APIs; they do not independently reproduce server-side recommendation, provider or acquisition rules.
 

@@ -1,5 +1,9 @@
 # Navi Librarian agent instructions
 
+This repository (`abucalip/navi-librarian`) contains the Python/FastAPI server, the web client, and the shared server API contracts (`docs/contracts/`). Native client work happens in separate repositories:
+- macOS client: [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos)
+- Android client: [`abucalip/discair-android`](https://github.com/abucalip/discair-android)
+
 Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) in full before running any repository search or opening source files. Use its ownership map to identify the relevant modules and narrow subsequent searches.
 
 Keep updates and replies concise. Avoid chattiness, repetition, and unnecessary detail. Read only files relevant to the task, keep searches and tool output focused, and avoid work that wastes tokens or usage.

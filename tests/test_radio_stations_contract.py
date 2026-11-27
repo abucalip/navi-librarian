@@ -3,7 +3,7 @@ import json
 import unittest
 from pathlib import Path
 
-FIXTURES = Path(__file__).resolve().parent.parent / "android" / "contract-fixtures" / "librarian"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contract-fixtures" / "librarian"
 STATION_FIELDS = {"id", "name", "proxied", "stream_url", "playable_url", "homepage_url", "logo_url",
                   "favourite", "tags", "last_played_at"}
 

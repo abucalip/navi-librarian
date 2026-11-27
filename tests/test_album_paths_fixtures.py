@@ -1,14 +1,14 @@
 """Album paths fixtures keep the contract the builders promise (docs/archive/completed/ALBUM_PATHS_PROPOSAL.md, "Rules").
 
 Recorded through GET /api/knowledge/paths (type=release) and GET /api/sonic/album-neighbours
-in android/contract-fixtures/librarian. These tests read the recorded responses only; they do not
+in tests/fixtures/contract-fixtures/librarian. These tests read the recorded responses only; they do not
 call the server or the store.
 """
 import json
 import unittest
 from pathlib import Path
 
-FIXTURES = Path(__file__).resolve().parent.parent / "android" / "contract-fixtures" / "librarian"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contract-fixtures" / "librarian"
 
 ALBUM_CODES = {
     "album_crew": {"crew_on"},

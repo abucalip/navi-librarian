@@ -2,6 +2,8 @@
 
 This is the short queue of unfinished or explicitly parked work. GitHub `main` is authoritative. Check current code, open PRs, and CI before starting anything; do not infer current state from archived notes.
 
+> **Repository split (2026-11-27):** `macos/` and `android/` have been moved out of `abucalip/navi-librarian` into [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos) and [`abucalip/discair-android`](https://github.com/abucalip/discair-android) (see [`plans/split.md`](plans/split.md)). Server, web client, and shared API contracts remain here. Open native client items listed below (sections 2e, 2i P4–P5, 2j, 2k, 2l, 2l-2 Android steps, 2m, 2o, 2o-2, 2r, 2s) now belong to those respective client repositories.
+
 Finished and merged work, and owner checks on work merged before 2026-11-11, were moved on 2026-11-18 to [`archive/completed/ACTIVE_WORK_DONE_2026-11-18.md`](archive/completed/ACTIVE_WORK_DONE_2026-11-18.md) (full text, PR numbers and SHAs). Section numbers below are the old ones, so references still match. Entries here are either not started, not finished, or merged within the last week with the owner's check still open.
 
 ## 2e. macOS radio stage 2 — built, owner's live checks open

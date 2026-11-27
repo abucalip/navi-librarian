@@ -6,6 +6,8 @@ Last checked against GitHub `main` at `a1c94f30` on 2026-11-27.
 
 ## Current state
 
+- **Repository split S4 — trim monorepo (2026-11-27)** — Removed `macos/`, `android/`, client-only perf scripts (`scripts/perf/macos_cheap.sh`, `scripts/perf/android_cheap.sh`), and client-only contracts from `abucalip/navi-librarian`. Native client development now lives in `abucalip/discair-macos` and `abucalip/discair-android`, while the server, web client, and shared API contracts remain here. Next action: PR review and Slice S5 (local workspace setup & closeout).
+
 - **Android Index Graphite palettes (2026-11-27)** — Eight approved night variants are implemented with matching player/insight tones, canonical tokens and focused regression coverage. All 459 design contrast checks passed. Android tests/build and device checks are blocked by sandbox socket/cache permissions. Next action: PR review, focused Android verification and device inspection.
 
 - **macOS Playlist Inbox downloads (LB-16, 2026-11-27)** — Adds per-track Download and Retry, server refusal explanations, shared acquisition progress, and ownership refresh before playback. All 21 focused Swift tests passed; Cupertino fixture renders were reviewed. Full suites and live Navidrome/Soulseek transfer were not run. Next action is PR review and a live macOS download/import/scan check.

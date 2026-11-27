@@ -31,18 +31,14 @@ Paths are relative to the repository root.
 | --- | --- |
 | Web templates and UI | `app/templates/`, `static/app.js`, `static/radio.js`, `static/listening-room/` |
 | Web Playlist Inbox | `static/listening-room/playlist-inbox.js` renders saved editions, requests downloads by edition and track position, and refreshes ownership and acquisition progress through the authenticated APIs. |
-| Android app | `android/app/src/main/kotlin/app/discair/` |
-| Android screens and themes | Under the Android app path, use `ui/<feature>/` for screens and theme variants, `ui/common/` for shared controls and shells, and `ui/theme/` for palettes and theme selection. |
-| Android Playlist Inbox | `ui/discover/PlaylistInboxScreen.kt` reads the authenticated Inbox through the Android repository. `model/PlaylistInbox.kt` projects edition tracks into native queue items using the server’s ownership matches. The detail screen requests downloads by edition and position and reads transfer progress from the shared Android acquisition hub. |
-| macOS Playlist Inbox | `macos/Sources/DiscairLibrarian/PlaylistInbox.swift` reads saved editions and requests downloads by edition and position. `macos/Sources/DiscairUI/Model/PlaylistInboxModel.swift` owns the Discover shelf, edition detail, download attempts, and server-keyed acquisition progress; only confirmed owned occurrences enter the native queue. |
-| macOS app | `macos/Sources/DiscairApp/`, `macos/Sources/DiscairUI/` |
-| macOS playback, models, and API clients | `macos/Sources/DiscairAudio/`, `macos/Sources/DiscairCore/`, `macos/Sources/DiscairLibrarian/`, `macos/Sources/DiscairNavidrome/` |
+| Android app | Moved to [`abucalip/discair-android`](https://github.com/abucalip/discair-android) |
+| macOS app | Moved to [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos) |
 
 ## Tooling
 
 | Area | Start here |
 | --- | --- |
-| Tests | `tests/`, `android/app/src/test/`, `macos/Tests/` |
+| Tests | `tests/` (native client tests live in `abucalip/discair-android` and `abucalip/discair-macos`) |
 | Store backup and sizing | `scripts/backup_stores.py`, `scripts/store_size_report.py` |
 | Performance probes | `scripts/efficiency_inventory.py`, `scripts/efficiency_baseline.py`, `scripts/gate_spacing_check.py` |
 | Design sources | `docs/design/` |

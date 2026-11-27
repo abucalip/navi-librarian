@@ -26,7 +26,7 @@ from intelligence.artwork import ArtworkService, ArtworkStore  # noqa: E402
 from intelligence.artwork.service import _trim_doc  # noqa: E402
 from intelligence.artwork.index import EMPTY, OK, UNAVAILABLE, ReleaseIndex, build_group_index, to_response  # noqa: E402
 
-OUT = ROOT / "android" / "contract-fixtures" / "librarian"
+OUT = ROOT / "tests" / "fixtures" / "contract-fixtures" / "librarian"
 CAPTURED_AT = "2026-11-10T00:00:00Z"
 RG = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 R_US = "11111111-1111-4111-8111-111111111111"   # 1958 US LP (the owned edition)
