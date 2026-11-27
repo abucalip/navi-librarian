@@ -1,13 +1,17 @@
 # Navi Librarian agent instructions
 
-This repository (`abucalip/navi-librarian`) contains the Python/FastAPI server, the web client, and the shared server API contracts (`docs/contracts/`). Native client work happens in separate repositories:
-- macOS client: [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos)
-- Android client: [`abucalip/discair-android`](https://github.com/abucalip/discair-android)
+This repository (`abucalip/navi-librarian`) contains the Python/FastAPI server, the web client, and shared server API contracts (`docs/contracts/`). Native clients live in `abucalip/discair-macos` and `abucalip/discair-android`.
 
-Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) in full before running any repository search or opening source files. Use its ownership map to identify the relevant modules and narrow subsequent searches.
+## Start of task (2 reads)
+1. Read [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) (rolling snapshot + next action) and the relevant section of [`docs/ACTIVE_WORK.md`](docs/ACTIVE_WORK.md).
+2. Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) in full before searching or opening source files; use it to jump directly to source files and focused `pytest` modules.
 
-Keep updates and replies concise. Avoid chattiness, repetition, and unnecessary detail. Read only files relevant to the task, keep searches and tool output focused, and avoid work that wastes tokens or usage.
+## Hard rules
+- Refer to the project director exclusively as **"the owner"** everywhere.
+- **Never run the full unit suite.** Run only focused tests (`pytest <file>`) for changed code.
+- **`navidrome_server.py` takes no additions** (D-016); new code goes in new modules with direct-import tests.
+- Update [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) in the same change when adding or moving a module.
+- End the task after pushing and creating/updating the PR; do not wait for or poll CI unless asked.
+- Documentation-only changes go straight to `main`, no PR.
 
-Follow the [development workflow](docs/DEVELOPMENT_WORKFLOW.md). The owner applies this rule across the project:
-
-End the task after a successful push and after creating or updating any requested PR. Do not wait for, watch, or poll CI after pushing. The owner handles post-push CI and merge gates unless they explicitly ask the agent to handle them.
+Full workflow, opportunistic simplification, and safety rules: [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md).

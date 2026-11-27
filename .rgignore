@@ -1,0 +1,6 @@
+# Exclude archived logs and history from default ripgrep/agent searches.
+# Read these paths explicitly when historical evidence is needed.
+docs/archive/
+PROJECT_LOG.md
+wt-*/
+.claude/

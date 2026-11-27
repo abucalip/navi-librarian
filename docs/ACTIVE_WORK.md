@@ -1,139 +1,61 @@
 # Active work
 
-This is the short queue of unfinished or explicitly parked work. GitHub `main` is authoritative. Check current code, open PRs, and CI before starting anything; do not infer current state from archived notes.
+Short queue of open or parked **server and web** work. GitHub `main` is authoritative.
 
-> **Repository split (2026-11-27):** `macos/` and `android/` have been moved out of `abucalip/navi-librarian` into [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos) and [`abucalip/discair-android`](https://github.com/abucalip/discair-android) (see [`plans/split.md`](plans/split.md)). Server, web client, and shared API contracts remain here. Open native client items listed below (sections 2e, 2i P4–P5, 2j, 2k, 2l, 2l-2 Android steps, 2m, 2o, 2o-2, 2r, 2s) now belong to those respective client repositories.
+> **Repository split (2026-11-27):** `macos/` and `android/` moved to [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos) and [`abucalip/discair-android`](https://github.com/abucalip/discair-android) ([`plans/split.md`](plans/split.md)). Native client queues and plans now live in those repositories (archived snapshots in [`archive/native-clients/`](archive/native-clients/)). Completed pre-2026-11-18 items are in [`archive/completed/ACTIVE_WORK_DONE_2026-11-18.md`](archive/completed/ACTIVE_WORK_DONE_2026-11-18.md).
 
-Finished and merged work, and owner checks on work merged before 2026-11-11, were moved on 2026-11-18 to [`archive/completed/ACTIVE_WORK_DONE_2026-11-18.md`](archive/completed/ACTIVE_WORK_DONE_2026-11-18.md) (full text, PR numbers and SHAs). Section numbers below are the old ones, so references still match. Entries here are either not started, not finished, or merged within the last week with the owner's check still open.
+## 2h. Round 2 Neobrut layouts — P7 closeout open
 
-## 2e. macOS radio stage 2 — built, owner's live checks open
+- P1–P6 and revisit merged; P7 closeout (docs and owner-authorized release) not started ([`BRUT_LAYOUTS_PLAN.md`](archive/completed/BRUT_LAYOUTS_PLAN.md)).
 
-- All slices S2-0 to S2-5 are merged (2026-11-13 to 2026-11-14). Open: the owner's live checks in [`RADIO_PLAYBACK_PROPOSAL.md`](plans/RADIO_PLAYBACK_PROPOSAL.md), S2.10. Never verified against a real station: sound, the live mini player, the widget LIVE state, the menu bar item and popover, Download from the bar, media keys and Control Centre, reconnect and sleep timer, ⌘1 to ⌘9, Night mode, VoiceOver, narrow window. Full macOS suite not run.
+## 2i. Round 3 Neobrut themes — web phases not started
 
-## 2h. Round 2 Neobrut layouts — P7 closeout not done
+- Plan: [`BRUT_ROUND3_PLAN.md`](plans/BRUT_ROUND3_PLAN.md) (D-024). Zine Spread (P1) merged; Pipeline Board dropped.
+- Not started (wait for owner): **P3a** web Window Manager, **P3b** second album window (spike first), **V** optional palette variants, **P6** closeout.
 
-- P1 to P6 and the revisit are merged. P7 (closeout: documents, and a published release only when the owner authorises it) is "not started" in the plan table ([`BRUT_LAYOUTS_PLAN.md`](archive/completed/BRUT_LAYOUTS_PLAN.md)).
+## 2l-2. Flow Home server additions — not started
 
-## 2i. Round 3 Neobrut themes — remaining phases not started
+- Two server additions for Android Flow Home: **S0a** (smart-playlist preview endpoint and song-list cache) and **S0b** (`album_label` album path kind). **Next:** S0a.
 
-- Plan: [`BRUT_ROUND3_PLAN.md`](plans/BRUT_ROUND3_PLAN.md) (D-024). Zine Spread (P1) is merged; Pipeline Board is dropped. Not started, to begin only when the owner asks: **P3a** web Window Manager (shell, taskbar, single windows), **P3b** second album window (spike first), **P4** Android Receipt Roll, **P5** Android Binder, **V** optional palette variants, **P6** closeout.
+## 2m-2. Star Operation — open decisions
 
-## 2j. macOS client (Discair for Mac) — open decisions and recent checks
+- S1–S4b merged (2026-11-15). Open: owner approval for star-seed half-life (180 d), expiry (365 d), undated factor (0.5), and with/without-stars replay (needs provider traffic approval).
+- Web gaps: dashboard strip and shelf lack "Not this artist"; no client exposes star-seed or discovery-mode settings; S1c reason lines and blocklist screens not yet checked in a browser.
 
-- **Keychain and first release:** the owner decides whether to accept one Keychain prompt per update, get an Apple Developer ID, or move logins out of the Keychain (`macos/DESIGN.md`, "Keychain partition finding"). The first release waits for the owner's authorisation (`macos/Packaging/RELEASING.md`). M7 (Bento Block, Native Glass v2) stays later and is not started.
-- **Night mode and Appearance tab (#1015, 2026-11-13):** the full macOS suite was not run; the owner looks at Night across the screens, decides whether releasing the hue slider (not live drag) is acceptable, and checks the Mini Player staying dark.
-- **Another booklet button (#1016, 2026-11-13):** the owner looks at the button on the Mac and on a device; full suites not run.
+## 2p. Server efficiency — Phase K decisions open
 
-## 2k. macOS and Android redesign (`docs/plans/redesign.md`) — open items
+- Plan: [`efficiency.md`](plans/efficiency.md). K2–K6 and #1177 merged; not deployed.
+- Open: owner approval for K3 `reviews` prefetch cap and K4/K5/K6 restart side-by-side pass (provider traffic); waiting on evidence for S1 retention, C3 memory limits, wider K2 scope, and M2 album route latency.
 
-- Android A8b: the playlist route (item 1) and the device check (item 7) remain; the A9 device review is open. D5 (`savePlayQueue`) has no live Navidrome check yet. macOS audit follow-ups F1 to F13 are listed in the plan as not started. Not published or deployed.
-- **macOS Home "Marquee":** H1 to H3 are merged; **H4, the owner checks Home against the real server** (plan section 8: [`MACOS_HOME_MARQUEE_PLAN.md`](archive/completed/MACOS_HOME_MARQUEE_PLAN.md)). Simplification candidate: `HomeDashboard.neverPlayedChange` and its baseline input now feed nothing on Home.
+## 2q. Web Listening Room redesign — L0–L2 merged, L3 in review
 
-## 2l. Android art-led themes (Soft Brut, Flow) — owner phone checks open
+- Plan: [`LISTENING_ROOM_WEB.md`](plans/LISTENING_ROOM_WEB.md); design package in [`design/listening-room/`](design/listening-room/).
+- L0 (#1221), L1 (#1222), and L2 (#1248) merged; L3 (lead, Up next, Daily picks and reasons) in review (Genre spread tab omitted until stored lens endpoint serves it).
+- **Next:** review L3, complete browser checklist and lead-cover fallback check, then build L4 (Artist Deep Dives, Personal Discoveries, Discover music).
 
-- All build steps are merged (Soft Brut S1 to S4, Flow F1 to F4, 13 palettes, Flow Discover option B D1 to D4). Open for the owner: the phone check of Soft Brut and Flow pages against the mockups in [`design/android-art-themes/`](design/android-art-themes/) (including the Flow bar blur and status bar icons, and Soft Brut fixes batch 1 from #1017), the 13 palettes against the PNGs in `design/android-art-themes/palettes/`, and Flow Discover (each of the seven lists, the sheet, swipes across all seven, a night palette). Flow Discover open point O1 (Save and ⋯ touch size) is for the owner. Filtered tests only throughout; nothing screenshot-compared.
+## 2t. FirstFM — Last.fm removal built, runtime checks open
 
-## 2l-2. Flow Home: Threads and Shelf mixer — plan approved, no code yet
-
-- Plan and design system: [`Home_threads_mixer.md`](plans/Home_threads_mixer.md); mockups (spec) in [`design/android-art-themes/flow/home-threads-mixer/`](design/android-art-themes/flow/home-threads-mixer/). The owner picked A's Threads and C's Shelf mixer on 2026-11-15 from three Home proposals (A Threads, B Time, C Shelves). Flow only on Android, plus two server additions.
-- Steps: S0a (smart-playlist preview endpoint and song-list cache), S0b (`album_label` album path kind), H1 (Android data and rules), H2 (Threads section), H3 (Why they connect sheet), M1 (Shelf mixer), M2 (Save and Saved), C (closeout). **Next:** S0a. Open points O1 to O3 (whole albums on Play, play-count thresholds, default centre) have defaults and wait for the owner.
-
-## 2m. Android Paths sheets (Trail) — built, owner's phone check open
-
-- Steps 1 to 6 are merged (2026-11-13). Left: the owner's phone check of the Album and Artist Paths sheets.
-
-## 2m-2. Star Operation — built, open decisions
-
-- S1 to S4b are merged (2026-11-15). Open: the star-seed half-life (180 days), expiry (365 days) and undated factor (0.5) are proposed and need the owner's approval, and the with/without-stars replay was not run (needs provider traffic and approval). No client shows the star-seed or discovery-mode settings. Not seen in a browser, on a device or in the app: S1c reason lines (web, Android card, macOS), the blocklist screens. Known gaps: Android Home pick menus lack the new entries; macOS offers a pick's first genre only; the web dashboard strip and shelf have no "Not this artist". Genre spread under the discovery mode is unmeasured.
-
-## 2o. Android Gallery theme — owner's phone check open
-
-- G1 to G7 and the follow-ups #1125 and #1126 are merged. Open: the owner checks the Gallery theme on the phone (all eight palettes, the motion, the Radio section on Home). Differences from the mockups are in `PROJECT_LOG.md`.
-
-## 2o-2. Android Bento and Index themes
-
-- Specs: [`BENTO_THEME.md`](plans/BENTO_THEME.md) (B1 to B6) and [`INDEX_THEME.md`](plans/INDEX_THEME.md) (I1 to I6); owner decisions B1 to B7 and I1 to I7 taken as proposed (2026-11-17). Palettes: Bento Sorbet (default), Licorice, Riviera; Index Signal Blue (default), Newsprint Red, Graphite Orange, Field Green. By owner rule, every missing server route or field is built in its own PR before the client step that draws it.
-- **Bento: not started.** B0 (server data audit, spec section 11a) has not run; then B1 to B6. Bento and Index first steps must not run at the same time (both branch `Palette.kt`, `Theme.kt`, `Motion.kt`).
-- **Index: I0 to I6 merged** (#1192 to #1204; I1 to I6 are #1197 to #1202, then #1203 Paths and #1204 Home swipe). Open: the owner checks I3 to I6 on the phone (not checked: the other three palettes, Server version and ping because the I0 server is not deployed, a download in progress, the live radio page, timed lyrics, Insights lens rows and the anniversary block). Owner decisions on new `INDEX_THEME.md` 11a rows: Stats hours this month, Stats lossless share, the pick sheet's "Why this pick?", artist library position, unowned album "PICK 03 / 12", genre artist album counts, live radio Save and previous/next station, and whether to build the discover mockup's lettered taste sheet (Discovery mode, Blocked genres, More like this, Refresh lists). Then the Index closeout. Known shared bug, not in scope: system Back with a Paths step open closes the whole sheet on every theme.
-- **Graphite night variants (2026-11-27):** Eight approved variants are implemented on `feat/index-graphite-palettes`. Design contrast checks pass; Android unit tests/debug build and device verification remain open because this sandbox cannot start Gradle or ADB listeners. Next: PR review and verification of Appearance persistence, Home, Now Playing, Queue and insight blocks.
-
-## 2p. Server efficiency — evidence and decisions open
-
-- Plan and evidence: [`efficiency.md`](plans/efficiency.md), Phase K. K2 to K6, the K3 parts, the no-decision follow-ups and finishing-up #1177 are merged; nothing is deployed (the K3 caps are the `compose.yaml` default, so the job runs on the next worker deployment).
-- Open: the K3 album-reviews prefetch stays off until the owner approves a `reviews` cap; waiting on evidence: S1 retention, C3 memory limits, wider K2 scope; M2 acceptance (album route time independent of provider latency) not measured; the restart side-by-side pass (K4/K5/K6) needs the owner's approval for provider traffic.
-
-## 2q. Web client Listening Room redesign: L0–L2 merged, L3 in review
-
-- The owner picked direction A ("Listening Room") on 2026-11-17 from three Home mockups, and asked for fuller reasons for each pick (as in direction C). The design system and build plan are in [`LISTENING_ROOM_WEB.md`](plans/LISTENING_ROOM_WEB.md), with the package in [`design/listening-room/`](design/listening-room/): tokens, components, icons, fonts, and Home, reasons and states mockups at 1440 and 390.
-- Open owner decisions D1 to D4 are in section 10 of the plan. L0 assumed the recommended D1 = (b) (server builds `why`); Listening Room becomes the web default, and the old web layouts are retired only after the owner's check; Discover music stays on Home; covers that cannot be sampled get the fallback tint.
-- **L0 (server audit and `pick_why`) merged (2026-11-22, PR #1221, squash `c941c6a1`):** added `deep_dive_kind` in `discovery/deep_dive_candidates.py`, pure `discovery/pick_why.py` (`why: {kind, sentence, chips}`), read-time attachment in `discovery/list_payload.py`, `discovery/lens_week.py` and `app/api/discovery.py`, and confirmed section 9.3 page fields (`quality` present on owned albums, reviews return `{source, quote, url}`, similar artists omit `album_count`, Saved carries client-supplied `metadata` only).
-- **L1 (foundations behind a switch) merged (2026-11-22, PR #1222, squash `ab3e7663`):** shipped Instrument Sans 600/700 and OFL licence in `static/fonts/` + `fonts.css`, copied `static/listening-room/tokens.css`, linked it and inlined the 52-icon `#lr-*` sprite in `app/templates/index.html`, and added opt-in `listeningroom` (`Listening Room`, default still `ink`) in `static/appearance.js` + `static/themes.css`. Not checked in a live browser yet.
-- **L2 (shell) merged (PR #1248):** responsive navigation, More sheet, shared search and the discovery mode switch. The PR records isolated Chrome fixture coverage.
-- **L3 (lead, Up next, Daily picks and reasons):** the stored lens endpoint on the L3 base serves four lenses. It returns 404 for Genre spread, so Home omits that tab until the endpoint serves it. Client support for all five lenses is covered with fixtures.
-- **Next action:** review L3. The full application browser checklist and the fallback rate across real lead covers are still open. L4 adds Artist Deep Dives, Personal Discoveries and Discover music.
-
-## 2r. macOS Paths and Booklet sheets — owner check open
-
-- All slices are merged (P0 to P2, B1 to B4; 2026-11-17 to 2026-11-18). Open: the owner's check of both sheets in a real window and the CPU measurements (Paths five cases from P1; Booklet open after B2 and B3). D4 unanswered (recommended: no language tag). Details: [`MACOS_PATHS_BOOKLET.md`](plans/MACOS_PATHS_BOOKLET.md).
-
-## 2s. macOS design details polish: D1 to D8 merged; D3, D5, D6, D7 and D8 visual checks open
-
-- The owner asked on 2026-11-18 for a fine-detail review of the Cupertino macOS client from 12 screenshots. The plan is [`MACOS_DESIGN_DETAILS.md`](plans/MACOS_DESIGN_DETAILS.md), slices D1 to D8.
-- D1 (shell, corners and hero edges) is present on `main` at `dd95d6f9`.
-- D2 (Album and Artist hero alignment) is merged in PR #1208, squash `5071453c`; the owner approved the visual checks, including the corrected soft scrim.
-- D3 (bottom insets and the Pipeline dock) is merged in PR #1209, squash `7808ab8c`, from head `2495876f`, based on `main` at `4bbdfc10`. The Pipeline card reports its laid-out height and the page scroll views take that height plus a 16 pt margin as a bottom content inset while it shows; the card stays 16 pt clear of the queue inside the main column when the queue is open. One shared 32 pt inset now lives in the shell instead of each page. New `PipelineDockTests` cover the placement rules, the measured inset and a Home page scrolled to the end.
-- **Verification:** 50 focused UI tests in six suites passed. The selected `DiscairUITests` target ran 885 tests with 884 passing; the known wall-clock freshness test `dismissQueuesOneCardEventKeyedBySubject` failed inside the full run and passes alone. All five GitHub Actions checks passed on the exact head. **Not verified:** no owner visual acceptance in Day and Night, no before/after crops, no CPU measurement (no motion added). **Next:** the owner checks the listed pages at the end of their scroll with the card showing.
-- **D4.1 (segmented control) is merged in PR #1210, squash `fe90cc43`, from head `4abdb36b`.** `CUSegmented` owns the neutral look through `CUSegmentedSpec` (track and chip radii, 2 pt padding, 24/28 pt segments); Day keeps the hairline drop shadow and Night adds a 1 pt `separator` hairline on the selected chip. The unused `accented` variant was removed, Radio "Stations / Heard" is neutral, and the last system `Picker(.segmented)` controls (Timeline, Atlas, classic Connections) were replaced. The Radio tag chips keep their separate inverted-pill style. Missing contrast pairs were added and pass 4.5:1 in both modes. New `SegmentedControlTests` and `D4SegmentedRenderTests` (five pages in Day and Night). The agent's focused run passed 9 tests in 2 suites; the owner reports a further 50 tests in 7 suites passing. The selected target was stopped after it stalled. All five GitHub Actions checks passed on the exact head. **Not verified:** owner visual acceptance in a live window; the classic Connections control was not rendered (no theme uses it); no CPU measurement (no motion added). Not published or deployed.
-- **D4.2 (capsule heights) is merged in PR #1211, squash `bb96dbba`, from head `92e36ccd`.** Capsules that sit in one row now share one size variant: the Home marquee's "More" menu is regular (32 pt) beside Get album / Save / Not for me and keeps the small variant on a Discover row (`CupertinoPickFeedbackMenu.capsuleStyle(marquee:)`); the Home radio card's Resume / Stop / Open Radio move onto the shared `CapsuleButtonStyle` at the regular height (`HomeRadioCardView.capsuleStyle(primary:)`). New `D4CapsuleTests`; `HomeRenderTests` gained two Night radio-card renders. The focused run passed 25 tests in 4 suites; the rendered "Resume" capsule measured 22.5 pt before and 31.5 pt after. All five GitHub Actions checks passed on the exact head. **Not verified:** owner visual acceptance in a live window. Not published or deployed.
-- **D4.3 (phone banner) is merged in PR #1212, squash `2f62f933`, from head `d972ac1a`.** `CUNotice` now centre-aligns its leading icon, notice sentence and trailing capsule button (`CUNotice.rowAlignment = .center`) without the 4 pt icon top offset that left a one-line sentence ("Playing on your phone: …") 3.0 pt above the banner's vertical centre. New `D4NoticeTests`; `HomeRenderTests` gained Day and Night phone handoff renders. The focused run passed 20 tests in 3 suites; in the 40.0 pt rendered phone banner (centre `87.75 pt`), the text centre moved from `84.75 pt` (`-3.00 pt`) to `88.75 pt` (`+1.00 pt` with descenders; cap-height-to-baseline centre `87.50 pt`), aligned with the icon and button (`87.75 pt`). All five GitHub Actions checks passed on the exact head. **Not verified:** owner visual acceptance in a live window. Not published or deployed.
-- **D4.4–D4.6 (page title edge, quality badge, sidebar group headers) merged in PR #1213, squash `2ecb2921`, from head `c938fe73`.** `TimelineView` and `AtlasView` now use `CU.Space.xl` (32 pt) horizontal padding (`horizontalPadding`). Added `CUQualityBadge` (`CupertinoKit.swift`, filled 4 pt rounded rectangle, bold caption, 8×2 pt padding) and adopted it across `CupertinoPlayerBar`, `CupertinoAlbum` and `CupertinoLibrary`. Unified `CupertinoSidebar` group headers onto `CU.Font.eyebrow.font` and `CU.Space.m` group gaps. Added `D4PageTitleEdgeTests`, `D4QualityBadgeTests` and `D4SidebarHeaderTests`; focused runs passed 21 tests in 7 suites and 20 tests in 6 suites; before/after offscreen renders inspected for Timeline, Atlas, Connections, Album and Sidebar (player bar rendered empty in preview). **Not verified:** owner visual acceptance in a live window; no CPU measurement (no motion added). Not published or deployed.
-- **D4.7–D4.8 (sidebar sub-item highlight edge, search shortcut hint) merged in PR #1214, squash `bb701cfa`, from head `36dc8ae4`.** `CupertinoSidebar` indents only the icon and label of Discover sub-items (`subItemIndent = CU.Space.m`, 16 pt) inside `row(_:_:_:indent:)`, keeping the `CU.accentTint` highlight pill's leading edge aligned with top-level rows. `CupertinoToolbar` moves `"⌘K"` to the trailing edge in `CU.textTertiary` opposite `"Search"`. Added `D4SidebarHighlightSearchHintTests` (Day/Night offscreen render checks); focused run passed 9 tests in 3 suites (`D4SidebarHighlightSearchHintTests`, `D4SidebarHeaderTests`, `CupertinoControlsTests`). All five GitHub Actions checks passed on exact head `36dc8ae4`. **Not verified:** owner visual acceptance in a live window; no CPU measurement (no motion added). Not published or deployed.
-- **D5.1–D5.9 (columns in lists) merged in PR #1215, squash `10e9e228`, from head `9a807380`.** Downloads stepper columns/action stack use fixed widths (`70`/`280`/`128` pt), static 2 pt connectors (`CUChartMath.stageConnectors(step:)`), hidden stepper on `.imported` rows, and `maxListWidth = 1040` pt with aligned `"Clear … imported"`; Queue reserves `playingSlotWidth` (`18` pt) and `actionSlotWidth` (`24` pt) slots, aligns the header count (`headerCountTrailingInset = 40` pt), and aligns its header to the toolbar centre line; Timeline year/undated labels use `.firstTextBaseline`; `TimelineInspector` and `AtlasInspector` run full height in `CupertinoWindow`'s trailing slot with titles on `CupertinoToolbar.centreY`; `StationLogo` aspect-fits non-square logos with 3 pt padding on `CU.bgFill` (plus synchronous `StationLogoStore.cached`); empty `OnAirPanel` hugs content and `"Add station"` sits in the Radio header toolbar row. Focused run (`D51`–`D59` plus related suites) passed 89 tests in 22 suites; all five GitHub Actions checks passed on exact head `9a807380`. **Not verified:** full macOS suite not run; owner visual acceptance in a live window; no CPU measurement (no motion added). Not published or deployed.
-- **D6.1–D6.4 (Now Playing) is on `main` at `19bb6a05` (PR #1216).**
-- **D7.1–D7.4 (graph and map labels) merged in PR #1217, squash `96ade9f3`, from head `70a278c1`.** Connections drops sector eyebrows with fewer than 2 step-1 nodes, places remaining sector labels in edge midpoint gaps (`GraphLayout.sectorLabelAngles(_:)`), draws edges strictly beneath nodes/labels, and backs labels with a rounded `CU.content` 80% halo (4 pt padding); Atlas moves to `AtlasMapView` (`MKMapView` via `NSViewRepresentable`) with native MapKit clustering (`clusteringIdentifier = "atlas-place"`, numbered `AtlasClusterView`), `AtlasGeometry.displayPriority(owned:recordings:selected:)`, and `AtlasLabelLayout.place(_:in:)` for priority-ordered collision hiding and map-bounds clamping; `AtlasInspector` collapses empty album lines (`albumLine(for:)`); Atlas and Timeline footers wrap legend clauses via `FlowLayout` with `"Showing the first … only."` on its own line. Focused run (`D7GraphMapLabelsTests` plus related suites) passed 38 tests in 10 suites (9.067 s); all five GitHub Actions checks passed on exact head `70a278c1`. **Not verified:** full macOS suite not run; owner visual acceptance in a live window (including live MapKit clustering/tiles); no CPU measurement (no continuous or looping SwiftUI motion added). Not published, deployed or runtime-verified.
-- **D8.1–D8.4 (user-facing copy) merged in PR #1218, squash `b2a434bb`, from head `8bf8ede5`.** `GraphWording.provenanceLine` (`GraphExplorer.swift`) maps internal provenance codes to plain words across `AtlasInspector` (`"MusicBrainz · stated place · exact match"`), `TimelineInspector` and `GraphExplorerView`; `AcquisitionModel.statusText` maps `destination_exists` to `"Already in your library folder; nothing was copied"` with `Dismiss` as the only action and `.importing` stepper stage (`HomeDashboard.stage(of:)`); `GraphExplorerModel.truncatedNotice` drops developer wording (`"Showing the first N connections."` + `"Turn on Credits only, lower the reach, or use List to see them all."`, keeping `Switch to List`); `CupertinoPlayerBar` lets the title block grow up to 40% of the bar width via `CappedWidthLayout` while hugging shorter titles and centring the middle line between the title block and controls. Focused run (`D8UserFacingCopyTests` plus related suites) passed 60 tests in 5 suites (6.260 s); all five GitHub Actions checks passed on exact head `8bf8ede5`. **Not verified:** full macOS suite not run; owner visual acceptance in a live window; no CPU measurement (no continuous or looping SwiftUI motion added). Not published, deployed or runtime-verified.
-- All slices D1 to D8 are merged; remaining work in 2s is the owner's live visual acceptance of D3, D5, D6, D7 and D8.
-- Owner decisions (2026-11-18, all as recommended): hero gutter fade and collapse; selected-tab styles by mode; full-height inspectors; left-aligned artist bio. The cover stays shown twice (sidebar slot and player bar).
-
-## 2t. FirstFM — Last.fm API removal built, runtime checks open
-
-- Plan: [`FirstFM.md`](plans/FirstFM.md). All slices F1.1 to F5.2 are built (ListenBrainz popularity & radio scrobbling/love, Deezer artist fallback, Discogs tag fallback, web/Android/macOS client updates, `integrations/lastfm/` removal, and `lastfm_*` payload alias removal).
-- Open: live runtime verification (ListenBrainz popularity, Deezer fallback, ListenBrainz radio scrobbling/love) and deployment; nothing is published or deployed.
+- Plan: [`FirstFM.md`](plans/FirstFM.md). F1.1–F5.2 built. Open: live runtime verification (ListenBrainz popularity, Deezer fallback, ListenBrainz radio scrobbling/love) and deployment.
 
 ## 2n. Simplification candidates
 
-One line each: file, what could be simplified, why it was not done in the PR that found it (see "Opportunistic simplification" in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)). Remove the line when it is done or no longer true.
+One line each: file, simplification, why deferred. Remove when done.
 
-- `navidrome_server.py`: acquisition adapters `_slskd_track_identity`, `_slskd_path_match_diagnostics`, `_slskd_extract_candidates`, `_discovery_import_matched_album_files`, `_discovery_switch_to_next_source(_locked)`, `_discovery_import_completed_source(_locked)`. Not done in #1172: they bind `_music_key`, locks and other module callbacks, several are patched in `tests/test_acquisition_safety.py`, and the code is safety-critical.
-- `navidrome_server.py`: `_discovery_is_various_artists`, a plain forward to `discovery.recommendations.is_various_artists`. Not done in #1172: it has three callers, and that pass only took single-caller code.
-- `navidrome_server.py`: `_bridge_deep_dives` (one caller, six lines of logic). Not done in #1172: it would have to move into `discovery/deep_dive_bridge.py`, which is a move, not a removal.
-- `navidrome_server.py`: `discovery_skip_acquisition_source` (one caller, `app/api/acquisitions.py`). Not done in #1172: it binds the acquisition lock, the database connection and the lifecycle.
+- `navidrome_server.py`: acquisition adapters (`_slskd_track_identity`, `_slskd_path_match_diagnostics`, `_slskd_extract_candidates`, `_discovery_import_matched_album_files`, `_discovery_switch_to_next_source(_locked)`, `_discovery_import_completed_source(_locked)`) — safety-critical, patched in `tests/test_acquisition_safety.py`.
+- `navidrome_server.py`: `_discovery_is_various_artists` — plain forward to `discovery.recommendations.is_various_artists` (3 callers).
+- `navidrome_server.py`: `_bridge_deep_dives` — 1 caller, 6 lines (would move to `discovery/deep_dive_bridge.py`).
+- `navidrome_server.py`: `discovery_skip_acquisition_source` — 1 caller (`app/api/acquisitions.py`), binds acquisition lock/DB/lifecycle.
 
 ## 3. Recommendation engine — gated
 
-- CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
-- **Family-coverage policy — merged in PR #573** (backend-only opt-in `recommendation_selection_policy = family_coverage`; default remains `quota`; genre-tag lookups 120/135). `CF_MAX_PAGES` remains 4. Evidence is limited to one profile and individual captures; replay captures do not freeze the policy setting, and listening-quality impact is unmeasured. A settings/UI control remains a parked decision. Measurements and roadmap: [engine2.md](plans/engine2.md) and `PROJECT_LOG.md`.
-- Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply (the 2026-10-23 branch work shows 8 pages helps only with 120 tag lookups and the coverage policy; see `engine2.md`). Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
-- Detailed older evidence, alternatives, and evaluation criteria: [archived recommendation-engine research](archive/recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md).
+- `CF_MAX_PAGES` stays 4; `recommendation_selection_policy = family_coverage` is backend-only opt-in (PR #573, default `quota`, genre-tag lookups 120/135). Plan: [`engine2.md`](plans/engine2.md).
+- Open/optional: examine why recent-genre cap removes ~60% of candidates; 8 CF pages only if owner wants more supply. Do not change ranking weights or run live captures without owner approval.
 
 ## 4. Parked decisions — do not start without a new decision
 
-- **Material 3 ordinary themes (parked 2026-11-03):** Workspace (web), Expressive, Seeded, Thumb Zone and Triage (Android) were mocked in `docs/design/brut-round3/mockups.html` (tabs 6 to 10) and are not approved; do not build them without a new owner decision.
-
-- **Recommendation settings UI:** still paused; PR #573 added a backend-only opt-in `recommendation_selection_policy = family_coverage` setting while preserving `quota` as the default. It is merged but not published/deployed, and the evidence does not establish better listening outcomes. Replay captures do not yet freeze the policy setting. See the [archived diversity roadmap](archive/parked/DIVERSITY_SETTING_ROADMAP.md) and `PROJECT_LOG.md`.
-- **Gap Radar full discography (parked 2026-11-04):** the macOS Gap Radar (PR #745) only shows gaps among Librarian picks, which carry no year. A later server endpoint returning an artist's discography (for example MusicBrainz release groups with year and type) would let it show every album an artist released, placed on a real year axis. Not started; needs a new decision, and per D-016 the code would go in a new module, not `navidrome_server.py`.
-
-- **Server V2 Music Intelligence:** Phases 0 to 7 server work is merged (store, editions, insight lenses, knowledge pages and paths, sonic proxy, sideman paths), and the macOS client gate (graph explorer, atlas, timeline) is built. Remaining client slices and verification are in [ServerV2.md](plans/ServerV2.md); history is in [archive/ServerV2_HISTORY_2026-11-09.md](archive/ServerV2_HISTORY_2026-11-09.md) and the moved entries in the done archive. Do not add provider traffic beyond the approved samples or change an existing API without the owner's approval. Not published or deployed. Optional owner step: install the AudioMuse-AI Navidrome plugin (D-6, proxy first).
-
-- **Releases:** v0.2.2 image published 2026-10-22 (see `PROJECT_STATUS.md`); not deployed. Further publication or deployment requires explicit owner authorization. See [archived release preparation](archive/release/RELEASE_v0.2.md).
-- **External MCP clients:** repository MCP retirement is complete; any external-client migration is unverified and outside repository evidence. See [archived MCP retirement record](archive/completed/MCP_RETIREMENT_PLAN.md).
-
-## Reference map
-
-- Current status and single next action: [PROJECT_STATUS.md](PROJECT_STATUS.md)
-- Permanent development rules: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)
-- Product behavior: [REQUIREMENTS.md](REQUIREMENTS.md)
-- Test gates: [TEST_PLAN.md](TEST_PLAN.md)
-- Current architecture and boundaries: [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md)
-- Chronological implementation/verification evidence: root [PROJECT_LOG.md](../PROJECT_LOG.md)
-- Historical roadmaps and completed plans: [archive](archive/)
+- **Material 3 ordinary themes (2026-11-03):** Workspace (web) and Android M3 mockups not approved.
+- **Recommendation settings UI:** paused; replay captures do not yet freeze policy setting ([`DIVERSITY_SETTING_ROADMAP.md`](archive/parked/DIVERSITY_SETTING_ROADMAP.md)).
+- **Gap Radar full discography endpoint (2026-11-04):** needs new decision; must be a new module (D-016).
+- **Server V2 Music Intelligence:** Phases 0–7 server work merged; remaining items in [`ServerV2.md`](plans/ServerV2.md). Optional owner step: install AudioMuse-AI Navidrome plugin.
+- **Releases:** v0.2.2 published 2026-10-22, not deployed; further publication/deployment requires owner authorization.
+- **External MCP clients:** retired ([`MCP_RETIREMENT_PLAN.md`](archive/completed/MCP_RETIREMENT_PLAN.md)).

@@ -1,121 +1,55 @@
 # Development and Git workflow
 
-Last updated: 2026-11-14.
+Last updated: 2026-11-27.
 
-## Authority and responsibilities
+## Core rules
 
-- **Exclusive reference rule:** in all repository documentation, source comments, commit messages, PR titles/descriptions/reviews, issue discussions, and other project communications, refer to the person directing this project exclusively as **“the owner”**. Do not use their personal name, account username/handle, or another label for that person. Apply this rule to new text and to any existing text being edited; quote historical text only when necessary to preserve evidence, and avoid expanding or repeating identifying references.
-- **GitHub is the single source of truth** for code, commits, branches, PRs, documentation, and release history. Never use a local checkout as the source for authoritative changes; local environments test identifiable GitHub revisions only.
-- Start each task by checking current `main`, recent commits, open PRs, and relevant CI. Read [`PROJECT_STATUS.md`](PROJECT_STATUS.md), then [`ACTIVE_WORK.md`](ACTIVE_WORK.md), and define one concrete objective with acceptance criteria.
-- **Mandatory architecture-first navigation:** before opening source files, running broad grep/search commands, or choosing implementation files, read [`ARCHITECTURE.md`](ARCHITECTURE.md) in full. Use its module-ownership map to identify the responsible package and likely entry points. Then open those specific files, their callers, tests, configuration and contracts. Do not use repository-wide grep as the first way to discover ownership or module boundaries.
-- If the ownership map does not identify the needed file, use the task-specific documentation and [`scripts/session_search.py`](../scripts/session_search.py) to narrow the search; only then use targeted source search. Search results are navigation aids, not proof: trace actual imports/callers and inspect relevant tests, configuration and safety behavior. If ownership is genuinely unclear or crosses boundaries, update the map only after confirming the current code and dependencies.
-- **Architecture-map maintenance is part of implementation:** whenever a change adds a new importable module, package, target, or distinct subsystem, update [`ARCHITECTURE.md`](ARCHITECTURE.md) in the same change. Add or amend the ownership-map entry to identify its path, single responsibility, and important dependency or boundary rules; update an existing entry when ownership moves or changes. Group closely related files under one entry where that keeps the map readable, but do not leave a new module undiscoverable. Do this before the PR is ready for review (or in the same direct-to-main documentation/code change when that workflow applies), and include the architecture map in the final diff review. A new file that is only an implementation detail of an already documented module does not need its own row, but its owner must remain clear from the existing entry.
-- Read [`REQUIREMENTS.md`](REQUIREMENTS.md), [`TEST_PLAN.md`](TEST_PLAN.md), and [`DECISIONS.md`](DECISIONS.md) for the task's behavior, verification and constraints. Search root [`PROJECT_LOG.md`](../PROJECT_LOG.md) for prior evidence.
-- MCP is retired as a supported interface. Do not reintroduce MCP runtime, registration, or startup paths. Preserve the supported web interface and shared service behavior.
-- UI work follows the same repository, testing, safety, and review rules as backend work. Keep domain/discovery/acquisition/import logic server-side; do not duplicate it in browser code. Preserve established API, authentication, accessibility, keyboard/focus, responsive, and reduced-motion behavior. UI work must use the isolated procedure in [`LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md), plus the UI acceptance gates in [`TEST_PLAN.md`](TEST_PLAN.md). Historical redesign direction and phase evidence are in [`archive/redesign/`](archive/redesign/).
+- **Exclusive reference rule:** refer to the person directing this project exclusively as **“the owner”** everywhere (docs, comments, commits, PRs). Never use their name or handle.
+- **GitHub is the single source of truth.** Branch from current GitHub `main`. Never restart archived/completed work or bypass owner-approval gates.
+- **Architecture-first navigation:** read [`ARCHITECTURE.md`](ARCHITECTURE.md) in full before opening source files or searching. Use its map to jump straight to source files and focused tests; fall back to `scripts/session_search.py` or targeted search only if needed. Update [`ARCHITECTURE.md`](ARCHITECTURE.md) in the same change whenever adding or moving a module/subsystem.
+- **MCP is retired.** Do not reintroduce MCP runtime, registration, or startup paths. Keep domain logic server-side; UI only presents it.
+- **Server module rule (D-016):** `navidrome_server.py` takes no additions. New code goes in new modules with direct-import tests; changes touching `navidrome_server.py` must remove or move lines overall.
 
-## Owner learning note after successful merges
+## Change cycle
 
-- **Every successful PR merge must be followed by a beginner-friendly `Did you know?` section in the agent's final response to the owner.** This is required even when the merge is documentation-only; if a task merges multiple PRs, include a learning section after reporting the merges (one lesson per merged PR is ideal, and do not omit the section).
-- Teach one basic Python idea per lesson, using plain language for someone with no coding background. Prefer a concept connected to the merged change when possible, but the lesson itself must be about Python.
-- Keep each lesson short and concrete: explain the idea in everyday terms, show a tiny Python example when useful, and explain what the example does. Avoid unexplained jargon, assume no prior knowledge, and vary topics over time rather than repeating the same lesson.
-- **Model-cost notice (owner rule, 2026-11-06):** after the `Did you know?` section, the final response must also say whether the next slice or task could be done by Haiku, and at which effort (low, medium or high), or that it needs a stronger model, with one line of reasoning, so the owner can save usage.
-- Only claim a merge occurred when GitHub confirms it. If no PR was successfully merged, this post-merge requirement is not triggered.
+1. Check `main`, [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`ACTIVE_WORK.md`](ACTIVE_WORK.md), and [`ARCHITECTURE.md`](ARCHITECTURE.md).
+2. Branch from current `main`, make the smallest reviewable change, and add regression tests.
+3. **Run focused tests only** (`pytest <file>`). **Never run the full unit suite** (the owner and CI run it). Report exactly what ran and what did not.
+4. Run `python scripts/check_lint_changed.py --base origin/main` if touching Python files (CI fails on new pylint findings in touched files; do not add suppression comments).
+5. Push and open/update a focused PR. **End the task after pushing and creating/updating the PR** — do not wait for, watch, or poll CI unless the owner explicitly asks.
+6. **Documentation-only changes** go straight to `main`, no PR.
 
-## Normal change cycle
+## Opportunistic simplification
 
-1. Inspect repository state, relevant documentation, implementation, all callers, tests, configuration, packaging, and compatibility boundaries.
-2. Define the objective, acceptance criteria, risks, and dependencies.
-3. Branch from current GitHub `main`, unless another GitHub base is explicitly justified.
-4. Make the smallest reviewable change and add regression tests. The one allowed addition is a small, behaviour-preserving simplification under the opportunistic simplification rule below. Preserve behavior, response shapes, side effects, persistence, and compatibility interfaces unless an approved requirement says otherwise.
-5. Run focused tests, syntax checks, and applicable API/Docker checks where execution is available. **Agents must never run the full unit suite** (owner rule); the owner runs it independently and CI runs it on the PR head. Report exactly which focused tests ran and all skipped/unavailable checks.
-   - **Selective testing (owner rule, 2026-11-04):** run only the tests for code you changed (for Swift, `swift test --filter <suite or target>`). Do not re-run tests for code that is already tested and unmodified. For the macOS client, Swift tests run only on a Mac, locally, and are not run on GitHub: the owner removed the macOS CI workflow on 2026-11-04 (`.github/workflows/macos-package.yml`). Choose the targets with the dependency map in `macos/scripts/select-tests.sh` (keep it in step with `macos/Package.swift`); an unrecognised path, `Package.swift` or `Package.resolved` means run the full suite, and report it as not run if it was not.
-6. Review the complete diff, changed-file list, callers, package inclusion, unsafe failure cases, secrets, and unintended changes.
-7. For code, tests, Docker/Compose, or workflow changes, open or update a focused PR. End the task after the push succeeds and any requested PR is created or updated. Do not wait for, watch, or poll CI after pushing unless the owner explicitly requests it. The owner handles the required checks on the final PR head and the merge gates.
-8. **Documentation-only owner rule:** documentation-only changes are committed directly to `main`, not through a PR. Review links, current state, and the complete documentation diff before committing.
-9. When a separate task follows a confirmed merge, refresh `main` before dependent work. Record the exact branch, PR and SHA, tests, available CI evidence, limitations, merge state, and next action in project documentation.
+While modifying code, you may include a small, behaviour-preserving simplification in the same PR **only when all 7 conditions hold**:
+1. **Identical behaviour** (outputs, shapes, side effects, persistence, errors, ordering).
+2. **Covered by a focused test** (existing or added first); otherwise list it in `ACTIVE_WORK.md` under "Simplification candidates".
+3. **Small scope:** touched files or direct imports only, ≤1/3 of the diff.
+4. **Own commit:** titled `simplify: ...`, with a **Simplifications** section in the PR description.
+5. **Never in safety-critical or paced code:** acquisition, import, cleanup/deletion, auth, path validation, or provider-request code.
+6. **Real simplification only:** dead code, local duplication, needless `else` after `return`/`raise`, idiomatic comparisons, flatter nesting. No taste renames/moves; do not change broad `except Exception` (report as candidate).
+7. **Contracts and public names untouched.**
 
-- **Opportunistic simplification (owner rule, 2026-11-14):** while doing a fix, improvement or new module, an agent may simplify code it already modifies, or code a new module imports, and include it in the same PR when all of these hold:
-  1. **Behaviour is identical:** same outputs, response shapes, side effects, persistence, error messages and ordering. If equivalence cannot be shown, do not do it.
-  2. **It is covered:** an existing focused test covers the code, or the agent adds a characterization test first. Otherwise skip it and list it as a candidate (see below).
-  3. **It stays small:** only files the task already touches, or the direct import being used, and no more than about a third of the diff. Anything larger is a separate PR.
-  4. **Its own commit:** titled `simplify: ...`, so the owner can review or revert it apart from the functional change.
-  5. **Never in safety-critical or paced code:** acquisition, import, cleanup/deletion, authentication, path validation, and provider-request code (budgets and pacing live there).
-  6. **Real simplification only:** remove dead code or duplication, flatten needless branching, drop an unused parameter after checking every caller. Renames, reformatting and moving code for taste do not count.
-  7. **Contracts and public names are untouched:** nothing a contract document (including the Android and macOS client contracts) defines, and no name a client depends on.
-  - **Lint-style checks (pylint-like), on touched code only.** A "real simplification" (condition 6) is one of these, each fixed only where behaviour stays identical:
-    - Unused import, variable, argument or private function (pylint `unused-*`); an unreachable statement or a branch whose condition is constant.
-    - Duplicated block or repeated expression that one local helper or variable can replace (`duplicate-code`, `R0801`), when it stays inside the touched file.
-    - Needless `else` or `elif` after `return`, `raise`, `continue` or `break` (`no-else-return`, `no-else-raise`); a nested `if` that merges into one; `if x: return True else: return False` written as `return x`.
-    - `== True`, `== None`, `len(x) == 0` and similar comparisons written the idiomatic way; a loop that is a comprehension, `any`, `all` or `sum` (`consider-using-*`), only when truthiness and short-circuit order are the same.
-    - Too many arguments, branches or nesting levels in a function the task already rewrites (`too-many-*`), fixed only by a flatter structure, not by moving code to a new file.
-    - Broad `except Exception` or a bare `except` that hides errors is **reported, not changed** (the failure behaviour would change); add it to the candidates list.
-    - Do not "fix" a lint finding in code the task does not touch, and do not add suppression comments or a lint configuration. The `simplify:` commit shows which checks it applies.
-    - **CI lint ratchet (owner decision, 2026-11-14):** the `Lint changed files` workflow runs `scripts/check_lint_changed.py` on pull requests. It runs pylint (installed in the job only, not in `requirements.txt`) with the checks listed in that script, on the Python files the PR changes, and fails only when a finding appears more often than in the base version of the same file. Existing findings in touched files are never required work; the full repo is never linted. Fix a reported finding in the touched code or drop that part of the PR; do not add suppression comments. Unused arguments and the size checks are not gated (interface callbacks and framework hooks make them noisy); apply them by hand under the rule above. A passing lint run says nothing about behaviour; it does not replace the focused tests. Locally, run `python scripts/check_lint_changed.py --base origin/main` with pylint installed.
-  - Pylint, ruff or flake8 may also be used locally as a reading aid for the touched files. Their output is not evidence of correctness and the full-repo findings are not a task.
-  - In `navidrome_server.py` a simplification must remove lines overall (D-016). On every platform (Python, Swift, Kotlin) the same rule applies.
-  - Tests for simplified code are changed-code tests: run them and report them (selective testing still applies; never the full suite).
-  - The PR description gets a **Simplifications** section: what changed, why behaviour is identical, tests run, and net lines (added minus removed). `PROJECT_LOG.md` records one line for it.
-  - If the simplification makes the diff harder to review, or the agent is unsure about equivalence, revert that part; the task comes first.
-  - A simplification that breaks a limit is not done: add one line under "Simplification candidates" in `ACTIVE_WORK.md` instead.
+## Testing, safety, and providers
 
-- **Server module rule (owner decision, D-016):** `navidrome_server.py` takes no additions. New code goes in new modules with direct-import tests; a change that touches the server must remove or move lines, not add them. PR #592 added adapters to the server; they were moved to `discovery/lens_service.py` afterwards.
+- **Safety-critical code** (acquisition, import, cleanup, deletion, auth, path validation): validate canonical paths under configured roots; reject traversal, symlink escapes, and ambiguous targets; test safe success and unsafe refusal.
+- **Provider requests:** use batch lookups whenever the provider offers one; keep existing pacing, budgets, and owner-approval gates.
+- **Credentials:** read provider credentials from workspace `config.env` only; never print, log, or commit them.
+- **Web UI changes:** follow [`LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md) and [`TEST_PLAN.md`](TEST_PLAN.md).
+- **Release safety:** merge ≠ publish ≠ deploy ≠ verified at runtime. Image publication and deployment stay paused unless explicitly authorized.
 
-## Testing and safety
+## Post-merge response (only when GitHub confirms a merge)
 
-- Use [`TEST_PLAN.md`](TEST_PLAN.md) as the verification baseline. Never claim a test passed unless it was actually run. A successful import, build, startup, or workflow definition alone is not proof of correctness.
-- UI changes require automated CI first, then manual browser checks against the exact tested SHA using `LOCAL_UI_TESTING.md`. Record actual results; if the head changes, retest or clearly identify the earlier SHA.
-- Treat acquisition, import, cleanup, and deletion as safety-critical. Validate canonical paths under configured roots; reject traversal, symlink escapes, ambiguous targets, and unsafe paths; prevent overwriting/deleting unrelated files. Test safe success and unsafe refusal.
-- **Provider requests (owner rule, 2026-11-05):** every provider request (MusicBrainz, ListenBrainz, Last.fm, Discogs, and any other external service) must use a batch lookup whenever the provider offers one (for example one MusicBrainz browse per artist instead of one lookup per release). Fall back to single lookups only when no batch form exists, and say so in the PR. Existing budgets, pacing and owner approvals for provider traffic still apply.
-- **Provider credentials for agents (owner rule, 2026-11-05):** agents always read provider credentials from the `config.env` file in the local working folder (never committed, never printed, never copied into the repository, docs, logs or PRs). Do not look for credentials elsewhere or ask for them to be pasted into the conversation.
-- Preserve configuration and persistent data. Never weaken safety checks, overwrite unrelated work, force-push, or delete production data to make tests pass.
-- Stop when a boundary is unclear, tests fail, or a higher-priority correctness/security/verification issue exists. Avoid size-only refactors and speculative extraction work; the opportunistic simplification rule above is the only exception.
+1. **`Did you know?`** — one beginner-friendly Python concept in plain language with a tiny example (vary topics).
+2. **Model-cost notice** — whether the next slice can use Haiku (low/medium/high effort) or needs a stronger model, with one line of reasoning.
 
-## macOS client motion and CPU rules (owner rule, 2026-11-15)
+## Documentation ownership
 
-The macOS client's CPU kept returning to about 40 % and the player clock lagged and jumped (fixed piece by piece in #1071, #1072, #1073, #1088 and the backdrop PR after it). Each time the cause was a SwiftUI view that animated every frame. On macOS, each such frame re-renders the whole window's SwiftUI display list on the main thread and then blocks on the render server (`-[RBLayer display]`, `waitForCommitId`). One small looping view cost 10 to 30 points of CPU, and the blocked main thread delayed the 4 Hz position tick, which made the clock lag and then jump. The rules:
-
-1. **No looping or continuous motion through SwiftUI.** In `macos/Sources` do not use `TimelineView(.animation)`, `TimelineView(.periodic)` faster than once a second, `.repeatForever`, `.symbolEffect(..., options: .repeating)`, or repeating `phaseAnimator`/`keyframeAnimator` for anything that keeps moving. This applies however small the element is: a 13 pt playing mark cost 30 points.
-2. **Use Core Animation or AppKit instead.** Use one of these:
-   - A layer in an `NSViewRepresentable` with a repeating `CABasicAnimation`, paused in place with `speed = 0` and `timeOffset`. Example: `SpinningBitmap` in `Chrome/NowPlayingArtwork.swift`.
-   - An AppKit symbol effect on an `NSImageView`. Example: `PlayingBars`.
-   - SwiftUI content drawn once in an `NSHostingView`, moved by a layer animation. Example: `MarqueeStrip` in `CupertinoPlayerBar.swift`.
-   - A bitmap rendered once with `ImageRenderer`.
-
-   SwiftUI animation stays fine for one-shot transitions caused by a state change (a fade, a slide, under about a second).
-3. **Fast-changing state is read in the smallest view.** `PlayerModel.position` changes 4 times a second. Read it only in small leaf views of its own (`PlaybackClock`, `BarProgress`, `BarWaveform`), never in a large `body` and never through a wrapping `TimelineView`. Do not add a faster tick.
-4. **Motion stops when nobody needs it:** when paused, under Reduce Motion, in Low Power Mode where the feature already allows that, and when not visible. Rows in a plain `VStack` or `HStack` (not lazy) stay alive when scrolled out of sight, so their animations keep running there.
-5. **AppKit views need two fallbacks:**
-   - `ImageRenderer` (the offscreen screenshot and the render tests) cannot draw an `NSViewRepresentable`. Under `RenderMode.offscreenScreenshot`, draw a still SwiftUI version.
-   - An `NSHostingView` inside a representable does not inherit SwiftUI's environment. Set the font and colour on its content explicitly.
-6. **Measure motion and timer changes, and not only on Home.** A PR that adds or changes motion, a timer or a tick in the macOS UI records Discair CPU with `top -l 4 -s 4 -pid <pid> -stats pid,cpu`, before and after, in these cases:
-   - playing on Home;
-   - playing on an album page that shows the playing row;
-   - playing with Now Playing open;
-   - paused.
-
-   Earlier A/Bs were taken only on Home and missed the album-page driver. A large gap between pages, or between playing and paused, means some view animates every frame. Find it with `sample <pid> 8`: the signature is the main thread in `UC::DriverCore::continueProcessing` with `DisplayList.ViewUpdater` and `RBLayer display` / `waitForCommitId`. Then bisect by page and state with the same track playing. A standalone test window is good enough to check a mechanism. The fix is done only after the owner's A/B in the installed app.
-7. **Examples now in the code:** the disc (`SpinningBitmap`), the playing mark (`PlayingBars`), the player-bar marquee (`MarqueeStrip`), the Now Playing slideshow (`SlideshowLayers`, one looping keyframe timeline, photos blurred once), and the artist banner collage (`CollageSlotLayer`). No continuous SwiftUI motion is known to remain.
-
-## Release and production safety
-
-- Image publication and deployment remain paused until explicitly authorized.
-- Track implementation, testing, CI, merge, publication, deployment, and runtime verification separately. A merge is not publication; publication is not deployment; deployment is not runtime verification.
-- For authorized deployment, verify image tag/digest, Compose configuration, persistent storage, logs, connectivity, and application behavior. Preserve a rollback reference and obtain appropriate authorization before consequential production actions.
-
-## Documentation ownership and closeout
-
-Keep one canonical home for each kind of information:
-- outstanding tasks and parked decisions: [`ACTIVE_WORK.md`](ACTIVE_WORK.md);
-- current snapshot and single next action: [`PROJECT_STATUS.md`](PROJECT_STATUS.md);
-- product behavior: [`REQUIREMENTS.md`](REQUIREMENTS.md);
-- verification requirements: [`TEST_PLAN.md`](TEST_PLAN.md);
-- current boundaries and rationale: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`DECISIONS.md`](DECISIONS.md);
-- chronological completed work and verification evidence: root [`PROJECT_LOG.md`](../PROJECT_LOG.md);
-- historical or completed plans: [`archive/`](archive/).
-
-At meaningful session closeout, update `PROJECT_STATUS.md` and root `PROJECT_LOG.md`, plus only the relevant requirements, test, workflow, architecture, or deployment documents. Record facts only: exact PR/commit, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and one next action. Do not duplicate long PR/CI narratives across the active queue and status snapshot.
-
-## Local toolchain notes
-
-- **Android Gradle needs JDK 17.** The system default JDK on the owner's Mac (27) fails the build. Use the Homebrew `openjdk@17`: `JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew testDebugUnitTest --tests '<filter>'` from `android/`.
+- `docs/ACTIVE_WORK.md` — open server/web tasks and parked decisions (1–3 bullets per item).
+- `docs/PROJECT_STATUS.md` — rolling snapshot (≤30 lines) and single next action.
+- `docs/ARCHITECTURE.md` — module-to-file and focused-test map.
+- `docs/REQUIREMENTS.md` — concise user-facing behavior ledger.
+- `docs/TEST_PLAN.md` — verification baseline.
+- `docs/DECISIONS.md` — active architectural constraints.
+- `PROJECT_LOG.md` — recent chronological evidence; rotate older entries to `docs/archive/`.
+- `docs/archive/` — completed plans and historical logs (ignored by default search via `.rgignore`).
