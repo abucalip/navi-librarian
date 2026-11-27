@@ -74,6 +74,8 @@ Queue (play next, add to queue, reorder), shuffle, repeat, gapless with next-tra
 
 Discover’s Playlist Inbox uses the authenticated [Inbox list and edition GETs](PLAYLIST_INBOX_CONTRACT.md). Play owned tracks starts at the first playable occurrence in source order, turns shuffle off, and keeps repeated occurrences. With zero or unknown ownership, playback is unavailable and the current queue is preserved.
 
+Inbox Download and Retry use the authenticated edition-and-position POST in the [Inbox contract](PLAYLIST_INBOX_CONTRACT.md), without sending editable track metadata. Rows show server refusal messages and acquisition progress matched by the server’s `artist` and synthetic `job_album`, including albumless source rows. Existing in-progress and imported results remain requested even when `ok` is false. Imported tracks wait for a confirmed owned-index match before entering playback. Shared acquisition updates refresh the visible edition; Refresh status also rechecks ownership and the shelf counts after a later Navidrome scan. No additional polling timer is added.
+
 ## 6. Desktop features (approved by the owner)
 
 1. **Library table:** sortable columns (year, rating, bitrate, format, added, plays, last played, missing MBID).

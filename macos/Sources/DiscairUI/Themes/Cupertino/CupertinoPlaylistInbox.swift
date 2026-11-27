@@ -85,7 +85,7 @@ struct CupertinoInboxEdition: View {
                         Text("This playlist has no tracks.").foregroundStyle(CU.textSecondary)
                     }
                     ForEach(detail.tracks) { track in
-                        InboxTrackRow(track: track)
+                        InboxTrackRow(state: state, track: track)
                     }
                 }
             }
@@ -94,6 +94,9 @@ struct CupertinoInboxEdition: View {
         }
         .scrollEdgeEffectStyle(.hard, for: .top)
         .task(id: id) { await model.loadDetail(id: id) }
+        .onChange(of: state.acquisition.jobs) { _, _ in
+            Task { await model.loadDetail(id: id, refreshing: true) }
+        }
     }
 
     private func detailHeader(_ detail: PlaylistInboxDetail) -> some View {
@@ -101,9 +104,22 @@ struct CupertinoInboxEdition: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(detail.edition.displayTitle).font(CU.title(34)).accessibilityAddTraits(.isHeader)
             InboxEditionMetadata(edition: detail.edition)
-            Button("Play owned tracks") { state.player.playInOrder(songs) }
-                .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
-                .disabled(songs.isEmpty)
+            HStack {
+                Button("Play owned tracks") { state.player.playInOrder(songs) }
+                    .buttonStyle(CapsuleButtonStyle(primary: true, small: true))
+                    .disabled(songs.isEmpty)
+                Button("Refresh status") {
+                    Task {
+                        await state.acquisition.refresh()
+                        await model.loadDetail(id: id, refreshing: true)
+                        await model.loadShelf()
+                    }
+                }
+                .buttonStyle(CapsuleButtonStyle(small: true))
+            }
+            if let message = model.refreshNotice {
+                Text(message).foregroundStyle(CU.textSecondary)
+            }
         }
     }
 }
@@ -153,6 +169,7 @@ private extension PlaylistInboxEdition {
 }
 
 private struct InboxTrackRow: View {
+    let state: AppState
     let track: PlaylistInboxTrack
 
     private var ownership: String {
@@ -175,11 +192,41 @@ private struct InboxTrackRow: View {
                 }
             }
             Spacer(minLength: 8)
-            Text(ownership).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(ownership).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+                if track.matchState != "owned" { downloadControl }
+            }
         }
         .padding(10)
         .background(CU.bgPanel, in: RoundedRectangle(cornerRadius: 8))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var downloadControl: some View {
+        let status = state.playlistInbox.downloadState(for: track, jobs: state.acquisition.jobs)
+        switch status {
+        case .idle:
+            downloadButton("Download")
+        case .pending:
+            Text("Requesting…").foregroundStyle(CU.textSecondary)
+        case .requested(let message):
+            Text(message).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+        case .failed(let message):
+            Text(message).font(CU.Font.callout.weighted(.regular)).foregroundStyle(CU.textSecondary)
+            downloadButton("Retry")
+        }
+    }
+
+    private func downloadButton(_ label: String) -> some View {
+        Button(label) {
+            Task {
+                await state.playlistInbox.download(position: track.position, jobs: state.acquisition.jobs)
+                await state.acquisition.refresh()
+            }
+        }
+        .buttonStyle(CapsuleButtonStyle(small: true))
+        .disabled(!state.playlistInbox.isConnected)
+        .accessibilityLabel("\(label) \(track.displayTitle), track \(track.position + 1)")
     }
 }
 
