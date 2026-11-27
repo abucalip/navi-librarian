@@ -34,7 +34,7 @@ Paths are relative to the repository root.
 | Android app | `android/app/src/main/kotlin/app/discair/` |
 | Android screens and themes | Under the Android app path, use `ui/<feature>/` for screens and theme variants, `ui/common/` for shared controls and shells, and `ui/theme/` for palettes and theme selection. |
 | Android Playlist Inbox | `ui/discover/PlaylistInboxScreen.kt` reads the authenticated Inbox through the Android repository. `model/PlaylistInbox.kt` projects edition tracks into native queue items using the server’s ownership matches. The detail screen requests downloads by edition and position and reads transfer progress from the shared Android acquisition hub. |
-| macOS Playlist Inbox | `macos/Sources/DiscairLibrarian/PlaylistInbox.swift` reads saved editions. `macos/Sources/DiscairUI/Model/PlaylistInboxModel.swift` owns the Discover shelf and edition detail state and projects confirmed owned occurrences into the native queue. |
+| macOS Playlist Inbox | `macos/Sources/DiscairLibrarian/PlaylistInbox.swift` reads saved editions and requests downloads by edition and position. `macos/Sources/DiscairUI/Model/PlaylistInboxModel.swift` owns the Discover shelf, edition detail, download attempts, and server-keyed acquisition progress; only confirmed owned occurrences enter the native queue. |
 | macOS app | `macos/Sources/DiscairApp/`, `macos/Sources/DiscairUI/` |
 | macOS playback, models, and API clients | `macos/Sources/DiscairAudio/`, `macos/Sources/DiscairCore/`, `macos/Sources/DiscairLibrarian/`, `macos/Sources/DiscairNavidrome/` |
 

@@ -85,4 +85,29 @@ import DiscairCore
             try await client(t).feedback(artist: "A", album: "B", action: .save)
         }
     }
+    @Test func inboxDownloadRenewsSessionAndPostsOnlyStoredIdentity() async throws {
+        let t = MockTransport { request, n in
+            if request.url!.path == "/api/auth/login" { return (200, Data()) }
+            if n == 1 { return (401, Data()) }
+            return (200, Data(#"{"ok":true,"status":"already_in_progress","artist":"A","job_album":"C (song on B)"}"#.utf8))
+        }
+        let result = try await client(t).downloadInboxTrack(editionID: 42, position: 0)
+        #expect(result.ok && result.jobAlbum == "C (song on B)")
+        #expect(t.sent.map(\.url!.path) == [
+            "/api/playlists/inbox/42/tracks/0/download", "/api/auth/login", "/api/playlists/inbox/42/tracks/0/download",
+        ])
+        #expect(t.sent.first?.httpMethod == "POST")
+        #expect(t.sent.first?.httpBody == nil)
+    }
+
+    @Test(arguments: [409, 503, 502])
+    func inboxStructuredErrorsKeepTheServerExplanation(_ status: Int) async throws {
+        let t = MockTransport { _, _ in
+            (status, Data(#"{"detail":{"code":"unresolved_album","message":"No confirmed album."}}"#.utf8))
+        }
+        await #expect(throws: DiscairError.server(status: status, message: "No confirmed album.")) {
+            try await client(t).downloadInboxTrack(editionID: 42, position: 1)
+        }
+    }
+
 }

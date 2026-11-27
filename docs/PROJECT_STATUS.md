@@ -1,10 +1,12 @@
 # Project status
 
-Last checked against GitHub `main` at `525f08ff` on 2026-11-25.
+Last checked against GitHub `main` at `a1c94f30` on 2026-11-27.
 
 **Server V2 work queue:** `docs/plans/ServerV2.md` now contains only remaining client slices and verification; the former full plan and completed-work history is preserved in `docs/archive/ServerV2_HISTORY_2026-11-09.md`.
 
 ## Current state
+
+- **macOS Playlist Inbox downloads (LB-16, 2026-11-27)** — Adds per-track Download and Retry, server refusal explanations, shared acquisition progress, and ownership refresh before playback. All 21 focused Swift tests passed; Cupertino fixture renders were reviewed. Full suites and live Navidrome/Soulseek transfer were not run. Next action is PR review and a live macOS download/import/scan check.
 
 - **macOS Playlist Inbox playback (LB-15, 2026-11-25)** — Discover shows saved playlists and queues their playable owned occurrences in source order. Nine focused Swift tests passed, including the Cupertino renders. Next action is PR review and a live macOS playback check.
 

@@ -1,3 +1,4 @@
+import DiscairCore
 import Foundation
 
 public struct PlaylistInbox: Decodable, Equatable, Sendable {
@@ -41,10 +42,13 @@ public struct PlaylistInboxTrack: Decodable, Equatable, Identifiable, Sendable {
     public let recordingMBID: String?
     public let matchState: String?
     public let songID: String?
+    public let acquisitionStatus: String?
+    public let acquisitionKey: PlaylistInboxAcquisitionKey?
 
     enum CodingKeys: String, CodingKey {
         case position, title, artist, album, durationMs = "duration_ms", recordingMBID = "recording_mbid"
         case matchState = "match_state", songID = "song_id"
+        case acquisitionStatus = "acquisition_status", acquisitionKey = "acquisition_key"
     }
 }
 
@@ -57,5 +61,42 @@ extension LibrarianClient {
     public func playlistInboxEdition(id: Int64) async throws -> PlaylistInboxDetail {
         let (data, http) = try await authedSendPublic("GET", "api/playlists/inbox/\(id)", body: nil)
         return try decodePublic(PlaylistInboxDetail.self, data, http)
+    }
+}
+
+public struct PlaylistInboxAcquisitionKey: Decodable, Equatable, Sendable {
+    public let artist: String
+    public let jobAlbum: String
+    public init(artist: String, jobAlbum: String) {
+        self.artist = artist
+        self.jobAlbum = jobAlbum
+    }
+    enum CodingKeys: String, CodingKey { case artist, jobAlbum = "job_album" }
+}
+
+public struct PlaylistInboxDownload: Decodable, Sendable {
+    public let ok: Bool
+    public let status: String?
+    public let message: String?
+    public let artist: String?
+    public let jobAlbum: String?
+    enum CodingKeys: String, CodingKey { case ok, status, message, artist, jobAlbum = "job_album" }
+}
+
+extension LibrarianClient {
+    public func downloadInboxTrack(editionID: Int64, position: Int) async throws -> PlaylistInboxDownload {
+        let (data, http) = try await authedSendPublic(
+            "POST", "api/playlists/inbox/\(editionID)/tracks/\(position)/download", body: nil)
+        // Inbox refusals carry a structured detail, unlike the older string-only errors.
+        struct Refusal: Decodable {
+            struct Detail: Decodable { let message: String }
+            let detail: Detail
+        }
+        if !(200..<300).contains(http.statusCode),
+           let refusal = try? JSONDecoder().decode(Refusal.self, from: data) {
+            throw ErrorMapping.map(status: http.statusCode, message: refusal.detail.message)
+                ?? DiscairError.server(status: http.statusCode, message: refusal.detail.message)
+        }
+        return try decodePublic(PlaylistInboxDownload.self, data, http)
     }
 }

@@ -1,3 +1,10 @@
+## 2026-11-27 — macOS Playlist Inbox downloads (LB-16)
+
+- Branch `feat/lb-16-macos-inbox-downloads` starts from GitHub `main` at `a1c94f30` (LB-15, PR #1284).
+- Inbox rows request and retry by immutable edition and position, retain structured refusal messages, and use server-provided synthetic job keys for shared acquisition progress. Active/imported responses with `ok: false` do not offer Retry. Imported tracks enter playback only after refreshed ownership confirms them, preserving source order and repeats.
+- `swift test --disable-sandbox --cache-path /private/tmp/discair-lb16-cache --manifest-cache none --jobs 6 --filter 'PlaylistInboxTests|PlaylistInboxDownloadTests|AcquisitionClientTests'` passed all 21 focused tests. The Clang and SwiftPM module caches were redirected to the same writable temporary directory. Initial attempts hit sandbox cache permissions and a corrected caption-font compile error.
+- Reviewed Cupertino shelf, mixed, zero-owned, and download/refusal fixture renders (540-point edition width). `git diff --check` passed. Full suites, live Navidrome/Soulseek transfer, and installed-app keyboard/VoiceOver checks were not run. No provider calls, deployment, or publication. Next action: PR review and the live macOS download/import/scan check. Post-push CI belongs to the owner.
+
 ## 2026-11-25 — macOS Playlist Inbox playback (LB-15)
 
 - Branch `feat/lb-15-macos-inbox-playback` starts from GitHub `main` at `525f08ff` (LB-14, PR #1283).
