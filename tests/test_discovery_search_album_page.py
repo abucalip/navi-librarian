@@ -296,6 +296,32 @@ class TracklistRaceTests(unittest.TestCase):
         self.assertTrue(sections["tracks"]["available"])
         self.assertEqual(sections["tracks"]["items"], [])
 
+    def test_unowned_album_without_mbid_resolves_musicbrainz_tracks_by_name(self):
+        mb = FakeMusicBrainz([track(1, "From MusicBrainz")])
+        mb.release_groups_named = lambda artist, album, *, remaining, cancelled: [
+            {"id": "rg-other", "title": "Other", "artist-credit": [{"name": "Radiohead"}]},
+            {"id": "rg-match", "title": "Kid A", "artist-credit": [{"name": "Radiohead"}]},
+        ]
+        seen = []
+        original = mb.release_group_tracks
+        mb.release_group_tracks = lambda mbid, *, remaining, cancelled: (
+            seen.append(mbid) or original(mbid, remaining=remaining, cancelled=cancelled)
+        )
+        network = make_network(deezer_tracks=lambda artist, album: [], musicbrainz=mb)
+        sections = run(network, release_group_mbid=None)
+        self.assertEqual([t["title"] for t in sections["tracks"]["items"]], ["From MusicBrainz"])
+        self.assertEqual(seen, ["rg-match"])
+
+    def test_unowned_album_without_mbid_ignores_non_matching_musicbrainz_groups(self):
+        mb = FakeMusicBrainz([track(1, "Wrong Album")])
+        mb.release_groups_named = lambda artist, album, *, remaining, cancelled: [
+            {"id": "rg-other", "title": "Amnesiac", "artist-credit": [{"name": "Radiohead"}]},
+        ]
+        network = make_network(deezer_tracks=lambda artist, album: [], musicbrainz=mb)
+        sections = run(network, release_group_mbid=None)
+        self.assertTrue(sections["tracks"]["available"])
+        self.assertEqual(sections["tracks"]["items"], [])
+
 
 class SimilarTests(unittest.TestCase):
     def test_similar_albums_take_one_album_per_similar_artist(self):

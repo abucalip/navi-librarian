@@ -180,6 +180,34 @@ def race_tracks(
     return _race_and_store(network, key, artist, album, release_group_mbid, remaining=remaining, cancelled=cancelled)
 
 
+def _match_release_group_id(groups: list[dict[str, Any]], artist: str, album: str) -> str | None:
+    """The release-group ID of an exact normalized artist-and-title match from MusicBrainz search."""
+    artist_key, album_key = normalize_key(artist), normalize_key(album)
+    if not artist_key or not album_key:
+        return None
+    for group in groups:
+        credit = "".join(
+            str(part.get("name") or "") + str(part.get("joinphrase") or "")
+            for part in group.get("artist-credit") or []
+            if isinstance(part, dict)
+        )
+        if group.get("id") and normalize_key(group.get("title") or "") == album_key \
+                and normalize_key(credit) == artist_key:
+            return str(group["id"])
+    return None
+
+
+def _musicbrainz_tracks_by_name(
+    network: ArtistNetwork, artist: str, album: str, *, remaining, cancelled,
+) -> list[dict[str, Any]]:
+    """Resolve an unowned album's release-group MBID by name and fetch its MusicBrainz tracklist."""
+    groups = network.musicbrainz.release_groups_named(artist, album, remaining=remaining, cancelled=cancelled)
+    mbid = _match_release_group_id(groups, artist, album)
+    if not mbid:
+        return []
+    return network.musicbrainz.release_group_tracks(mbid, remaining=remaining, cancelled=cancelled)
+
+
 def _race_and_store(
     network: ArtistNetwork, key: str, artist: str, album: str, release_group_mbid: str | None, *, remaining, cancelled,
 ) -> list[dict[str, Any]]:
@@ -190,6 +218,9 @@ def _race_and_store(
     if release_group_mbid:
         attempts.append(lambda: network.musicbrainz.release_group_tracks(
             release_group_mbid, remaining=remaining, cancelled=cancelled))
+    elif callable(getattr(network.musicbrainz, "release_groups_named", None)):
+        attempts.append(lambda: _musicbrainz_tracks_by_name(
+            network, artist, album, remaining=remaining, cancelled=cancelled))
     if not attempts:
         raise RuntimeError("no tracklist source")
 
