@@ -6,6 +6,8 @@ Last checked against GitHub `main` at `a1c94f30` on 2026-11-27.
 
 ## Current state
 
+- **Android Index Graphite palettes (2026-11-27)** — Eight approved night variants are implemented with matching player/insight tones, canonical tokens and focused regression coverage. All 459 design contrast checks passed. Android tests/build and device checks are blocked by sandbox socket/cache permissions. Next action: PR review, focused Android verification and device inspection.
+
 - **macOS Playlist Inbox downloads (LB-16, 2026-11-27)** — Adds per-track Download and Retry, server refusal explanations, shared acquisition progress, and ownership refresh before playback. All 21 focused Swift tests passed; Cupertino fixture renders were reviewed. Full suites and live Navidrome/Soulseek transfer were not run. Next action is PR review and a live macOS download/import/scan check.
 
 - **macOS Playlist Inbox playback (LB-15, 2026-11-25)** — Discover shows saved playlists and queues their playable owned occurrences in source order. Nine focused Swift tests passed, including the Cupertino renders. Next action is PR review and a live macOS playback check.

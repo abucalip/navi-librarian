@@ -7,7 +7,7 @@ its default macOS path) and the live motion page.
 
 Design tooling only: nothing imports it and no test collects it. Inputs: ../tokens.json, ../index.css, ../../_kit/kit.py,
 and the app's own fonts in android/app/src/main/res/font. Every page is drawn in Signal Blue (the default); `palettes`
-shows Home in all four palettes. Spec: docs/plans/INDEX_THEME.md.
+shows Home in all palettes. Spec: docs/plans/INDEX_THEME.md.
 """
 import json, os, sys
 
@@ -480,7 +480,7 @@ def sheets():
 
 def palettes():
     fr = [frame(f'{p["name"]} · {"day" if p["light"] else "night"}{" · default" if p.get("default") or p.get("defaultDark") else ""} ({p["id"]})', screen(home_top()), p["id"]) for p in TOKENS["palettes"]]
-    return kit.page("Index · the four palettes (colour only; layout identical)", HEAD, fr), 4
+    return kit.page("Index · palettes (colour only; layout identical)", HEAD, fr), len(fr)
 
 
 def components():

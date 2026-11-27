@@ -25,3 +25,5 @@ Mockups are drawn only in Signal Blue. Newsprint Red, Graphite Orange and Field 
 ## Fonts
 
 None to add. Inter Tight 800, Inter (variable) and IBM Plex Mono 400/500/600 are already in `android/app/src/main/res/font/`, and the mockups load those files.
+
+The eight additional Graphite night variants are Blue, Cyan, Mint, Lime, Yellow, Violet, Pink and Coral (`index_graphite_<colour>`). They retain Graphite Orange’s neutral and status colours and light player strip; only the signal, progress and insight-label hues change. Graphite Orange remains the default Index night palette.

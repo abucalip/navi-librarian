@@ -626,7 +626,7 @@ object Palettes {
         layout = Layout.Gallery, suggestedFontId = "gallery",
     )
 
-    // Index (docs/plans/INDEX_THEME.md 4.2): three day and one night palette, one layout. Values are docs/design/index/tokens.json; the dims are the derived defaults.
+    // Index (docs/plans/INDEX_THEME.md 4.2): three day and nine night palettes, one layout. Values are docs/design/index/tokens.json; the dims are the derived defaults.
     // The strip and insight tones are not Palette fields (decision I1): they live in IndexTones (ui/common/IndexKit.kt), keyed by id.
     val Index = Palette(
         "index", "Index · Signal Blue", true,
@@ -658,6 +658,28 @@ object Palettes {
         layout = Layout.Index, suggestedFontId = "index",
     )
 
+    /** Graphite variants share the neutral and semantic roles; accent-derived defaults follow the new signal. */
+    private fun indexGraphiteVariant(id: String, label: String, signal: Color): Palette = Palette(
+        id, label, false,
+        rail = IndexGraphite.rail, ink = IndexGraphite.ink, surface = IndexGraphite.surface, raised = IndexGraphite.raised,
+        edge = IndexGraphite.edge, edgeStrong = IndexGraphite.edgeStrong,
+        text = IndexGraphite.text, textMuted = IndexGraphite.textMuted, accent = signal, onAccent = IndexGraphite.onAccent,
+        chartRed = IndexGraphite.chartRed, chartRedText = IndexGraphite.chartRedText,
+        ok = IndexGraphite.ok, caution = IndexGraphite.caution, info = IndexGraphite.info,
+        chart2 = IndexGraphite.chart2, chart3 = IndexGraphite.chart3,
+        control = signal, onControl = IndexGraphite.onControl, mat = IndexGraphite.mat,
+        minAccentContrast = IndexGraphite.minAccentContrast, layout = Layout.Index, suggestedFontId = "index",
+    )
+
+    val IndexGraphiteBlue = indexGraphiteVariant("index_graphite_blue", "Index · Graphite Blue", c(0x82AEFF))
+    val IndexGraphiteCyan = indexGraphiteVariant("index_graphite_cyan", "Index · Graphite Cyan", c(0x59D4E8))
+    val IndexGraphiteMint = indexGraphiteVariant("index_graphite_mint", "Index · Graphite Mint", c(0x83DDB0))
+    val IndexGraphiteLime = indexGraphiteVariant("index_graphite_lime", "Index · Graphite Lime", c(0xB9E563))
+    val IndexGraphiteYellow = indexGraphiteVariant("index_graphite_yellow", "Index · Graphite Yellow", c(0xF0D46B))
+    val IndexGraphiteViolet = indexGraphiteVariant("index_graphite_violet", "Index · Graphite Violet", c(0xBB9BFF))
+    val IndexGraphitePink = indexGraphiteVariant("index_graphite_pink", "Index · Graphite Pink", c(0xF29AC8))
+    val IndexGraphiteCoral = indexGraphiteVariant("index_graphite_coral", "Index · Graphite Coral", c(0xFF8B88))
+
     val IndexField = Palette(
         "index_field", "Index · Field Green", true,
         rail = c(0xFFFFFF), ink = c(0xEDF1EB), surface = c(0xFFFFFF), raised = c(0xE0E7E1), edge = c(0xCFD8D0), edgeStrong = c(0x76837B),
@@ -672,7 +694,7 @@ object Palettes {
     val Light: List<Palette> = listOf(Sand, Paper, Mist, Sage, Blush, BrutLavender, BrutMint, BrutLemon, BrutCream, BrutSky, BrutPoster, TapeLime, TapeCobalt, TapeTangerine, SheetDaylight, StickerPeach, SoftBrut, SoftBrutMint, SoftBrutPeach, SoftBrutSky, SoftBrutLemon, Flow, FlowForest, FlowRaspberry, FlowViolet, Gallery, GalleryCeladon, GalleryMist, GalleryBlush, GalleryButter, Index, IndexNewsprint, IndexField)
 
     /** Dark themes in the order the picker shows them; the first is the default night theme. */
-    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum, GalleryGraphite, GalleryOxblood, GalleryMoss, IndexGraphite)
+    val Dark: List<Palette> = listOf(Night, Amoled, Forest, Ocean, Ember, Graphite, HighContrast, BrutInk, BrutMidnight, SheetViolet, SheetAcid, SoftBrutMidnightMint, SoftBrutPlumPeach, SoftBrutNavySky, FlowEmber, FlowMoss, FlowPlum, GalleryGraphite, GalleryOxblood, GalleryMoss, IndexGraphite, IndexGraphiteBlue, IndexGraphiteCyan, IndexGraphiteMint, IndexGraphiteLime, IndexGraphiteYellow, IndexGraphiteViolet, IndexGraphitePink, IndexGraphiteCoral)
 
     val All: List<Palette> = Light + Dark
 
