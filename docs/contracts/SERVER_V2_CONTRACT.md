@@ -275,3 +275,7 @@ Entity pages and path `reasons[]` (later phases); any scheduling or trigger rout
 ## GET /api/artist-radio (LB-17)
 
 Authenticated owned-library queue; no playlist writes or playback side effects. Contract: [Artist Radio](ARTIST_RADIO_CONTRACT.md).
+
+## GET /api/discovery/lb-radio (LB-18)
+
+Authenticated full-list discovery mix with fresh ownership matching. Contract: [LB Radio Discovery Mix](LB_RADIO_CONTRACT.md).
