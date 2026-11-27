@@ -51,7 +51,7 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
 - Create empty GitHub repos (`abucalip/discair-macos` and `abucalip/discair-android`) with no initial commit, README, or license. — Created both as empty public repos.
 - **Done when:** Both empty remotes exist and `SPLIT_SHA` is recorded.
 
-### Slice S1 — Extract & Decouple `discair-macos`
+### Slice S1 — Extract & Decouple `discair-macos` (Done — 2026-11-27, `abucalip/discair-macos` PR #1 `f4eece4`)
 **Goal:** Push full macOS git history to `discair-macos` and make its build and tests 100% self-contained.
 - Clone `navi-librarian` into `/tmp/discair-macos` and run:
   ```bash
@@ -64,7 +64,7 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
   3. Add a minimal `scripts/sync-fixtures.sh` (optional) noting the source paths in `navi-librarian`.
 - **Verification:** Run focused `swift test --filter` across the 7 updated test suites; confirm `swift build` succeeds cleanly.
 
-### Slice S2 — Extract & Decouple `discair-android`
+### Slice S2 — Extract & Decouple `discair-android` (Done — 2026-11-27, `abucalip/discair-android` PR #1 `f116657`)
 **Goal:** Push full Android git history to `discair-android` and make its build and tests 100% self-contained.
 - Clone `navi-librarian` into `/tmp/discair-android` and run:
   ```bash
@@ -77,7 +77,7 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
   2. Update `app/build.gradle.kts` (line 61) and the 5 Kotlin test files to point to the local vendored paths.
 - **Verification:** Run focused Gradle unit tests (`JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew testDebugUnitTest --tests '...'`) for `PlaylistInboxTest`, `GalleryTest`, `GalleryMotionTest`, `IndexTest`, `IndexMotionTest`, and one intelligence-fixture consumer test.
 
-### Slice S3 — Re-home Client Docs, Contracts & Agent Instructions
+### Slice S3 — Re-home Client Docs, Contracts & Agent Instructions (Done — 2026-11-27, `discair-macos` PR #2 `7860e96`, `discair-android` PR #2 `fbd8b0d`)
 **Goal:** Give each new repo its own contracts, perf script, and lightweight agent rules.
 - In `discair-macos`:
   - Copy `docs/contracts/MACOS_CLIENT_CONTRACT.md` → `docs/CONTRACT.md` (or `docs/contracts/`), `scripts/perf/macos_cheap.sh` → `scripts/perf/macos_cheap.sh`, and update relative links in `README.md` and `DESIGN.md`.
@@ -87,7 +87,7 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
   - Add a concise `AGENTS.md` / `CLAUDE.md` (JDK 17 + Gradle filtered test rules, link to `navi-librarian` for shared API contracts).
 - **Verification:** Confirm no broken relative links to `../docs/` remain in either client `README.md` or `DESIGN.md`.
 
-### Slice S4 — Trim `navi-librarian` Monorepo & Document New Client Locations
+### Slice S4 — Trim `navi-librarian` Monorepo & Document New Client Locations (Done — 2026-11-27, `abucalip/navi-librarian` PR #1287 `46d0e538`)
 **Goal:** Remove `macos/` and `android/` from `navi-librarian` in a single clean PR once S1–S3 are merged and verified, and make it unmistakable where the clients now live for future feature work.
 - Remove `macos/`, `android/`, `scripts/perf/macos_cheap.sh`, `scripts/perf/android_cheap.sh`, and the moved client-only contracts from `docs/contracts/`.
 - Explicitly document in `navi-librarian` that the native clients moved to `abucalip/discair-macos` and `abucalip/discair-android` (so future feature development knows where to find them):
@@ -96,7 +96,7 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
   - `docs/ACTIVE_WORK.md` and `docs/PROJECT_STATUS.md` — record the split and point open client items to their new repos.
 - **Verification:** Run `python scripts/check_lint_changed.py --base origin/main` and confirm server/web tests are unaffected.
 
-### Slice S5 — Local Workspace Setup & Closeout
+### Slice S5 — Local Workspace Setup & Closeout (Done — 2026-11-27)
 **Goal:** Set up local checkouts and update workspace-level agent rules.
 - Clone `discair-macos` and `discair-android` into `/Users/hamdibaala/Desktop/disqair/` alongside `navi-librarian`.
 - Copy local untracked Android signing/config files (`discair-release.jks`, `keystore.properties`, `local.properties`) from the old backup into `/Users/hamdibaala/Desktop/disqair/discair-android/` and verify `git status` shows them ignored.
