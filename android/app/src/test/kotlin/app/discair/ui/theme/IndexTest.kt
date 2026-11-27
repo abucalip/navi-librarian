@@ -22,9 +22,10 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Step I1 of docs/plans/INDEX_THEME.md: the four palettes and the tones (pinned to docs/design/index/tokens.json), the font pair, the icons and the shell rules. */
+/** Step I1 of docs/plans/INDEX_THEME.md: the Index palettes and the tones (pinned to docs/design/index/tokens.json), the font pair, the icons and the shell rules. */
 class IndexTest {
-    private val ids = listOf("index", "index_newsprint", "index_graphite", "index_field")
+    private val graphiteIds = listOf("blue", "cyan", "mint", "lime", "yellow", "violet", "pink", "coral").map { "index_graphite_$it" }
+    private val ids = listOf("index", "index_newsprint", "index_graphite", "index_field") + graphiteIds
     private val index = ids.map { Palettes.byId(it) ?: error("missing $it") }
 
     private fun hex(c: Color) = "#%02X%02X%02X".format((c.red * 255 + 0.5f).toInt(), (c.green * 255 + 0.5f).toInt(), (c.blue * 255 + 0.5f).toInt())
@@ -37,10 +38,10 @@ class IndexTest {
 
     private fun palettes(): Map<String, JsonObject> = tokens.getValue("palettes").jsonArray.map { it.jsonObject }.associateBy { it.getValue("id").jsonPrimitive.content }
 
-    @Test fun theFourPalettesAreInThePickerAndKeepTheLayout() {
-        assertEquals(4, index.size)
+    @Test fun thePalettesAreInThePickerAndKeepTheLayout() {
+        assertEquals(12, index.size)
         assertEquals(listOf("index", "index_newsprint", "index_field"), Palettes.Light.filter { it.layout == Layout.Index }.map { it.id })
-        assertEquals(listOf("index_graphite"), Palettes.Dark.filter { it.layout == Layout.Index }.map { it.id })
+        assertEquals(listOf("index_graphite") + graphiteIds, Palettes.Dark.filter { it.layout == Layout.Index }.map { it.id })
         for (p in index) {
             assertEquals(Layout.Index, p.layout); assertEquals("Index", p.layout.label)
             assertEquals(Family.Classic, p.family); assertNull(p.shape); assertFalse(p.brutal)
@@ -51,11 +52,38 @@ class IndexTest {
         }
         assertEquals("Index", ThemeGroups.of(index.first()))
         assertEquals(3, ThemeGroups.shown(Palettes.All, "Index", true).size)
-        assertEquals(1, ThemeGroups.shown(Palettes.All, "Index", false).size)
+        assertEquals(9, ThemeGroups.shown(Palettes.All, "Index", false).size)
         assertTrue("Index" in ThemeGroups.chips(Palettes.All, true) && "Index" in ThemeGroups.chips(Palettes.All, false))
         // Signal Blue leads the day palettes and Graphite Orange the night ones of the theme: they are what "Follow the phone" offers first (decision I5).
         assertEquals("index", ThemeGroups.shown(Palettes.All, "Index", true).first().id)
         assertEquals("index_graphite", ThemeGroups.shown(Palettes.All, "Index", false).first().id)
+    }
+
+    @Test fun graphiteChoicesSurviveAppearanceResolution() {
+        for (id in graphiteIds) {
+            assertEquals(id, AppearanceRules.sanitizeChoice(id))
+            assertEquals(id, AppearanceRules.sanitizeNight(id))
+            assertEquals(id, AppearanceRules.resolve(id, "index", "index_graphite", false).id)
+            assertEquals(id, AppearanceRules.resolve(THEME_SYSTEM, "index", id, true).id)
+            assertEquals("index", AppearanceRules.resolve(THEME_SYSTEM, "index", id, false).id)
+        }
+    }
+
+    @Test fun graphiteVariantsKeepNeutralAndSemanticTokens() {
+        val base = palettes().getValue("index_graphite")
+        val replaced = setOf("id", "label", "name", "defaultDark", "accent", "control", "tones")
+        for (id in graphiteIds) {
+            val variant = palettes().getValue(id)
+            assertFalse(variant.containsKey("defaultDark"))
+            for ((role, value) in base.filterKeys { it !in replaced }) assertEquals("$id $role", value, variant[role])
+            val tones = variant.getValue("tones").jsonObject
+            for (role in listOf("strip", "onStrip", "stripMuted", "onInsight"))
+                assertEquals("$id $role", base.getValue("tones").jsonObject[role], tones[role])
+            val p = Palettes.byId(id)!!
+            assertEquals(p.accent, p.control)
+            assertEquals(tint(p.accent, p.surface), p.accentDim)
+            assertEquals(p.accent, p.accent2); assertEquals(p.accent, p.accent3); assertEquals(p.accent, p.accent4)
+        }
     }
 
     @Test fun everyPaletteMatchesTokensJson() {

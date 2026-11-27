@@ -138,10 +138,32 @@ class IndexTones(
         val SignalBlue = IndexTones(c(0x0B0C0E), c(0xFFFFFF), c(0xA7ACB4), c(0x2B4BFF), c(0x0B0C0E), c(0xFFFFFF), c(0xAEB4FF))
         val NewsprintRed = IndexTones(c(0x141210), c(0xFBF9F4), c(0xB4ADA2), c(0xFF6A5C), c(0xB81F18), c(0xFFFFFF), c(0xFFE1DD))
         val GraphiteOrange = IndexTones(c(0xEDEEEA), c(0x141516), c(0x55585C), c(0xC2410C), c(0xFF6A1A), c(0x141516), c(0x3A1A08))
+        private fun graphiteVariant(signal: Long, progress: Long, label: Long) = IndexTones(
+            GraphiteOrange.strip, GraphiteOrange.onStrip, GraphiteOrange.stripMuted, c(progress),
+            c(signal), GraphiteOrange.onInsight, c(label),
+        )
+
+        val GraphiteBlue = graphiteVariant(0x82AEFF, 0x285CB0, 0x102547)
+        val GraphiteCyan = graphiteVariant(0x59D4E8, 0x087386, 0x073139)
+        val GraphiteMint = graphiteVariant(0x83DDB0, 0x246D4A, 0x103522)
+        val GraphiteLime = graphiteVariant(0xB9E563, 0x52751B, 0x263609)
+        val GraphiteYellow = graphiteVariant(0xF0D46B, 0x806314, 0x3D300B)
+        val GraphiteViolet = graphiteVariant(0xBB9BFF, 0x7042B0, 0x291744)
+        val GraphitePink = graphiteVariant(0xF29AC8, 0x9C3D72, 0x40172D)
+        val GraphiteCoral = graphiteVariant(0xFF8B88, 0xAD3F3C, 0x431A19)
+
         val FieldGreen = IndexTones(c(0x0E1A14), c(0xFFFFFF), c(0xA9B8AF), c(0x4CC98D), c(0x0E1A14), c(0xFFFFFF), c(0x8FE0B5))
 
         val byId: Map<String, IndexTones> = mapOf(
             "index" to SignalBlue, "index_newsprint" to NewsprintRed, "index_graphite" to GraphiteOrange, "index_field" to FieldGreen,
+            "index_graphite_blue" to GraphiteBlue,
+            "index_graphite_cyan" to GraphiteCyan,
+            "index_graphite_mint" to GraphiteMint,
+            "index_graphite_lime" to GraphiteLime,
+            "index_graphite_yellow" to GraphiteYellow,
+            "index_graphite_violet" to GraphiteViolet,
+            "index_graphite_pink" to GraphitePink,
+            "index_graphite_coral" to GraphiteCoral,
         )
 
         /** The tones of a palette id; Signal Blue's when the id is not an Index palette (a preview, a theme being left). */

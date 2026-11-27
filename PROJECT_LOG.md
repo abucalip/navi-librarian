@@ -1,3 +1,11 @@
+## 2026-11-27 — Android Index Graphite night palettes
+
+- Branch `feat/index-graphite-palettes`, based on GitHub `main` at `780f20d5`, implements the owner's eight approved Graphite variants: Blue, Cyan, Mint, Lime, Yellow, Violet, Pink and Coral. Shared neutral/status roles, the light mini-player strip, existing light palettes and Graphite Orange's default position are preserved. Canonical tokens and generated CSS include every variant; the design generator derives its palette frame count from the tokens.
+- Focused `IndexTest` coverage now includes all 12 palettes, tone lookups, picker order, Appearance ID sanitization/resolution, inherited neutrals/status colours and derived accents. `PaletteTest` expects 62 registered palettes with unique IDs. Appearance uses the existing SharedPreferences path; no persistence format changes.
+- `python3 docs/design/index/_src/check_contrast.py` passed all 459 colour-pair checks across 12 palettes. Generated CSS and palette-frame counts were checked against the tokens; `git diff --check` passed.
+- Attempted JDK 17 `./gradlew --offline testDebugUnitTest --tests 'app.discair.ui.theme.IndexTest' --tests 'app.discair.ui.theme.PaletteTest' assembleDebug`: blocked before tests by sandbox denial writing the default Gradle wrapper lock. Retrying the installed Gradle with a writable temporary cache reached daemon startup but was blocked by `java.net.SocketException: Operation not permitted`. Neither Android tests nor the debug build completed. ADB also cannot bind its listener in this sandbox. Appearance/restart, Home, Now Playing, Queue and insight-block device checks, full suites and post-push CI were not run. GitHub CLI could not read initial PR/CI state because api.github.com was unreachable.
+- Next action: review the PR, run the focused Android checks and inspect the eight palettes on a device. Nothing merged, published or deployed; the owner handles post-push CI.
+
 ## 2026-11-27 — macOS Playlist Inbox downloads (LB-16)
 
 - Branch `feat/lb-16-macos-inbox-downloads` starts from GitHub `main` at `a1c94f30` (LB-15, PR #1284).
