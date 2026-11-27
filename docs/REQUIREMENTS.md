@@ -31,6 +31,7 @@ Concise user-facing behavior ledger for the **server and web client** (native cl
 | ACQ-06 | Acquisition/import must validate completeness and paths and never overwrite or delete unrelated library content. | Core |
 | ACQ-07 | Broaden slskd queries (including wildcard-masked artist names) when an exact artist+album query returns no usable payloads; report query/response counts. | Implemented |
 | ACQ-08 | Single-track Get (`POST /api/acquire/track`) downloads one matching audio file into `<music root>/<artist>/<album>/` without overwriting existing files; dismissing removes only that song's download file. | Implemented |
+| RADIO-02 | Artist Radio generates an owned-only library queue with Familiar, Explore and Deep cuts modes; sparse libraries return shorter queues and provider failure falls back to local ranking. | Implemented |
 | RADIO-01 | Radio relay replaces station URL in Navidrome with `/radio/stream/<secret token>` (public to login gate via token), logs ICY titles heard ≥30 s in `radio.sqlite3`, and supports song-only Get via MusicBrainz. | Implemented |
 | LIB-01 | Every artist, album, and genre name opens its library page; song results open their album. | Implemented |
 | LIB-02 | Artist page shows photo, genres, library count, Top songs, bio, owned albums, missing albums (with Get), and similar artists. | Implemented |
