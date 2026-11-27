@@ -43,11 +43,12 @@ Move `macos/` and `android/` out of `abucalip/navi-librarian` into dedicated Git
 
 ## Implementation Slices
 
-### Slice S0 — Pre-flight & Empty Repos
+### Slice S0 — Pre-flight & Empty Repos (Done — 2026-11-27)
 **Goal:** Lock the source SHA, verify `git-filter-repo` is installed, and create the two empty GitHub repositories.
 - Sync `navi-librarian` `main` with `origin/main` and record the split anchor SHA (`SPLIT_SHA`).
-- Install/verify `git-filter-repo` (`brew install git-filter-repo` if missing).
-- Create empty GitHub repos (`abucalip/discair-macos` and `abucalip/discair-android`) with no initial commit, README, or license.
+  - `SPLIT_SHA`: `66f52cdc9ea0ad95257cd06512c51c0446cd6a02`
+- Install/verify `git-filter-repo` (`brew install git-filter-repo` if missing). — Installed `git-filter-repo` 2.47.0 (`a40bce548d2c`).
+- Create empty GitHub repos (`abucalip/discair-macos` and `abucalip/discair-android`) with no initial commit, README, or license. — Created both as empty public repos.
 - **Done when:** Both empty remotes exist and `SPLIT_SHA` is recorded.
 
 ### Slice S1 — Extract & Decouple `discair-macos`
