@@ -45,6 +45,8 @@ While modifying code, you may include a small, behaviour-preserving simplificati
 
 ## Documentation ownership
 
+**No doc bloat:** keep documentation updates to the necessary minimum—short factual bullets only, no long PR/CI narratives in standing docs, respect line caps, and never duplicate rules across files.
+
 - `docs/ACTIVE_WORK.md` — open server/web tasks and parked decisions (1–3 bullets per item).
 - `docs/PROJECT_STATUS.md` — rolling snapshot (≤30 lines) and single next action.
 - `docs/ARCHITECTURE.md` — module-to-file and focused-test map.

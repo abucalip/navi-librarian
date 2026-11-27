@@ -13,5 +13,6 @@ This repository (`abucalip/navi-librarian`) contains the Python/FastAPI server, 
 - Update [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) in the same change when adding or moving a module.
 - End the task after pushing and creating/updating the PR; do not wait for or poll CI unless asked.
 - Documentation-only changes go straight to `main`, no PR.
+- **Do not bloat documentation:** keep doc updates to the necessary minimum—short factual bullets, no long PR/CI narratives, respect line caps (`PROJECT_STATUS.md` ≤30 lines), and never duplicate rules across files.
 
 Full workflow, opportunistic simplification, and safety rules: [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md).
