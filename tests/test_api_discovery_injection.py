@@ -22,7 +22,11 @@ class FakeLibrarian:
 
     def discovery_get_list(self, *, list_name, count):
         self.calls.append(("discovery_get_list", list_name, count))
-        return json.dumps({"list": list_name, "items": []})
+        return json.dumps({
+            "list": list_name,
+            "generated_at": "2026-11-27T10:00:00Z",
+            "items": [{"artist": "A", "album": "B"}],
+        })
 
     def discovery_refresh_list(self, *, list_name, count):
         self.calls.append(("discovery_refresh_list", list_name, count))
@@ -52,8 +56,25 @@ class DiscoveryDependencyInjectionTests(unittest.TestCase):
     def test_discovery_list_uses_injected_service(self):
         response = self.client.get("/api/discovery/personal?count=12")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"list": "personal", "items": []})
+        self.assertEqual(response.json(), {
+            "list": "personal",
+            "generated_at": "2026-11-27T10:00:00Z",
+            "items": [{"artist": "A", "album": "B"}],
+        })
+        self.assertNotIn("new_count", response.json())
         self.assertEqual(self.fake.calls, [("discovery_get_list", "personal", 12)])
+
+    def test_discovery_list_since_adds_new_count_and_validates(self):
+        newer = self.client.get("/api/discovery/personal?count=12&since=2026-11-27T09:00:00Z")
+        self.assertEqual(newer.status_code, 200)
+        self.assertEqual(newer.json()["new_count"], 1)
+
+        older = self.client.get("/api/discovery/personal?count=12&since=2026-11-27T11:00:00Z")
+        self.assertEqual(older.status_code, 200)
+        self.assertEqual(older.json()["new_count"], 0)
+
+        invalid = self.client.get("/api/discovery/personal?since=not-a-timestamp")
+        self.assertEqual(invalid.status_code, 400)
 
     def test_refresh_and_feedback_use_injected_service(self):
         refreshed = self.client.post("/api/discovery/classics/refresh", json={"count": 8})

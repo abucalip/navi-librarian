@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from discovery import artist_block, artist_lean, genre_block, lens_service
+from discovery.new_count import count_new_items, parse_since
 from discovery.pick_why import attach_why
 from discovery.taste_families import deep_dive_row
 
@@ -151,13 +152,24 @@ def lens_feedback(librarian=Depends(get_librarian)):
 
 
 @router.get("/api/discovery/{list_name}")
-def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librarian)):
+def discovery_list(
+    list_name: str,
+    count: int = 30,
+    since: str | None = None,
+    librarian=Depends(get_librarian),
+):
     allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
     is_lens = list_name in lens_service.lens_names()
     if list_name not in allowed and not is_lens:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     if not 1 <= count <= 150:
         raise HTTPException(status_code=400, detail="count must be between 1 and 150")
+    since_dt = None
+    if since is not None and since.strip():
+        try:
+            since_dt = parse_since(since)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
     try:
         if is_lens:
             data = parse_result(lens_service.list_response(librarian, list_name, count))
@@ -172,6 +184,8 @@ def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librar
             for item in data.get(key) or []:
                 if isinstance(item, dict):
                     item.update(deep_dive_row(item))
+    if since_dt is not None and isinstance(data, dict):
+        data["new_count"] = count_new_items(data, since_dt)
     return data
 
 
