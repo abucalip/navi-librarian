@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/discovery/for_me",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "list": "for_me",
+      "count": 1,
+      "total": 1,
+      "items": [
+        {
+          "artist": "Contract Fixture Artist",
+          "album": "Contract Fixture Album",
+          "saved_at": 1793402024.090562,
+          "updated_at": 1793402152.210853,
+          "acquired": false,
+          "metadata": {
+            "source": "android-contract-capture"
+          }
+        }
+      ],
+      "library_inventory_available": true,
+      "read_only_except_user_list": true
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

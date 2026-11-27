@@ -1,6 +1,6 @@
 """Artwork index fixtures keep the contract the route promises (docs/archive/completed/artwork.md, "Contract fixtures").
 
-The files in android/contract-fixtures/librarian/artwork_index*.json are written by
+The files in tests/fixtures/contract-fixtures/librarian/artwork_index*.json are written by
 scripts/write_artwork_fixtures.py through the real route with canned provider answers. These tests read
 them, and rebuild them to catch drift; they make no network calls.
 """
@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FIXTURES = ROOT / "android" / "contract-fixtures" / "librarian"
+FIXTURES = ROOT / "tests" / "fixtures" / "contract-fixtures" / "librarian"
 SLOTS = {"Front", "Back", "Spine", "Obi", "Medium", "Tray", "Sticker", "Poster"}
 IMAGE_KEYS = {"image_id", "release", "releases", "edition", "types", "comment", "approved", "width", "height", "format"}
 TOP_KEYS = {"status", "rgid", "truncated", "truncated_reason", "releases", "best_front", "slots", "booklet", "booklets", "images"}

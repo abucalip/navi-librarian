@@ -1,0 +1,102 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/acquisitions/stream",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "text/event-stream",
+    "elapsed_seconds": 3.04,
+    "body": {
+      "sse_events": [
+        {
+          "event": "message",
+          "data": {
+            "ok": true,
+            "acquisitions": [
+              {
+                "artist": "Contract Fixture Artist",
+                "album": "Contract Fixture Song (song on Contract Fixture Album)",
+                "status": "settings_required",
+                "details": {
+                  "status": "settings_required",
+                  "updated_at": 1793402152.202327,
+                  "kind": "track",
+                  "album_name": "Contract Fixture Album",
+                  "track_title": "Contract Fixture Song",
+                  "track_number": 1,
+                  "year": null,
+                  "message": "Add the slskd API key in Discovery Settings first.",
+                  "metadata": {
+                    "source": "android-contract-capture"
+                  }
+                },
+                "created_at": 1793402024.081442,
+                "updated_at": 1793402152.202327
+              }
+            ]
+          }
+        },
+        {
+          "event": "message",
+          "data": {
+            "ok": true,
+            "acquisitions": [
+              {
+                "artist": "Contract Fixture Artist",
+                "album": "Contract Fixture Song (song on Contract Fixture Album)",
+                "status": "settings_required",
+                "details": {
+                  "status": "settings_required",
+                  "updated_at": 1793402152.202327,
+                  "kind": "track",
+                  "album_name": "Contract Fixture Album",
+                  "track_title": "Contract Fixture Song",
+                  "track_number": 1,
+                  "year": null,
+                  "message": "Add the slskd API key in Discovery Settings first.",
+                  "metadata": {
+                    "source": "android-contract-capture"
+                  }
+                },
+                "created_at": 1793402024.081442,
+                "updated_at": 1793402152.202327
+              }
+            ]
+          }
+        },
+        {
+          "event": "message",
+          "data": {
+            "ok": true,
+            "acquisitions": [
+              {
+                "artist": "Contract Fixture Artist",
+                "album": "Contract Fixture Song (song on Contract Fixture Album)",
+                "status": "settings_required",
+                "details": {
+                  "status": "settings_required",
+                  "updated_at": 1793402152.202327,
+                  "kind": "track",
+                  "album_name": "Contract Fixture Album",
+                  "track_title": "Contract Fixture Song",
+                  "track_number": 1,
+                  "year": null,
+                  "message": "Add the slskd API key in Discovery Settings first.",
+                  "metadata": {
+                    "source": "android-contract-capture"
+                  }
+                },
+                "created_at": 1793402024.081442,
+                "updated_at": 1793402152.202327
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:08Z"
+}

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/ping",
+    "query": {}
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:32Z"
+}

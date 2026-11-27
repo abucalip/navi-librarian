@@ -1,0 +1,2327 @@
+{
+  "captured_at": "2026-11-09T23:41:10Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_room",
+      "mbid": "ec68bede-98ef-4f0e-9a77-1dc5c3a5575f",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_room",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "A Celebration",
+        "mbid": "ec68bede-98ef-4f0e-9a77-1dc5c3a5575f",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Empyrean Isles",
+            "mbid": "3796e346-e40b-4334-b306-b8cf96dafcd2",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Empyrean Isles",
+            "album_artist": "Herbie Hancock",
+            "artist": null,
+            "context": "Herbie Hancock",
+            "title": "Empyrean Isles"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-06-17",
+                  "valid_to": "1964-06-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-06-17",
+                  "valid_to": "1964-06-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-06-17",
+                  "valid_to": "1964-06-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-06-17",
+                  "valid_to": "1964-06-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-06-17",
+                  "valid_to": "1964-06-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "White Rabbit",
+            "mbid": "1e2bf92b-aa91-48cc-ac84-f0c9c073d083",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "White Rabbit",
+            "album_artist": "George Benson",
+            "artist": null,
+            "context": "George Benson",
+            "title": "White Rabbit"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Born To Be Blue",
+            "mbid": "575fc65e-8fc6-4c61-9d47-43627a235e21",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Born To Be Blue",
+            "album_artist": "Grant Green",
+            "artist": null,
+            "context": "Grant Green",
+            "title": "Born To Be Blue"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Duke Ellington & John Coltrane",
+            "mbid": "904b56d3-8fb9-367e-ae5f-f198d2a6bb3b",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Duke Ellington & John Coltrane",
+            "album_artist": "Duke Ellington & John Coltrane",
+            "artist": null,
+            "context": "Duke Ellington & John Coltrane",
+            "title": "Duke Ellington & John Coltrane"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-09-26",
+                  "valid_to": "1962-09-26"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-09-26",
+                  "valid_to": "1962-09-26"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-09-26",
+                  "valid_to": "1962-09-26"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-09-26",
+                  "valid_to": "1962-09-26"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-09-26",
+                  "valid_to": "1962-09-26"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Blue Train",
+            "mbid": "dfabbfc2-d183-4316-988e-e42efff703b3",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Blue Train",
+            "album_artist": "John Coltrane",
+            "artist": null,
+            "context": "John Coltrane",
+            "title": "Blue Train"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Ballads",
+            "mbid": "d35a21e4-f594-3749-93b5-12849edfdf56",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Ballads",
+            "album_artist": "John Coltrane Quartet",
+            "artist": null,
+            "context": "John Coltrane Quartet",
+            "title": "Ballads"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-11-13",
+                  "valid_to": "1962-11-13"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-11-13",
+                  "valid_to": "1962-11-13"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-11-13",
+                  "valid_to": "1962-11-13"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-11-13",
+                  "valid_to": "1962-11-13"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1962-11-13",
+                  "valid_to": "1962-11-13"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Maiden Voyage",
+            "mbid": "53c462ec-26fa-34d2-936d-3f696680de0f",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Maiden Voyage",
+            "album_artist": "Herbie Hancock",
+            "artist": null,
+            "context": "Herbie Hancock",
+            "title": "Maiden Voyage"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1965-03-17",
+                  "valid_to": "1965-03-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1965-03-17",
+                  "valid_to": "1965-03-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1965-03-17",
+                  "valid_to": "1965-03-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1965-03-17",
+                  "valid_to": "1965-03-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1965-03-17",
+                  "valid_to": "1965-03-17"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "A Love Supreme",
+            "mbid": "eb5f77b4-1201-4df8-9d5c-76bc417ebd66",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "A Love Supreme",
+            "album_artist": "John Coltrane",
+            "artist": null,
+            "context": "John Coltrane",
+            "title": "A Love Supreme"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "A Night In Tunisia (Remaster)",
+            "mbid": "3e0d58c6-74bf-48b4-9260-ee57b633418d",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "A Night In Tunisia (Remaster)",
+            "album_artist": "Art Blakey",
+            "artist": null,
+            "context": "Art Blakey",
+            "title": "A Night In Tunisia (Remaster)"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1960-08-14",
+                  "valid_to": "1960-08-14"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1960-08-14",
+                  "valid_to": "1960-08-14"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1960-08-14",
+                  "valid_to": "1960-08-14"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1960-08-14",
+                  "valid_to": "1960-08-14"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1960-08-14",
+                  "valid_to": "1960-08-14"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Speak No Evil",
+            "mbid": "9dc0b483-efcc-4657-a645-0dc7541e2486",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Speak No Evil",
+            "album_artist": "Wayne Shorter",
+            "artist": null,
+            "context": "Wayne Shorter",
+            "title": "Speak No Evil"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-24",
+                  "valid_to": "1964-12-24"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-24",
+                  "valid_to": "1964-12-24"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-24",
+                  "valid_to": "1964-12-24"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-24",
+                  "valid_to": "1964-12-24"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-12-24",
+                  "valid_to": "1964-12-24"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Crescent",
+            "mbid": "a51b59f0-f3d1-4276-beac-e7f034b54cfc",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Crescent",
+            "album_artist": "John Coltrane",
+            "artist": null,
+            "context": "John Coltrane",
+            "title": "Crescent"
+          },
+          "reason_count": 5,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-04-27",
+                  "valid_to": "1964-04-27"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Earth Bird, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-04-27",
+                  "valid_to": "1964-04-27"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where African Marketplace, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Ancient Cape",
+                "mbid": "29920f2f-9ed7-4760-b09a-ac268cf37a68",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1991-12-18",
+                  "valid_to": "1991-12-18"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-04-27",
+                  "valid_to": "1964-04-27"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Ancient Cape, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mixed at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-04-27",
+                  "valid_to": "1964-04-27"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where The Mountain, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "recorded_at",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "recorded at",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/place/1165ef7d-371c-4e03-98db-569fa8b97644",
+                  "valid_from": "1964-04-27",
+                  "valid_to": "1964-04-27"
+                }
+              ],
+              "text": "Van Gelder Studio is stated as a place where Mannenberg Revisited, from the album you started from, was made (recorded, mixed or engineered), and where a recording on this album was made",
+              "via": {
+                "canonical_name": "Van Gelder Studio",
+                "mbid": "1165ef7d-371c-4e03-98db-569fa8b97644",
+                "owned": false,
+                "type": "place"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

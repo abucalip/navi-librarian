@@ -1,0 +1,95 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_works",
+      "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_works",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Mulatu of Ethiopia",
+        "mbid": "261f4553-69ed-4567-becb-e38d795b857e",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974",
+            "mbid": "f85a03b1-efb8-4558-86ac-f23945a94853",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974",
+            "album_artist": "ሙላቱ አስታጥቄ",
+            "artist": null,
+            "context": "ሙላቱ አስታጥቄ",
+            "title": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974"
+          },
+          "reason_count": 1,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "this album has another recording of Dèwèl, the work behind Dèwèl on the album you started from",
+              "via": {
+                "canonical_name": "Dèwèl",
+                "mbid": "95370f49-b15a-40cf-bd06-5cab26bbf05c",
+                "owned": false,
+                "type": "work"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

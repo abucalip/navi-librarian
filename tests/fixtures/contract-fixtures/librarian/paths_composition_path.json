@@ -1,0 +1,298 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "composition_path",
+      "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "generation": 1,
+      "kind": "composition_path",
+      "start": {
+        "canonical_name": "ሙላቱ አስታጥቄ",
+        "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+        "owned": true,
+        "type": "artist"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Ethanopium (live at Snowy's)",
+            "mbid": "901c0f82-d3b4-4a69-9b2b-812e347e0b1b",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": "cover, live",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/901c0f82-d3b4-4a69-9b2b-812e347e0b1b",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yègellé tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yegelle Tezeta",
+                "mbid": "7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": "cover, live",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/901c0f82-d3b4-4a69-9b2b-812e347e0b1b",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yegelle Tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Ethanopium",
+            "mbid": "bd7a26cf-f5c2-44c9-bcc2-56fc26c447b2",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": "cover",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/bd7a26cf-f5c2-44c9-bcc2-56fc26c447b2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yègellé tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yegelle Tezeta",
+                "mbid": "7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": "cover",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/bd7a26cf-f5c2-44c9-bcc2-56fc26c447b2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yegelle Tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Yegelle Tezeta",
+            "mbid": "636b5409-46b7-4643-8c33-396b58ad4adc",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/636b5409-46b7-4643-8c33-396b58ad4adc",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cf5a830-d903-46db-9140-bd4b050e9e1f",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yègellé tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yegelle Tezeta",
+                "mbid": "7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "same_work",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/636b5409-46b7-4643-8c33-396b58ad4adc",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "performance",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/recording/7cd87ee1-d773-4108-afa4-196f4ef8e502",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "another recording of the work that Yegelle Tezeta from your library performs",
+              "via": {
+                "canonical_name": "Yègellé tezeta",
+                "mbid": "4f2020a0-7ae9-476e-ba23-4a148675544e",
+                "owned": false,
+                "type": "work"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 3
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

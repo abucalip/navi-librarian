@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/auth/status",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "setup_required": false
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

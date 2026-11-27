@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/auth/login",
+    "query": {},
+    "body": {
+      "username": "<username>",
+      "password": "<password>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.07,
+    "body": {
+      "ok": true,
+      "message": "Signed in."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

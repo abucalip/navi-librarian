@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-FIXTURES = Path(__file__).resolve().parent.parent / "android" / "contract-fixtures" / "librarian"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contract-fixtures" / "librarian"
 NOW_FIELDS = {"state", "raw_title", "artist", "title", "play_id", "in_library", "cover_url"}
 NOW_STATES = {"ok", "no_metadata", "unparsed", "not_proxied", "unavailable", "idle"}
 

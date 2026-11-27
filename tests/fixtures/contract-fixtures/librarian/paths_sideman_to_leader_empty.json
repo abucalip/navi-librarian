@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "sideman_to_leader",
+      "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.03,
+    "body": {
+      "kind": "sideman_to_leader",
+      "start": {
+        "type": "artist",
+        "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+        "canonical_name": "آمال ماهر",
+        "owned": true
+      },
+      "generation": 1,
+      "status": "empty",
+      "stops": [],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T14:59:12Z"
+}

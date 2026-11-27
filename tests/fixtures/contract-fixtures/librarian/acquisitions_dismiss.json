@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/acquisitions/dismiss",
+    "query": {},
+    "body": {
+      "artist": "Contract Fixture Artist",
+      "album": "Contract Fixture Album"
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "ok": true,
+      "status": "dismissed",
+      "message": "Acquisition dismissed and its safely identified download files were removed."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:08Z"
+}

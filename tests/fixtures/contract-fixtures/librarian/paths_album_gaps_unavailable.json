@@ -1,0 +1,4056 @@
+{
+  "captured_at": "2026-11-09T23:55:54Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_gaps",
+      "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "history": {
+        "filtered": false,
+        "filtered_out": 0,
+        "little_plays_below": 2,
+        "played_albums": null,
+        "state": "unavailable",
+        "unknown": 0
+      },
+      "kind": "album_gaps",
+      "overlap_dropped": 1,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Still Life",
+        "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "My Arms, Your Hearse",
+            "mbid": "d517244f-4da0-3282-96dd-5c0ff3f0106b",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "My Arms, Your Hearse",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "My Arms, Your Hearse"
+          },
+          "reason_count": 38,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mastering",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/34817fb9-15f8-4602-b63a-51cff6fb120e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mastering",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/34817fb9-15f8-4602-b63a-51cff6fb120e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Göran Finnberg has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Göran Finnberg",
+                "mbid": "34817fb9-15f8-4602-b63a-51cff6fb120e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": "co",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Damnation",
+            "mbid": "08fa2a0a-d47c-4b5c-8fe4-ef3c41c289d7",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Damnation",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "Damnation"
+          },
+          "reason_count": 52,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/af4223e2-30c3-44da-aaac-eadbecc8b669",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/af4223e2-30c3-44da-aaac-eadbecc8b669",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Isak Edh has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Isak Edh",
+                "mbid": "af4223e2-30c3-44da-aaac-eadbecc8b669",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/af4223e2-30c3-44da-aaac-eadbecc8b669",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/af4223e2-30c3-44da-aaac-eadbecc8b669",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Isak Edh has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Isak Edh",
+                "mbid": "af4223e2-30c3-44da-aaac-eadbecc8b669",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Deliverance",
+            "mbid": "ace96210-f0a1-3c72-a497-d75c7b8080eb",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Deliverance",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "Deliverance"
+          },
+          "reason_count": 44,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2002",
+                  "valid_to": "2002"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Morningrise",
+            "mbid": "54235827-1142-3637-b3c1-6639f8d5a1f9",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Morningrise",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "Morningrise"
+          },
+          "reason_count": 22,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "acoustic guitar, electric guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "acoustic guitar, electric guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Puritanical Euphoric Misanthropia",
+            "mbid": "04569482-8d04-4375-91fc-ff9d08c3598c",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Puritanical Euphoric Misanthropia",
+            "album_artist": "Dimmu Borgir",
+            "artist": null,
+            "context": "Dimmu Borgir",
+            "title": "Puritanical Euphoric Misanthropia"
+          },
+          "reason_count": 8,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": "2000-10",
+                  "valid_to": "2000-11"
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Futile",
+            "mbid": "be17983f-aafd-4204-8999-cef31ec84db3",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Futile",
+            "album_artist": "Porcupine Tree",
+            "artist": null,
+            "context": "Porcupine Tree",
+            "title": "Futile"
+          },
+          "reason_count": 36,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Death Cult Armageddon",
+            "mbid": "f41d7b0e-32dd-4699-b25d-780fe194bc79",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Death Cult Armageddon",
+            "album_artist": "Dimmu Borgir",
+            "artist": null,
+            "context": "Dimmu Borgir",
+            "title": "Death Cult Armageddon"
+          },
+          "reason_count": 8,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Fredrik Nordström has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Fredrik Nordström",
+                "mbid": "9effdbf4-3e44-45ec-9d0d-b9a46f4c3ff6",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Ghost Reveries",
+            "mbid": "fe99de2d-c939-3b88-a776-9be12d84907f",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Ghost Reveries",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "Ghost Reveries"
+          },
+          "reason_count": 36,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Still Life",
+                "mbid": "545448a8-2969-3faf-b232-c0d3114a4e16",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Still Life, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on The Moor, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Godhead's Lament, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Benighted, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Moonlapse Vertigo, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Face Of Melinda, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on Serenity Painted Death, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "producer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/c14b4180-dc87-481e-b17a-64e4150f90f6",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Opeth has a production credit on White Cluster, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Opeth",
+                "mbid": "c14b4180-dc87-481e-b17a-64e4150f90f6",
+                "owned": true,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Peter Lindgren is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Peter Lindgren",
+                "mbid": "35033f24-ba26-4488-b934-0cf2ec94c1d2",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Watershed",
+            "mbid": "8542528a-62b8-34a2-8d24-f8de229ce287",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Watershed",
+            "album_artist": "Opeth",
+            "artist": null,
+            "context": "Opeth",
+            "title": "Watershed"
+          },
+          "reason_count": 14,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Benighted, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Moonlapse Vertigo, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Face Of Melinda, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Serenity Painted Death, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "lead vocals",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on White Cluster, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Martín Méndez is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Martín Méndez",
+                "mbid": "10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Martín Méndez is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Martín Méndez",
+                "mbid": "10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "bass guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Martín Méndez is credited on Benighted, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Martín Méndez",
+                "mbid": "10b41992-6c3f-4eb2-a38c-adf0f05326de",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Deadwing",
+            "mbid": "c2ab8804-5f77-4b35-8038-4850c39470d8",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Deadwing",
+            "album_artist": "Porcupine Tree",
+            "artist": null,
+            "context": "Porcupine Tree",
+            "title": "Deadwing"
+          },
+          "reason_count": 7,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Benighted, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Moonlapse Vertigo, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Face Of Melinda, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Serenity Painted Death, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "background vocals, guest",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": "2004-03",
+                  "valid_to": "2004-10"
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on White Cluster, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Deconstruction",
+            "mbid": "6548868b-640c-493e-85d6-b847234faa55",
+            "owned": true,
+            "type": "release"
+          },
+          "play": null,
+          "presentation": {
+            "album": "Deconstruction",
+            "album_artist": "The Devin Townsend Project",
+            "artist": null,
+            "context": "The Devin Townsend Project",
+            "title": "Deconstruction"
+          },
+          "reason_count": 7,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "The Moor",
+                "mbid": "c8b8ac92-78e0-47bf-964a-a2e7a42ba9d0",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on The Moor, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Godhead's Lament",
+                "mbid": "220b115a-4d7f-4851-8f47-3e8be89bdc42",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Godhead's Lament, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Benighted",
+                "mbid": "73bede8f-b70f-4249-8356-a64bf1855a8f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Benighted, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Moonlapse Vertigo",
+                "mbid": "c4674a5d-0921-47db-b017-6cca57ca9632",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Moonlapse Vertigo, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Face Of Melinda",
+                "mbid": "5eed893d-bdd8-48f1-88f7-caf4d74017d2",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Face Of Melinda, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Serenity Painted Death",
+                "mbid": "fb9ae821-e59e-4a0e-ae14-5ae7727003d4",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on Serenity Painted Death, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "White Cluster",
+                "mbid": "bec80bac-e4eb-4467-8dc8-0e23443b65cc",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "guest_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "guitar",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "vocal",
+                  "role": "additional",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Mikael Åkerfeldt is credited on White Cluster, from the album you started from, as a guest, and appears on this album",
+              "via": {
+                "canonical_name": "Mikael Åkerfeldt",
+                "mbid": "1a2b4f01-cdc8-406d-b34b-eef8603d104e",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

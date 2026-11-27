@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/health",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "status": "ok",
+      "service": "Navidrome",
+      "message": "ok"
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

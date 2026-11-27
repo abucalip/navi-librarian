@@ -1,0 +1,27 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/discovery/feedback",
+    "query": {},
+    "body": {
+      "artist": "Contract Fixture Artist",
+      "album": "Contract Fixture Album",
+      "action": "save",
+      "metadata": {
+        "source": "android-contract-capture"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "ok": true,
+      "action": "save",
+      "artist": "Contract Fixture Artist",
+      "album": "Contract Fixture Album"
+    }
+  },
+  "captured_at": "2026-10-30T23:16:08Z"
+}

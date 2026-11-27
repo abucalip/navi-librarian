@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/discovery/not_a_list",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": "Unknown discovery list."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

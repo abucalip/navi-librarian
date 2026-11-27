@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/api/radio/stations/11/favourite",
+    "query": {},
+    "body": {
+      "favourite": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "id": "11",
+      "favourite": true
+    }
+  },
+  "captured_at": "2026-11-10T17:35:01Z"
+}

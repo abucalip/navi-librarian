@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/dashboard/albums/newest",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.02,
+    "body": {
+      "items": [
+        {
+          "id": "7mPRt64G2tRJSy3i60KLd0",
+          "name": "Ken Andi Habib",
+          "artist": "Freh Khodja",
+          "artist_id": "0U62cIVPISeJzxDgGra1wa",
+          "year": null,
+          "artwork_url": "/api/owned/artwork/al-7mPRt64G2tRJSy3i60KLd0_878c3d446ba3e096",
+          "owned": true
+        },
+        {
+          "id": "4n1XUdR5fFVlHiLOvFrp8a",
+          "name": "Conflict Nkru!",
+          "artist": "Ebo Taylor & Uhuru Yenzu",
+          "artist_id": "4Ltxn07co6TIyEy28748MQ",
+          "year": 1980,
+          "artwork_url": "/api/owned/artwork/al-4n1XUdR5fFVlHiLOvFrp8a_8028f3e62d4ed17b",
+          "owned": true
+        },
+        {
+          "id": "5skZoiuc6X4eszaIp0AL8m",
+          "name": "Resistance",
+          "artist": "The Souljazz Orchestra",
+          "artist_id": "6T6WzkdBLfaCjsbOVnXxF5",
+          "year": 2015,
+          "artwork_url": "/api/owned/artwork/al-5skZoiuc6X4eszaIp0AL8m_aedcf9fd3d2ad2e1",
+          "owned": true
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

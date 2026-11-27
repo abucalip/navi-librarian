@@ -1,6 +1,6 @@
 """Android client contract: recorded fixtures must still describe routes the server serves.
 
-Fixtures live in android/contract-fixtures (docs/contracts/ANDROID_CLIENT_CONTRACT.md section 7).
+Fixtures live in tests/fixtures/contract-fixtures.
 """
 import json
 import re
@@ -9,7 +9,7 @@ from pathlib import Path
 
 from app import main
 
-FIXTURES = Path(__file__).resolve().parent.parent / "android" / "contract-fixtures"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contract-fixtures"
 LIBRARIAN = sorted((FIXTURES / "librarian").glob("*.json"))
 NAVIDROME = sorted((FIXTURES / "navidrome").glob("*.json"))
 

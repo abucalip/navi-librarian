@@ -1,0 +1,196 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/getAlbumList2",
+    "query": {
+      "type": "alphabeticalByName",
+      "size": 10,
+      "offset": 0
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true,
+        "albumList2": {
+          "album": [
+            {
+              "id": "63tDxgAiPELT9ksAtN2HPq",
+              "name": "!ممكن؟",
+              "artist": "محمد منير",
+              "artistId": "4fd8duBCA8x0pQh6s6OE00",
+              "coverArt": "al-63tDxgAiPELT9ksAtN2HPq_01676fcd398f716e",
+              "songCount": 1,
+              "duration": 233,
+              "playCount": 1,
+              "created": "2026-09-30T22:14:48.646052361Z",
+              "year": 1998,
+              "genre": "Jazz",
+              "played": "2026-10-19T09:58:03.066096989Z",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Jazz"
+                }
+              ],
+              "musicBrainzId": "6a486bab-7cda-47e7-ba87-6d815eac1900",
+              "isCompilation": false,
+              "sortName": "!ممكن؟",
+              "discTitles": [],
+              "originalReleaseDate": {
+                "year": 1998,
+                "month": 3,
+                "day": 29
+              },
+              "releaseDate": {
+                "year": 1998,
+                "month": 3,
+                "day": 29
+              },
+              "releaseTypes": [
+                "album"
+              ],
+              "recordLabels": [
+                {
+                  "name": "Digitec Records"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "4fd8duBCA8x0pQh6s6OE00",
+                  "name": "محمد منير"
+                }
+              ],
+              "displayArtist": "محمد منير",
+              "explicitStatus": "",
+              "version": ""
+            },
+            {
+              "id": "0Jhf4yHRrqtUbHZvx7q2pz",
+              "name": "“Live” at the Village Vanguard 11‐03 & 05‐1961",
+              "artist": "John Coltrane",
+              "artistId": "1MePb9E8R1LKVx4Ds7Q6dn",
+              "coverArt": "al-0Jhf4yHRrqtUbHZvx7q2pz_63dc144590d5374b",
+              "songCount": 1,
+              "duration": 302,
+              "created": "2026-09-14T17:06:44.112251064Z",
+              "year": 1962,
+              "genre": "Jazz",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Jazz"
+                }
+              ],
+              "musicBrainzId": "c31b6918-5264-4e5c-a3f3-3e8860ab46ab",
+              "isCompilation": false,
+              "sortName": "\"live\" at the village vanguard 11-03 & 05-1961",
+              "discTitles": [],
+              "originalReleaseDate": {
+                "year": 1962
+              },
+              "releaseDate": {
+                "year": 1991,
+                "month": 11,
+                "day": 21
+              },
+              "releaseTypes": [
+                "album",
+                "live"
+              ],
+              "recordLabels": [
+                {
+                  "name": "impulse!"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "1MePb9E8R1LKVx4Ds7Q6dn",
+                  "name": "John Coltrane"
+                }
+              ],
+              "displayArtist": "John Coltrane",
+              "explicitStatus": "",
+              "version": ""
+            },
+            {
+              "id": "6oo1O8s7wSKiReYKCsqjl2",
+              "name": "“Love and Theft”",
+              "artist": "Bob Dylan",
+              "artistId": "6vTS8i9V4BtQswGuFN8ngI",
+              "coverArt": "al-6oo1O8s7wSKiReYKCsqjl2_203db7c0a7e96ddc",
+              "songCount": 14,
+              "duration": 3952,
+              "playCount": 1,
+              "created": "2026-09-14T17:11:11.343626921Z",
+              "year": 2001,
+              "genre": "Easy Listening",
+              "played": "2026-10-18T00:34:19.537280866Z",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Easy Listening"
+                },
+                {
+                  "name": "Folk"
+                }
+              ],
+              "musicBrainzId": "4fd00a93-c1a7-31a3-9320-b6278ab7b129",
+              "isCompilation": false,
+              "sortName": "\"love and theft\"",
+              "discTitles": [
+                {
+                  "disc": 1,
+                  "title": "",
+                  "coverArt": "dc-6oo1O8s7wSKiReYKCsqjl2:1"
+                },
+                {
+                  "disc": 2,
+                  "title": "",
+                  "coverArt": "dc-6oo1O8s7wSKiReYKCsqjl2:2"
+                }
+              ],
+              "originalReleaseDate": {
+                "year": 2001,
+                "month": 9,
+                "day": 10
+              },
+              "releaseDate": {
+                "year": 2001,
+                "month": 9,
+                "day": 10
+              },
+              "releaseTypes": [
+                "album"
+              ],
+              "recordLabels": [
+                {
+                  "name": "Columbia"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "6vTS8i9V4BtQswGuFN8ngI",
+                  "name": "Bob Dylan"
+                }
+              ],
+              "displayArtist": "Bob Dylan",
+              "explicitStatus": "",
+              "version": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}

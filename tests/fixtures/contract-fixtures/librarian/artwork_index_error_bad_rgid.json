@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-11-10T00:00:00Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/artwork/index",
+    "query": {
+      "rgid": "not-an-id"
+    }
+  },
+  "response": {
+    "body": {
+      "detail": "rgid must be a MusicBrainz release group id."
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 400
+  }
+}

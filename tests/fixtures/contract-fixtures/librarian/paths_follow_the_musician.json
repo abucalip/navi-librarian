@@ -1,0 +1,412 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "follow_the_musician",
+      "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "generation": 1,
+      "kind": "follow_the_musician",
+      "start": {
+        "canonical_name": "ሙላቱ አስታጥቄ",
+        "mbid": "67f0c7ca-14e8-47a3-be0e-bd2f2ffe25bb",
+        "owned": true,
+        "type": "artist"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Woghenei",
+            "mbid": "cd131fb2-609d-47b0-8f04-7ae4fdfc7632",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 27,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Dèwèl from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yèkèrmo sèw",
+                "mbid": "7a294d69-d584-4394-921b-d8e078e75dd5",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Yèkèrmo sèw from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Gubèlyé",
+                "mbid": "a352409a-9a61-4c94-9d34-2dac387287f6",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Gubèlyé from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Birtukane",
+            "mbid": "867c23f8-0a72-441c-8ae9-80abe60e140c",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 27,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Dèwèl from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yèkèrmo sèw",
+                "mbid": "7a294d69-d584-4394-921b-d8e078e75dd5",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Yèkèrmo sèw from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Gubèlyé",
+                "mbid": "a352409a-9a61-4c94-9d34-2dac387287f6",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Gubèlyé from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Tche belew",
+            "mbid": "b2e47143-5160-4267-9991-8ddd5aa7a2cb",
+            "owned": false,
+            "type": "recording"
+          },
+          "reason_count": 27,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Dèwèl",
+                "mbid": "1f140c0d-8596-46ff-bee7-25a8e4ef688f",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Dèwèl from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Yèkèrmo sèw",
+                "mbid": "7a294d69-d584-4394-921b-d8e078e75dd5",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Yèkèrmo sèw from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Gubèlyé",
+                "mbid": "a352409a-9a61-4c94-9d34-2dac387287f6",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "shared_musician",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drums (drum set)",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "instrument",
+                  "role": "drum machine",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Temare Haregu is credited on Gubèlyé from your library and on this recording",
+              "via": {
+                "canonical_name": "Temare Haregu",
+                "mbid": "89d316ee-acc4-4b08-bb94-7e0c5b721f3c",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 3
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "follow_the_musician",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": "give an mbid or a navidrome_id"
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

@@ -1,0 +1,331 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_moment",
+      "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_moment",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+        "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Anthologie de la musique arabe : Oum Kaltsoum Volume IV (1931)",
+            "mbid": "d293e837-838c-4e1b-bf9e-9336cdeda8f9",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Anthologie de la musique arabe : Oum Kaltsoum Volume IV (1931)",
+            "album_artist": "أم كلثوم",
+            "artist": null,
+            "context": "أم كلثوم",
+            "title": "Anthologie de la musique arabe : Oum Kaltsoum Volume IV (1931)"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_label",
+              "evidence": [],
+              "text": "Les Artistes Arabes Associés released both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, within 1 year of each other",
+              "via": {
+                "canonical_name": "Les Artistes Arabes Associés",
+                "mbid": "dc707cbc-f9d5-479f-87c8-d12bd0461d46",
+                "owned": false,
+                "type": "label"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_credit",
+              "evidence": [
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "أم كلثوم is the credited artist of both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, released within 1 year of each other",
+              "via": {
+                "canonical_name": "أم كلثوم",
+                "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                "owned": true,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Anthologie de la musique arabe : Oum Kaltsoum, Volume III (1930-31)",
+            "mbid": "a02d3ae6-a46d-4a56-a77d-13754a455747",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Anthologie de la musique arabe : Oum Kaltsoum, Volume III (1930-31)",
+            "album_artist": "أم كلثوم",
+            "artist": null,
+            "context": "أم كلثوم",
+            "title": "Anthologie de la musique arabe : Oum Kaltsoum, Volume III (1930-31)"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_label",
+              "evidence": [],
+              "text": "Les Artistes Arabes Associés released both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, within 1 year of each other",
+              "via": {
+                "canonical_name": "Les Artistes Arabes Associés",
+                "mbid": "dc707cbc-f9d5-479f-87c8-d12bd0461d46",
+                "owned": false,
+                "type": "label"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_credit",
+              "evidence": [
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "أم كلثوم is the credited artist of both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, released within 1 year of each other",
+              "via": {
+                "canonical_name": "أم كلثوم",
+                "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                "owned": true,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Anthologie de la musique arabe : Oum Kaltsoum, Volume V (1931-1932)",
+            "mbid": "f3ac19b7-17d1-46c7-aa5d-8e68aea34a0b",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Anthologie de la musique arabe : Oum Kaltsoum, Volume V (1931-1932)",
+            "album_artist": "أم كلثوم",
+            "artist": null,
+            "context": "أم كلثوم",
+            "title": "Anthologie de la musique arabe : Oum Kaltsoum, Volume V (1931-1932)"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_label",
+              "evidence": [],
+              "text": "Les Artistes Arabes Associés released both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, within 1 year of each other",
+              "via": {
+                "canonical_name": "Les Artistes Arabes Associés",
+                "mbid": "dc707cbc-f9d5-479f-87c8-d12bd0461d46",
+                "owned": false,
+                "type": "label"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_credit",
+              "evidence": [
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "أم كلثوم is the credited artist of both this album (1990) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, released within 1 year of each other",
+              "via": {
+                "canonical_name": "أم كلثوم",
+                "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                "owned": true,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Anthologie de la Musique Arabe : Oum Kaltsoum Volume VII (1936)",
+            "mbid": "fd2fe90a-48e1-4698-a422-a0bdffafd257",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Anthologie de la Musique Arabe : Oum Kaltsoum Volume VII (1936)",
+            "album_artist": "أم كلثوم",
+            "artist": null,
+            "context": "أم كلثوم",
+            "title": "Anthologie de la Musique Arabe : Oum Kaltsoum Volume VII (1936)"
+          },
+          "reason_count": 2,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_label",
+              "evidence": [],
+              "text": "Les Artistes Arabes Associés released both this album (1991) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, within 2 years of each other",
+              "via": {
+                "canonical_name": "Les Artistes Arabes Associés",
+                "mbid": "dc707cbc-f9d5-479f-87c8-d12bd0461d46",
+                "owned": false,
+                "type": "label"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926)",
+                "mbid": "4971c488-c06d-435c-968f-79c57ebbdafe",
+                "owned": true,
+                "type": "release"
+              },
+              "code": "same_period_credit",
+              "evidence": [
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "evidence_class": "library_tag",
+                  "match_quality": "exact_mbid",
+                  "relation": "credited_to",
+                  "role": null,
+                  "source": "navidrome",
+                  "source_url": null,
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "أم كلثوم is the credited artist of both this album (1991) and Anthologie de la Musique Arabe: Oum Kaltsoum, Vol. I (1926) (1989), the album you started from, released within 2 years of each other",
+              "via": {
+                "canonical_name": "أم كلثوم",
+                "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                "owned": true,
+                "type": "artist"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

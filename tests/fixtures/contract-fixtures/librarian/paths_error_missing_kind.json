@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "mbid": "c51e4392-7ff6-41ae-9933-cf344c331cd5",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 422,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": [
+        {
+          "type": "missing",
+          "loc": [
+            "query",
+            "kind"
+          ],
+          "msg": "Field required",
+          "input": null
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-11-07T11:45:22Z"
+}

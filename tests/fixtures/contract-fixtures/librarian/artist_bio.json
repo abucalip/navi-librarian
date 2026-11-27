@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/artist-bio",
+    "query": {
+      "artist": "Abd Al Malik"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "artist": "Abd Al Malik",
+      "bio": "Regis Fayette‑Mikano, known professionally as Abd al Malik, was born on 14 March 1975 in the 14th arrondissement of Paris and emerged as a French rapper, slam poet, songwriter, producer, writer, filmmaker, actor and screenwriter. He began his musical path in the late 1980s by co‑founding the rap collective New African Poets (NAP) with his brother Bilal and cousin Aissa, while simultaneously developing his lyrical craft. Abd al Malik’s breakthrough came in 2004 with his debut solo album Le Face à Face des Cœurs, which entered the French charts at Number 155 and was followed by the autobiographical book Qu’Allah bénisse la France. His second studio effort, Gibraltar (2006), achieved a peak position of Number 13 on the French charts and sold over 250 000 copies, earning him several awards, including the Prix Constantin, the Académie Charles‑Cros Prize, the SACEM Prize and a Victoire de la musique for the best urban music album. Subsequent albums-including Dante (2008), Château Rouge (2010), Scarifications (2015) and Le Jeune Noir à l’Épée (2019)-continued to solidify his presence in the French rap scene, with Scarifications produced by Laurent Garnier and featuring the single \"Allogène (J'suis un stremon)\". Abd al Malik expanded into film and television, directing Qu’Allah bénisse la France (2014) and the mini‑series Cités (2021), while his literary works earned the Prix Laurence Trân (2005) and the Edgar‑Fauré prize (2010). His career is marked by consistent chart performance, critical acclaim, and a series of awards recognizing both his musical and literary contributions. In 2026, he released the album Furcy Héritage, composed based on the film Furcy, né libre, which he himself directed. Created with Matteo Falkone, it features contributions from Ministère A.M.E.R, Neg'Marrons, Soprano, Youssoupha, Wallen, Lindigo, Jahyanai, Mac Tyer, and Saamou."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

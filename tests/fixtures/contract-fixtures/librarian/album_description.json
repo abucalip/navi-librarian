@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/album-description",
+    "query": {
+      "artist": "The Beatles",
+      "album": "1"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "paragraphs": [],
+      "source": "Apple Music",
+      "url": "https://music.apple.com/us/album/1/1440833098"
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

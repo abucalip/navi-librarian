@@ -1,0 +1,38 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_moment",
+      "mbid": "65489a0f-ae8e-459f-9203-92fdd7e074bf",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_moment",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "Whenever You See Fit",
+        "mbid": "65489a0f-ae8e-459f-9203-92fdd7e074bf",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "empty",
+      "stops": [],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}

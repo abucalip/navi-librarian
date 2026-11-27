@@ -1,0 +1,192 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "sideman_to_leader",
+      "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+      "type": "artist"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.011,
+    "body": {
+      "kind": "sideman_to_leader",
+      "start": {
+        "type": "artist",
+        "mbid": "0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+        "canonical_name": "أم كلثوم",
+        "owned": true
+      },
+      "generation": 1,
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "type": "artist",
+            "mbid": "4b2d8124-1b45-48ee-8b84-da106b7f5eba",
+            "canonical_name": "محمد القصبجي",
+            "owned": false
+          },
+          "reason_count": 21,
+          "reasons": [
+            {
+              "code": "sideman_on",
+              "text": "led محمد القصبجي, a release that carries أيقظت في عواطفي, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                "canonical_name": "محمد القصبجي",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "7737df78-ba51-46b0-a022-6c311dbab1f8",
+                "canonical_name": "أيقظت في عواطفي",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led محمد القصبجي, a release that carries صحيح خصامك و الا هزار؟, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                "canonical_name": "محمد القصبجي",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "48f1a149-5da6-413f-83a8-1481b0455e16",
+                "canonical_name": "صحيح خصامك و الا هزار؟",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            },
+            {
+              "code": "sideman_on",
+              "text": "led محمد القصبجي, a release that carries حيرانة ليه يا دموعي, a recording the artist you started from played on",
+              "via": {
+                "type": "release",
+                "mbid": "3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                "canonical_name": "محمد القصبجي",
+                "owned": false
+              },
+              "anchor": {
+                "type": "recording",
+                "mbid": "f435a1f0-3fe2-40cd-9778-0ac9fcd8816c",
+                "canonical_name": "حيرانة ليه يا دموعي",
+                "owned": false
+              },
+              "evidence": [
+                {
+                  "relation": "performer",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/0a354a70-b879-4697-ad9b-60bfe2bd1d63",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "track_on",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                },
+                {
+                  "relation": "release_artist",
+                  "role": null,
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "source": "musicbrainz_dump_releases",
+                  "source_url": "https://musicbrainz.org/release/3b626e92-9699-4b5c-8b9b-5e87cbec680d",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "truncated": null,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      }
+    }
+  },
+  "captured_at": "2026-11-07T14:59:12Z"
+}

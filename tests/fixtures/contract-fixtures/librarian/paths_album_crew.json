@@ -1,0 +1,889 @@
+{
+  "captured_at": "2026-11-09T22:18:02Z",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/knowledge/paths",
+    "query": {
+      "kind": "album_crew",
+      "mbid": "ec68bede-98ef-4f0e-9a77-1dc5c3a5575f",
+      "type": "release"
+    }
+  },
+  "response": {
+    "body": {
+      "capped": [],
+      "generation": 1,
+      "kind": "album_crew",
+      "overlap_dropped": 0,
+      "sources": {
+        "musicbrainz_dump": {
+          "data_version": 4
+        }
+      },
+      "start": {
+        "canonical_name": "A Celebration",
+        "mbid": "ec68bede-98ef-4f0e-9a77-1dc5c3a5575f",
+        "owned": true,
+        "type": "release"
+      },
+      "status": "ok",
+      "stops": [
+        {
+          "entity": {
+            "canonical_name": "Somethin’ Else",
+            "mbid": "6abffedf-0980-3a30-8e53-8652ad6e83e5",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Somethin’ Else",
+            "album_artist": "Cannonball Adderley",
+            "artist": null,
+            "context": "Cannonball Adderley",
+            "title": "Somethin’ Else"
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Earth Bird, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on African Marketplace, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on The Mountain, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Mannenberg Revisited, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "White Rabbit",
+            "mbid": "1e2bf92b-aa91-48cc-ac84-f0c9c073d083",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "White Rabbit",
+            "album_artist": "George Benson",
+            "artist": null,
+            "context": "George Benson",
+            "title": "White Rabbit"
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Earth Bird, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on African Marketplace, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on The Mountain, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1971-11",
+                  "valid_to": "1971-11"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Mannenberg Revisited, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Born To Be Blue",
+            "mbid": "575fc65e-8fc6-4c61-9d47-43627a235e21",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Born To Be Blue",
+            "album_artist": "Grant Green",
+            "artist": null,
+            "context": "Grant Green",
+            "title": "Born To Be Blue"
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Earth Bird, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on African Marketplace, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on The Mountain, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1962-03-01",
+                  "valid_to": "1962-03-01"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Mannenberg Revisited, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "Ballads & Blues",
+            "mbid": "a873d9af-819c-4eea-9d47-bc39cd822d97",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "Ballads & Blues",
+            "album_artist": "Miles Davis",
+            "artist": null,
+            "context": "Miles Davis",
+            "title": "Ballads & Blues"
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Earth Bird, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on African Marketplace, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on The Mountain, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": null,
+                  "valid_to": null
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Mannenberg Revisited, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        },
+        {
+          "entity": {
+            "canonical_name": "A Love Supreme",
+            "mbid": "eb5f77b4-1201-4df8-9d5c-76bc417ebd66",
+            "owned": true,
+            "type": "release"
+          },
+          "presentation": {
+            "album": "A Love Supreme",
+            "album_artist": "John Coltrane",
+            "artist": null,
+            "context": "John Coltrane",
+            "title": "A Love Supreme"
+          },
+          "reason_count": 4,
+          "reasons": [
+            {
+              "anchor": {
+                "canonical_name": "Earth Bird",
+                "mbid": "4ff08eed-ccc3-413a-a822-18cbbbb5bb12",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Earth Bird, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "African Marketplace",
+                "mbid": "6e2e20b2-17b9-4093-8f37-ef44cc428049",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "mix",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1988-03-07",
+                  "valid_to": "1988-03-08"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on African Marketplace, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "The Mountain",
+                "mbid": "5ebdcba3-fd1c-4e38-a0b0-c28dcb5196b9",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on The Mountain, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            },
+            {
+              "anchor": {
+                "canonical_name": "Mannenberg Revisited",
+                "mbid": "c0d9a8ee-c548-469f-bee8-ac8a1781908c",
+                "owned": true,
+                "type": "recording"
+              },
+              "code": "crew_on",
+              "evidence": [
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1985-10",
+                  "valid_to": "1985-10"
+                },
+                {
+                  "evidence_class": "source_explicit",
+                  "match_quality": "exact_mbid",
+                  "relation": "engineer",
+                  "role": null,
+                  "source": "musicbrainz_dump",
+                  "source_url": "https://musicbrainz.org/artist/f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                  "valid_from": "1964-12-10",
+                  "valid_to": "1964-12-10"
+                }
+              ],
+              "text": "Rudy van Gelder has a production credit on Mannenberg Revisited, from the album you started from, and on this album",
+              "via": {
+                "canonical_name": "Rudy van Gelder",
+                "mbid": "f0707f1d-55e1-46b6-8a9c-05d508e09a73",
+                "owned": false,
+                "type": "artist"
+              }
+            }
+          ]
+        }
+      ],
+      "truncated": null
+    },
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "status": 200
+  }
+}
