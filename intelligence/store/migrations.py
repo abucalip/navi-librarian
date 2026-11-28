@@ -362,6 +362,20 @@ _V8 = (
     """,
 )
 
+_V9 = (
+    """
+    CREATE TABLE radio_mix_previews (
+        id TEXT PRIMARY KEY NOT NULL,
+        target_key TEXT NOT NULL,
+        created_at REAL NOT NULL,
+        payload TEXT NOT NULL,
+        save_songs TEXT,
+        playlist_id TEXT,
+        saved INTEGER NOT NULL DEFAULT 0
+    )
+    """,
+)
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "initial schema", _V1),
     Migration(2, "artist life span and release facts", _V2),
@@ -371,6 +385,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(6, "manual update requests", _V6),
     Migration(7, "playlist editions and managed copies", _V7),
     Migration(8, "Navidrome playlist creation intents", _V8),
+    Migration(9, "Explicit radio mix previews and saves", _V9),
 )
 LATEST_VERSION = MIGRATIONS[-1].version
 

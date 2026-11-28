@@ -279,3 +279,7 @@ Authenticated owned-library queue; no playlist writes or playback side effects. 
 ## GET /api/discovery/lb-radio (LB-18)
 
 Authenticated full-list discovery mix with fresh ownership matching. Contract: [LB Radio Discovery Mix](LB_RADIO_CONTRACT.md).
+
+## Radio mix preview actions (LB-19)
+
+Authenticated stored previews, per-track downloads and explicit private playlist saves: [Radio mix actions](RADIO_MIX_ACTIONS_CONTRACT.md).

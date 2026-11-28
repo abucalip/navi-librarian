@@ -37,6 +37,10 @@ Short queue of open or parked **server and web** work. GitHub `main` is authorit
 
 - Plan: [`FirstFM.md`](plans/FirstFM.md). F1.1–F5.2 built. Open: live runtime verification (ListenBrainz popularity, Deezer fallback, ListenBrainz radio scrobbling/love) and deployment.
 
+## 2u. LB-19 Web radio mixes — implemented, browser check open
+
+- Artist Radio/Discovery Mix previews, private saves and discovery downloads: [`contract`](contracts/RADIO_MIX_ACTIONS_CONTRACT.md). Isolated browser checks pending: browser host unavailable in the implementation session.
+
 ## 2n. Simplification candidates
 
 One line each: file, simplification, why deferred. Remove when done.

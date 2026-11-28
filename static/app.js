@@ -6281,6 +6281,7 @@ function renderArtist(target) {
   const heading = $('artistDetailHeading');
   const status = $('artistDetailStatus');
   heading.textContent = target.name || 'Loading artist…';
+  window.radioMixes?.setArtist(null);
   setArtistBio(null);
   fillRows($('artistTags'), [], () => null);
   $('artistTags').hidden = true;
@@ -6500,9 +6501,11 @@ function applyArtistSection(section, ctx) {
     const artist = section.artist;
     ctx.artistShown = true;
     ctx.name = artist.name;
+    ctx.mbid = artist.mbid;
     ctx.owned = artist.owned;
     ctx.albumCount = artist.album_count;
     $('artistDetailHeading').textContent = artist.name;
+    window.radioMixes?.setArtist(artist);
     updateArtistStatus(ctx);
     if (isListeningRoom()) {
       const actions = $('lrArtistActions');

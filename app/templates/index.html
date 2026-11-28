@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="/static/listening-room/home.css">
 <link rel="stylesheet" href="/static/listening-room/discover.css">
 <link rel="stylesheet" href="/static/listening-room/playlist-inbox.css">
+<link rel="stylesheet" href="/static/listening-room/radio-mixes.css">
 <link rel="stylesheet" href="/static/listening-room/album.css">
 <link rel="stylesheet" href="/static/listening-room/artist.css">
 <link rel="stylesheet" href="/static/listening-room/library.css">
@@ -436,6 +437,12 @@
   <section id="recommendations" class="page hidden lr-discover-list" aria-labelledby="recommendationsHeading">
     <div class="panel">
       <h2 id="recommendationsHeading">Discover music</h2>
+      <div class="mix-entry">
+        <h3>Make a mix</h3>
+        <p>Preview Artist Radio from your library, or discover tracks to download.</p>
+        <button type="button" data-mix-kind="artist">Artist Radio</button>
+        <button type="button" data-mix-kind="discovery">Discover a mix</button>
+      </div>
       <p>Generate a set of album suggestions, then narrow it by discovery category, reorder it, or search for an artist, album, or genre.</p>
       <!-- Phase 1 of this page's task: build the set. The primary action leads and the album
            count is its only parameter, so the two stay in one tight group. -->
@@ -655,6 +662,7 @@
             <ul id="artistTags" class="tag-list" aria-label="Genres" hidden></ul>
             <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
             <div id="lrArtistActions" class="lr-artist-only lr-actions"></div>
+            <div id="artistMixActions" class="mix-entry" hidden></div>
           </div>
         </div>
         <section id="artistTopSongsSection" class="artist-top-songs" aria-labelledby="artistTopSongsHeading">
@@ -993,6 +1001,23 @@
   <button id="undoSnackbarAction" type="button">Undo</button>
   <span id="undoSnackbarTimer" class="undo-snackbar-timer" aria-hidden="true"></span>
 </div>
+<dialog id="radioMixDialog" aria-labelledby="radioMixTitle">
+  <div class="mix-header"><h2 id="radioMixTitle">Make a mix</h2><button type="button" id="radioMixClose">Close</button></div>
+  <p>Preview tracks and save a private playlist to Navidrome.</p>
+  <form id="radioMixForm">
+    <label>Mix type<select id="radioMixKind"><option value="artist">Artist Radio</option><option value="discovery">Discovery Mix</option></select></label>
+    <label id="radioMixSeedTypeLabel">Seed type<select id="radioMixSeedType"><option value="artist">Artist</option><option value="tag">Tag</option></select></label>
+    <label><span id="radioMixSeedLabel">Artist name</span><input id="radioMixSeed" required maxlength="80" autocomplete="off"></label>
+    <button type="button" id="radioMixArtistSearch">Find artist</button>
+    <div id="radioMixArtistResults" aria-label="Matching artists"></div>
+    <label id="radioMixFamiliarityLabel">Familiarity<select id="radioMixFamiliarity"><option value="familiar">Familiar</option><option value="explore">Explore</option><option value="deep_cuts">Deep cuts</option></select></label>
+    <label id="radioMixModeLabel">Discovery mode<select id="radioMixMode"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>
+    <button type="submit" id="radioMixGenerate">Preview mix</button>
+  </form>
+  <p id="radioMixStatus" role="status"></p>
+  <div class="mix-actions"><button type="button" id="radioMixSave" disabled>Save owned to Navidrome</button><button type="button" id="radioMixRefresh" disabled>Refresh status</button></div>
+  <ol id="radioMixTracks"></ol>
+</dialog>
 <dialog id="dockerUpdateDialog" aria-labelledby="dockerUpdateTitle">
   <h2 id="dockerUpdateTitle">Discair update</h2>
   <p id="dockerUpdateVersion"></p>
@@ -1009,6 +1034,7 @@
 <script src="/static/listening-room/home.js" defer></script>
 <script src="/static/listening-room/discover.js" defer></script>
 <script src="/static/listening-room/playlist-inbox.js" defer></script>
+<script src="/static/listening-room/radio-mixes.js" defer></script>
 <script src="/static/layout-zine.js" defer></script>
 <script src="/static/radio.js" defer></script>
 </body>
