@@ -55,7 +55,7 @@ def test_upgrade_preserves_v6_data_and_creates_same_tables_as_fresh_store(tmp_pa
         assert migrations.current_version(writer) == 6
 
     with closing(db.open_store(path)) as upgraded, closing(db.open_store(":memory:")) as fresh:
-        assert migrations.current_version(upgraded) == migrations.current_version(fresh) == 8
+        assert migrations.current_version(upgraded) == migrations.current_version(fresh) == migrations.LATEST_VERSION
         tables = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name LIKE 'playlist_%' ORDER BY name"
         assert upgraded.execute(tables).fetchall() == fresh.execute(tables).fetchall()
         assert upgraded.execute("SELECT canonical_name FROM entities").fetchone()[0] == "Existing artist"
@@ -97,10 +97,11 @@ def test_retry_and_change_detection_with_same_or_missing_upstream_dates(store, s
     assert publish(store, changed, expected=first) is None
 
 
-def test_v8_migration_preserves_v7_editions_and_managed_links(tmp_path, snapshot):
-    path = tmp_path / "v7.sqlite3"
+@pytest.mark.parametrize("version", [7, 8])
+def test_upgrade_preserves_editions_and_managed_links(tmp_path, snapshot, version):
+    path = tmp_path / f"v{version}.sqlite3"
     with closing(db.connect(path)) as writer:
-        for migration in migrations.MIGRATIONS[:7]:
+        for migration in migrations.MIGRATIONS[:version]:
             migrations._apply(writer, migration)
         edition_id = publish(writer, snapshot)
         linked = ManagedCopy("daily-jams", "playlist-1")
@@ -109,7 +110,7 @@ def test_v8_migration_preserves_v7_editions_and_managed_links(tmp_path, snapshot
         assert save_managed_copy(writer, unlinked, expected=None)
 
     with closing(db.open_store(path)) as writer:
-        assert migrations.current_version(writer) == 8
+        assert migrations.current_version(writer) == migrations.LATEST_VERSION
         assert get_edition(writer, edition_id).snapshot == snapshot
         assert get_managed_copy(writer, linked.feed_key) == linked
         assert get_managed_copy(writer, unlinked.feed_key) == unlinked

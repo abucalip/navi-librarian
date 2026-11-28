@@ -1,0 +1,31 @@
+.mix-entry { margin-block: 1rem; }
+.mix-entry h3, .mix-entry p { margin-block: .5rem; }
+.mix-entry button { margin: .25rem .5rem .25rem 0; }
+#radioMixDialog {
+  box-sizing: border-box;
+  width: min(48rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: clamp(1rem, 4vw, 2rem);
+  overflow: auto;
+  border: 1px solid var(--lr-edge-strong, #777);
+  border-radius: var(--lr-radius-panel, 12px);
+  background: var(--lr-surface, #fff);
+  color: var(--lr-text, #222);
+  overflow-wrap: anywhere;
+}
+#radioMixDialog::backdrop { background: rgb(0 0 0 / .6); }
+.mix-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.mix-header h2 { margin: 0; }
+#radioMixForm { display: grid; gap: .75rem; margin-block: 1rem; }
+#radioMixForm label { display: grid; gap: .25rem; }
+#radioMixForm [hidden], #radioMixTracks [hidden], #artistMixActions[hidden] { display: none; }
+#radioMixForm :is(input, select) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; }
+#radioMixDialog button { min-height: 44px; white-space: normal; }
+#radioMixDialog :focus-visible { outline: 2px solid var(--lr-focus, #235ac7); outline-offset: 3px; }
+.mix-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+#radioMixArtistResults:not([hidden]) { display: flex; flex-wrap: wrap; gap: .5rem; }
+#radioMixTracks { padding-inline-start: 1.75rem; }
+#radioMixTracks li { padding: .75rem 0; border-bottom: 1px solid var(--lr-edge-strong, #aaa); }
+#radioMixTracks li > div { min-width: 0; }
+#radioMixTracks p { margin: .25rem 0; font-size: .875rem; }
+#radioMixTracks button { margin-top: .25rem; }

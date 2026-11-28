@@ -47,6 +47,7 @@ from app.api.sonic import router as sonic_router
 from app.api.library import router as library_router
 from app.api.artist_radio import router as artist_radio_router
 from app.api.lb_radio import router as lb_radio_router
+from app.api.radio_mixes import router as radio_mixes_router
 from app.api.playlist_inbox import router as playlist_inbox_router
 from app.api.owned_artwork import router as owned_artwork_router
 from app.api.artwork import router as artwork_router
@@ -230,6 +231,7 @@ app.include_router(create_auth_router(
 app.include_router(settings_router)
 app.include_router(acquisitions_router)
 app.include_router(lb_radio_router)
+app.include_router(radio_mixes_router)
 app.include_router(discovery_router)
 app.include_router(search_router)
 app.include_router(library_router)

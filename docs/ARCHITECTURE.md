@@ -12,6 +12,7 @@ Paths are relative to the repository root. Use this map to jump directly to sour
 | Owned library index, search, artist/album pages | `discovery/search/`, `app/api/search.py`, `app/api/library.py` | `tests/test_api_search_routes.py`, `tests/test_album_inventory_snapshot.py` |
 | LB Radio Discovery Mix | `app/api/lb_radio.py`, `discovery/lb_radio.py`, `integrations/listenbrainz/discovery_mix.py` | `tests/test_api_lb_radio.py`, `tests/test_listenbrainz_discovery_mix.py` |
 | Owned-first Artist Radio | `app/api/artist_radio.py`, `discovery/artist_radio.py`, `integrations/listenbrainz/artist_radio.py` | `tests/test_api_artist_radio.py`, `tests/test_artist_radio.py`, `tests/test_listenbrainz_artist_radio.py` |
+| Explicit radio mix previews, saves and downloads | `app/api/radio_mixes.py`, `discovery/radio_mixes.py`, `intelligence/store/radio_mixes.py` | `tests/test_radio_mixes.py`, `tests/test_radio_mixes_ui.py` |
 | Playlist Inbox and rolling copies | `app/api/playlist_inbox.py`, `discovery/playlist_inbox.py`, `discovery/recording_match.py`, `discovery/playlist_sync.py`, `intelligence/store/playlist_editions.py` | `tests/test_api_playlist_inbox.py`, `tests/test_playlist_*.py` |
 | Scheduled Playlist Inbox import | `app/services/discovery_schedule.py`, `app/services/playlist_inbox_refresh.py` | `tests/test_playlist_inbox_refresh.py` |
 | Playlist Inbox downloads | `discovery/playlist_download.py`, `acquisition/track_service.py` | `tests/test_acquisition_track.py` |
@@ -34,6 +35,7 @@ Paths are relative to the repository root. Use this map to jump directly to sour
 | --- | --- | --- |
 | Web templates and UI | `app/templates/`, `static/app.js`, `static/radio.js`, `static/listening-room/` | `tests/test_*_ui_contract.py` |
 | Web Playlist Inbox | `static/listening-room/playlist-inbox.js` | `tests/test_api_playlist_inbox.py` |
+| Web Artist Radio and Discovery Mix | `static/listening-room/radio-mixes.js`, `static/listening-room/radio-mixes.css` | `tests/test_radio_mixes_ui.py` |
 | Android app | Moved to [`abucalip/discair-android`](https://github.com/abucalip/discair-android) | — |
 | macOS app | Moved to [`abucalip/discair-macos`](https://github.com/abucalip/discair-macos) | — |
 
